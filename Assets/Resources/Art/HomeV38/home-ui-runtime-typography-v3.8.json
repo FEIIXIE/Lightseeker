@@ -1,0 +1,239 @@
+{
+  "coordinateSystem": "1080x2400",
+  "primaryFont": [
+    "Source Han Serif SC",
+    "Noto Serif CJK SC",
+    "STSong"
+  ],
+  "fallbackFont": [
+    "Source Han Sans SC",
+    "Noto Sans CJK SC"
+  ],
+  "syntheticBoldForbidden": true,
+  "defaultColor": "#17353E",
+  "lightColor": "#F0E7D2",
+  "goldColor": "#DDBE72",
+  "fields": {
+    "playerName": {
+      "rect": {
+        "name": "player-name",
+        "x": 176,
+        "y": 65,
+        "width": 130,
+        "height": 46,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": 105
+      },
+      "fontSize": 31,
+      "weight": 400,
+      "align": "left",
+      "baseline": 104,
+      "color": "#EEE3CD"
+    },
+    "playerPower": {
+      "rect": {
+        "name": "player-power",
+        "x": 217,
+        "y": 118,
+        "width": 152,
+        "height": 40,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": 92
+      },
+      "fontSize": 20,
+      "weight": 400,
+      "align": "left",
+      "baseline": 151,
+      "color": "#EEE3CD"
+    },
+    "energyValue": {
+      "rect": {
+        "name": "energy-value",
+        "x": 704,
+        "y": 62,
+        "width": 40,
+        "height": 46,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": -44
+      },
+      "fontSize": 28,
+      "weight": 400,
+      "align": "center",
+      "baseline": 101,
+      "color": "#F0E7D2"
+    },
+    "skrValue": {
+      "rect": {
+        "name": "skr-value",
+        "x": 851,
+        "y": 62,
+        "width": 40,
+        "height": 46,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": -44
+      },
+      "fontSize": 28,
+      "weight": 400,
+      "align": "center",
+      "baseline": 101,
+      "color": "#F0E7D2"
+    },
+    "tideValue": {
+      "rect": {
+        "name": "tide-value",
+        "x": 1000,
+        "y": 62,
+        "width": 44,
+        "height": 46,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": -44
+      },
+      "fontSize": 28,
+      "weight": 400,
+      "align": "center",
+      "baseline": 101,
+      "color": "#F0E7D2"
+    },
+    "season": {
+      "rect": {
+        "name": "season-label",
+        "x": 406,
+        "y": 470,
+        "width": 270,
+        "height": 73,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": -122
+      },
+      "fontSize": 48,
+      "weight": 400,
+      "align": "center",
+      "baseline": 518,
+      "color": "#17353E"
+    },
+    "chapter": {
+      "rect": {
+        "name": "chapter-title",
+        "x": 317,
+        "y": 546,
+        "width": 446,
+        "height": 68,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": -154
+      },
+      "fontSize": 44,
+      "weight": 500,
+      "align": "center",
+      "baseline": 605,
+      "color": "#17353E"
+    },
+    "islandName": {
+      "rect": {
+        "name": "island-name",
+        "x": 457,
+        "y": 652,
+        "width": 167,
+        "height": 51,
+        "method": "clone",
+        "sourceDx": 0,
+        "sourceDy": 67
+      },
+      "fontSize": 28,
+      "weight": 400,
+      "align": "center",
+      "baseline": 692,
+      "color": "#17353E"
+    },
+    "statusTitle": {
+      "rect": {
+        "name": "status-title",
+        "x": 375,
+        "y": 1664,
+        "width": 333,
+        "height": 62,
+        "method": "parchment",
+        "sourceDx": 0,
+        "sourceDy": 0
+      },
+      "fontSize": 32,
+      "weight": 400,
+      "align": "center",
+      "baseline": 1694,
+      "color": "#17353E"
+    },
+    "stoneCount": {
+      "rect": {
+        "name": "stone-count",
+        "x": 356,
+        "y": 1777,
+        "width": 101,
+        "height": 44,
+        "method": "parchment",
+        "sourceDx": 0,
+        "sourceDy": 0
+      },
+      "fontSize": 22,
+      "weight": 400,
+      "align": "left",
+      "baseline": 1812,
+      "color": "#17353E"
+    },
+    "oilCount": {
+      "rect": {
+        "name": "oil-count",
+        "x": 566,
+        "y": 1777,
+        "width": 100,
+        "height": 44,
+        "method": "parchment",
+        "sourceDx": 0,
+        "sourceDy": 0
+      },
+      "fontSize": 22,
+      "weight": 400,
+      "align": "left",
+      "baseline": 1812,
+      "color": "#17353E"
+    },
+    "lensCount": {
+      "rect": {
+        "name": "lens-count",
+        "x": 772,
+        "y": 1777,
+        "width": 101,
+        "height": 44,
+        "method": "parchment",
+        "sourceDx": 0,
+        "sourceDy": 0
+      },
+      "fontSize": 22,
+      "weight": 400,
+      "align": "left",
+      "baseline": 1812,
+      "color": "#17353E"
+    },
+    "expeditionLabel": {
+      "rect": {
+        "name": "expedition-label",
+        "x": 399,
+        "y": 1911,
+        "width": 286,
+        "height": 77,
+        "method": "button",
+        "sourceDx": 0,
+        "sourceDy": 0
+      },
+      "fontSize": 47,
+      "weight": 400,
+      "align": "center",
+      "baseline": 1965,
+      "color": "#F0E7D2"
+    }
+  }
+}

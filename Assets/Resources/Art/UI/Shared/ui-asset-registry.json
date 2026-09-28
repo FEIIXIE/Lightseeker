@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "libraryVersion": "1.0",
+  "policy": "one-semantic-key-one-canonical-asset",
+  "scalePolicy": "uniform-scale-only-preserve-source-aspect-ratio",
+  "unityResourcesRoot": "Art/UI/Shared",
+  "referencePolicy": "resolve-by-semantic-key-never-copy-per-page",
+  "assets": [
+    {
+      "semanticKey": "action.abandon.flag.white",
+      "displayName": "放弃／撤离白旗",
+      "status": "CANONICAL",
+      "file": "runtime/actions/ART-UI-SHARED-ACTION-ABANDON-FLAG-01.png",
+      "source": "source/ART-UI-SHARED-ACTION-ABANDON-FLAG-01-SOURCE.png",
+      "canvas": [128, 128],
+      "pivot": [0.5, 0.5],
+      "defaultRuntimeSize": [32, 32],
+      "allowedMeanings": ["放弃远征", "撤离", "投降", "退出当前战斗流程"],
+      "forbiddenSubstitutes": ["火焰旗", "纯色三角旗", "页面单独重绘的白旗"]
+    },
+    {
+      "semanticKey": "action.back",
+      "displayName": "返回",
+      "status": "CANONICAL",
+      "file": "runtime/actions/ART-UI-SHARED-ACTION-BACK-01.png",
+      "canvas": [128, 128],
+      "pivot": [0.5, 0.5],
+      "defaultRuntimeSize": [40, 40]
+    },
+    {
+      "semanticKey": "status.round",
+      "displayName": "回合",
+      "status": "CANONICAL",
+      "file": "runtime/status/ART-UI-SHARED-STATUS-ROUND-01.png",
+      "canvas": [128, 128],
+      "pivot": [0.5, 0.5],
+      "defaultRuntimeSize": [34, 34]
+    },
+    {
+      "semanticKey": "currency.coin",
+      "displayName": "远征金币",
+      "status": "CANONICAL",
+      "file": "runtime/status/ART-UI-SHARED-CURRENCY-COIN-01.png",
+      "canvas": [128, 128],
+      "pivot": [0.5, 0.5],
+      "defaultRuntimeSize": [34, 34]
+    },
+    {
+      "semanticKey": "status.life",
+      "displayName": "远征生命",
+      "status": "CANONICAL",
+      "file": "runtime/status/ART-UI-SHARED-STATUS-LIFE-01.png",
+      "canvas": [128, 128],
+      "pivot": [0.5, 0.5],
+      "defaultRuntimeSize": [34, 34]
+    },
+    {
+      "semanticKey": "map.legend.normal",
+      "status": "CANONICAL",
+      "file": "runtime/map-legend/legend-normal.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.legend.elite",
+      "status": "CANONICAL",
+      "file": "runtime/map-legend/legend-elite.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.legend.event",
+      "status": "CANONICAL",
+      "file": "runtime/map-legend/legend-event.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.legend.supply",
+      "status": "CANONICAL",
+      "file": "runtime/map-legend/legend-supply.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.legend.boss",
+      "status": "CANONICAL",
+      "file": "runtime/map-legend/legend-boss.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.normal",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-normal.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.elite",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-elite.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.event",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-event.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.rest",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-rest.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.shop",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-shop.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.treasure",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-treasure.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "map.node.boss",
+      "status": "CANONICAL",
+      "file": "runtime/map-nodes/node-boss.png",
+      "canvas": [128, 128],
+      "defaultRuntimeSize": [50, 50]
+    },
+    {
+      "semanticKey": "decor.compass.rose",
+      "displayName": "航海罗盘装饰母版",
+      "status": "CANONICAL",
+      "file": "runtime/decor/ART-UI-SHARED-DECOR-COMPASS-ROSE-01.png",
+      "source": "source/ART-UI-SHARED-DECOR-COMPASS-ROSE-01-SOURCE.png",
+      "canvas": [512, 512],
+      "pivot": [0.5, 0.5],
+      "scaleMode": "uniform-contain-only",
+      "allowedUses": ["顶部罗盘装饰", "面板罗盘水印", "航海分隔符"]
+    }
+  ]
+}

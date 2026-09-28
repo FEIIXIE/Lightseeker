@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "version": "character-short-names-v0.1",
+  "date": "2026-09-15",
+  "scope": "six_playable_character_display_names_only",
+  "translationStatus": "ja_ko_initial_name_translations_not_full_locales",
+  "layoutPolicy": "same_reserved_name_rect_as_english_measure_actual_glyphs",
+  "names": [
+    { "key": "unit.guardian", "zh-Hans": "灯盾卫", "en": "Lampguard", "ko": "등불병", "ja": "灯盾兵" },
+    { "key": "unit.healer", "zh-Hans": "提灯客", "en": "Beacon", "ko": "등불지기", "ja": "灯火守" },
+    { "key": "unit.thornGuard", "zh-Hans": "林径猎手", "en": "Ranger", "ko": "숲사냥꾼", "ja": "森狩人" },
+    { "key": "unit.archer", "zh-Hans": "苔药师", "en": "Herbalist", "ko": "약초사", "ja": "苔薬師" },
+    { "key": "unit.starblade", "zh-Hans": "岩锤卫", "en": "Stoneward", "ko": "바위병", "ja": "岩槌兵" },
+    { "key": "unit.starpriest", "zh-Hans": "炉火投手", "en": "Emberhand", "ko": "불씨병", "ja": "火壺兵" }
+  ]
+}

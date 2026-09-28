@@ -1,0 +1,607 @@
+{
+  "version": "0.2",
+  "sourceAnnotation": "redacted-local-reference",
+  "sourceMap": "../v2.5-fixed-archipelago-graybox/approved-map-runtime/chapter-01-fixed-map-approved-v1.0.png",
+  "canvas": {
+    "width": 2172,
+    "height": 724
+  },
+  "relocation": {
+    "sourceRect": {
+      "left": 230,
+      "top": 428,
+      "width": 145,
+      "height": 135
+    },
+    "destinationRect": {
+      "left": 307,
+      "top": 498,
+      "width": 145,
+      "height": 135
+    },
+    "cleanSeaRect": {
+      "left": 470,
+      "top": 550,
+      "width": 145,
+      "height": 135
+    },
+    "delta": {
+      "x": 77,
+      "y": 70
+    }
+  },
+  "anchorCount": 30,
+  "contentAssignment": "visual preview only; exact red-box anchors are fixed, runtime stage types remain seeded",
+  "anchors": [
+    {
+      "index": 0,
+      "id": "M00",
+      "x": 104.5,
+      "y": 448.5,
+      "type": "START",
+      "label": "起点",
+      "rect": {
+        "minX": 58,
+        "minY": 438,
+        "maxX": 151,
+        "maxY": 459,
+        "width": 94,
+        "height": 22,
+        "pixels": 862,
+        "centerX": 104.5,
+        "centerY": 448.5
+      }
+    },
+    {
+      "index": 1,
+      "id": "M01",
+      "x": 217.5,
+      "y": 314.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 172,
+        "minY": 304,
+        "maxX": 263,
+        "maxY": 325,
+        "width": 92,
+        "height": 22,
+        "pixels": 841,
+        "centerX": 217.5,
+        "centerY": 314.5
+      }
+    },
+    {
+      "index": 2,
+      "id": "M02",
+      "x": 227,
+      "y": 513,
+      "type": "EVENT",
+      "label": "随机事件",
+      "rect": {
+        "minX": 182,
+        "minY": 503,
+        "maxX": 272,
+        "maxY": 523,
+        "width": 91,
+        "height": 21,
+        "pixels": 712,
+        "centerX": 227,
+        "centerY": 513
+      }
+    },
+    {
+      "index": 3,
+      "id": "M03",
+      "x": 338,
+      "y": 217,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 292,
+        "minY": 207,
+        "maxX": 384,
+        "maxY": 227,
+        "width": 93,
+        "height": 21,
+        "pixels": 706,
+        "centerX": 338,
+        "centerY": 217
+      }
+    },
+    {
+      "index": 4,
+      "id": "M04",
+      "x": 340,
+      "y": 408.5,
+      "type": "REST",
+      "label": "休息",
+      "rect": {
+        "minX": 294,
+        "minY": 398,
+        "maxX": 386,
+        "maxY": 419,
+        "width": 93,
+        "height": 22,
+        "pixels": 770,
+        "centerX": 340,
+        "centerY": 408.5
+      }
+    },
+    {
+      "index": 5,
+      "id": "M05",
+      "x": 373.5,
+      "y": 630.5,
+      "type": "TREASURE",
+      "label": "宝箱",
+      "rect": {
+        "minX": 328,
+        "minY": 620,
+        "maxX": 419,
+        "maxY": 641,
+        "width": 92,
+        "height": 22,
+        "pixels": 755,
+        "centerX": 373.5,
+        "centerY": 630.5
+      }
+    },
+    {
+      "index": 6,
+      "id": "M06",
+      "x": 454.5,
+      "y": 314.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 408,
+        "minY": 304,
+        "maxX": 501,
+        "maxY": 325,
+        "width": 94,
+        "height": 22,
+        "pixels": 873,
+        "centerX": 454.5,
+        "centerY": 314.5
+      }
+    },
+    {
+      "index": 7,
+      "id": "M07",
+      "x": 454.5,
+      "y": 524.5,
+      "type": "SHOP",
+      "label": "商店",
+      "rect": {
+        "minX": 408,
+        "minY": 514,
+        "maxX": 501,
+        "maxY": 535,
+        "width": 94,
+        "height": 22,
+        "pixels": 681,
+        "centerX": 454.5,
+        "centerY": 524.5
+      }
+    },
+    {
+      "index": 8,
+      "id": "M08",
+      "x": 561.5,
+      "y": 228.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 516,
+        "minY": 218,
+        "maxX": 607,
+        "maxY": 239,
+        "width": 92,
+        "height": 22,
+        "pixels": 587,
+        "centerX": 561.5,
+        "centerY": 228.5
+      }
+    },
+    {
+      "index": 9,
+      "id": "M09",
+      "x": 598.5,
+      "y": 397.5,
+      "type": "EVENT",
+      "label": "随机事件",
+      "rect": {
+        "minX": 552,
+        "minY": 387,
+        "maxX": 645,
+        "maxY": 408,
+        "width": 94,
+        "height": 22,
+        "pixels": 802,
+        "centerX": 598.5,
+        "centerY": 397.5
+      }
+    },
+    {
+      "index": 10,
+      "id": "M10",
+      "x": 667.5,
+      "y": 588,
+      "type": "TREASURE",
+      "label": "宝箱",
+      "rect": {
+        "minX": 622,
+        "minY": 578,
+        "maxX": 713,
+        "maxY": 598,
+        "width": 92,
+        "height": 21,
+        "pixels": 635,
+        "centerX": 667.5,
+        "centerY": 588
+      }
+    },
+    {
+      "index": 11,
+      "id": "M11",
+      "x": 714,
+      "y": 282.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 668,
+        "minY": 272,
+        "maxX": 760,
+        "maxY": 293,
+        "width": 93,
+        "height": 22,
+        "pixels": 801,
+        "centerX": 714,
+        "centerY": 282.5
+      }
+    },
+    {
+      "index": 12,
+      "id": "M12",
+      "x": 753.5,
+      "y": 448.5,
+      "type": "ELITE",
+      "label": "精英战斗",
+      "rect": {
+        "minX": 707,
+        "minY": 438,
+        "maxX": 800,
+        "maxY": 459,
+        "width": 94,
+        "height": 22,
+        "pixels": 909,
+        "centerX": 753.5,
+        "centerY": 448.5
+      }
+    },
+    {
+      "index": 13,
+      "id": "M13",
+      "x": 861.5,
+      "y": 344.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 816,
+        "minY": 334,
+        "maxX": 907,
+        "maxY": 355,
+        "width": 92,
+        "height": 22,
+        "pixels": 641,
+        "centerX": 861.5,
+        "centerY": 344.5
+      }
+    },
+    {
+      "index": 14,
+      "id": "M14",
+      "x": 870,
+      "y": 524.5,
+      "type": "REST",
+      "label": "休息",
+      "rect": {
+        "minX": 826,
+        "minY": 514,
+        "maxX": 914,
+        "maxY": 535,
+        "width": 89,
+        "height": 22,
+        "pixels": 841,
+        "centerX": 870,
+        "centerY": 524.5
+      }
+    },
+    {
+      "index": 15,
+      "id": "M15",
+      "x": 963,
+      "y": 249,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 918,
+        "minY": 239,
+        "maxX": 1008,
+        "maxY": 259,
+        "width": 91,
+        "height": 21,
+        "pixels": 606,
+        "centerX": 963,
+        "centerY": 249
+      }
+    },
+    {
+      "index": 16,
+      "id": "M16",
+      "x": 980,
+      "y": 569,
+      "type": "SHOP",
+      "label": "商店",
+      "rect": {
+        "minX": 936,
+        "minY": 559,
+        "maxX": 1024,
+        "maxY": 579,
+        "width": 89,
+        "height": 21,
+        "pixels": 834,
+        "centerX": 980,
+        "centerY": 569
+      }
+    },
+    {
+      "index": 17,
+      "id": "M17",
+      "x": 1037.5,
+      "y": 398,
+      "type": "ELITE",
+      "label": "精英战斗",
+      "rect": {
+        "minX": 991,
+        "minY": 388,
+        "maxX": 1084,
+        "maxY": 408,
+        "width": 94,
+        "height": 21,
+        "pixels": 699,
+        "centerX": 1037.5,
+        "centerY": 398
+      }
+    },
+    {
+      "index": 18,
+      "id": "M18",
+      "x": 1146,
+      "y": 260.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 1100,
+        "minY": 250,
+        "maxX": 1192,
+        "maxY": 271,
+        "width": 93,
+        "height": 22,
+        "pixels": 768,
+        "centerX": 1146,
+        "centerY": 260.5
+      }
+    },
+    {
+      "index": 19,
+      "id": "M19",
+      "x": 1227.5,
+      "y": 482,
+      "type": "GUARD",
+      "label": "必经守卫",
+      "rect": {
+        "minX": 1182,
+        "minY": 472,
+        "maxX": 1273,
+        "maxY": 492,
+        "width": 92,
+        "height": 21,
+        "pixels": 655,
+        "centerX": 1227.5,
+        "centerY": 482
+      }
+    },
+    {
+      "index": 20,
+      "id": "M20",
+      "x": 1350.5,
+      "y": 314.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 1304,
+        "minY": 304,
+        "maxX": 1397,
+        "maxY": 325,
+        "width": 94,
+        "height": 22,
+        "pixels": 880,
+        "centerX": 1350.5,
+        "centerY": 314.5
+      }
+    },
+    {
+      "index": 21,
+      "id": "M21",
+      "x": 1406.5,
+      "y": 524,
+      "type": "EVENT",
+      "label": "随机事件",
+      "rect": {
+        "minX": 1360,
+        "minY": 513,
+        "maxX": 1453,
+        "maxY": 535,
+        "width": 94,
+        "height": 23,
+        "pixels": 800,
+        "centerX": 1406.5,
+        "centerY": 524
+      }
+    },
+    {
+      "index": 22,
+      "id": "M22",
+      "x": 1472.5,
+      "y": 249.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 1426,
+        "minY": 239,
+        "maxX": 1519,
+        "maxY": 260,
+        "width": 94,
+        "height": 22,
+        "pixels": 720,
+        "centerX": 1472.5,
+        "centerY": 249.5
+      }
+    },
+    {
+      "index": 23,
+      "id": "M23",
+      "x": 1499.5,
+      "y": 438,
+      "type": "REST",
+      "label": "休息",
+      "rect": {
+        "minX": 1453,
+        "minY": 428,
+        "maxX": 1546,
+        "maxY": 448,
+        "width": 94,
+        "height": 21,
+        "pixels": 685,
+        "centerX": 1499.5,
+        "centerY": 438
+      }
+    },
+    {
+      "index": 24,
+      "id": "M24",
+      "x": 1610,
+      "y": 558.5,
+      "type": "TREASURE",
+      "label": "宝箱",
+      "rect": {
+        "minX": 1566,
+        "minY": 548,
+        "maxX": 1654,
+        "maxY": 569,
+        "width": 89,
+        "height": 22,
+        "pixels": 912,
+        "centerX": 1610,
+        "centerY": 558.5
+      }
+    },
+    {
+      "index": 25,
+      "id": "M25",
+      "x": 1628.5,
+      "y": 342.5,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 1582,
+        "minY": 332,
+        "maxX": 1675,
+        "maxY": 353,
+        "width": 94,
+        "height": 22,
+        "pixels": 885,
+        "centerX": 1628.5,
+        "centerY": 342.5
+      }
+    },
+    {
+      "index": 26,
+      "id": "M26",
+      "x": 1759.5,
+      "y": 233,
+      "type": "ELITE",
+      "label": "精英战斗",
+      "rect": {
+        "minX": 1714,
+        "minY": 223,
+        "maxX": 1805,
+        "maxY": 243,
+        "width": 92,
+        "height": 21,
+        "pixels": 708,
+        "centerX": 1759.5,
+        "centerY": 233
+      }
+    },
+    {
+      "index": 27,
+      "id": "M27",
+      "x": 1770,
+      "y": 504.5,
+      "type": "SHOP",
+      "label": "商店",
+      "rect": {
+        "minX": 1724,
+        "minY": 494,
+        "maxX": 1816,
+        "maxY": 515,
+        "width": 93,
+        "height": 22,
+        "pixels": 641,
+        "centerX": 1770,
+        "centerY": 504.5
+      }
+    },
+    {
+      "index": 28,
+      "id": "M28",
+      "x": 1841.5,
+      "y": 363,
+      "type": "NORMAL",
+      "label": "普通战斗",
+      "rect": {
+        "minX": 1795,
+        "minY": 353,
+        "maxX": 1888,
+        "maxY": 373,
+        "width": 94,
+        "height": 21,
+        "pixels": 766,
+        "centerX": 1841.5,
+        "centerY": 363
+      }
+    },
+    {
+      "index": 29,
+      "id": "M29",
+      "x": 1907.5,
+      "y": 513,
+      "type": "BOSS",
+      "label": "首领",
+      "rect": {
+        "minX": 1861,
+        "minY": 503,
+        "maxX": 1954,
+        "maxY": 523,
+        "width": 94,
+        "height": 21,
+        "pixels": 768,
+        "centerX": 1907.5,
+        "centerY": 513
+      }
+    }
+  ]
+}

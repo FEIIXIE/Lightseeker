@@ -1,0 +1,3125 @@
+{
+  "version": "0.4",
+  "status": "user-marked-route-ports-and-v0.3-map-base-integrated",
+  "mapGenerationVersionRecommended": 8,
+  "sources": {
+    "anchorCoordinates": "art/v2.9-manual-map-labels/manual-label-anchors-v0.2.json",
+    "reviewedTopology": "art/v2.9-manual-map-labels/chapter-01-30-anchor-route-skeletons-v0.1.json",
+    "formalRoutePorts": "art/v2.9-manual-map-labels/chapter-01-30-anchor-manual-route-ports-v0.2.json",
+    "economyRules": "第一章30锚点关卡生成配置-v0.1.json",
+    "referenceSimulator": "../tools/e20_30_anchor_content_sim.cjs",
+    "mapBase": "art/v2.9-manual-map-labels/chapter-01-map-clean-relocated-island-v0.3.png",
+    "manualRoutePortMarkup": "art/v2.9-manual-map-labels/chapter-01-map-manual-route-port-markup-v0.1.png"
+  },
+  "coordinateSpace": {
+    "width": 2172,
+    "height": 724
+  },
+  "anchors": [
+    {
+      "id": "M00",
+      "index": 0,
+      "x": 104.5,
+      "y": 448.5,
+      "labelRect": {
+        "minX": 58,
+        "minY": 438,
+        "maxX": 151,
+        "maxY": 459,
+        "width": 94,
+        "height": 22,
+        "pixels": 862,
+        "centerX": 104.5,
+        "centerY": 448.5
+      },
+      "journeyProgress": 0,
+      "islandCenter": {
+        "x": 126.4,
+        "y": 370.6
+      },
+      "routePorts": [
+        {
+          "id": "M00:MP0",
+          "x": 171.0,
+          "y": 341.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M00:MP1",
+          "x": 223.5,
+          "y": 374.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "START",
+      "previewLabelOnly": "起点"
+    },
+    {
+      "id": "M01",
+      "index": 1,
+      "x": 217.5,
+      "y": 314.5,
+      "labelRect": {
+        "minX": 172,
+        "minY": 304,
+        "maxX": 263,
+        "maxY": 325,
+        "width": 92,
+        "height": 22,
+        "pixels": 841,
+        "centerX": 217.5,
+        "centerY": 314.5
+      },
+      "journeyProgress": 6.27,
+      "islandCenter": {
+        "x": 233.3,
+        "y": 250.1
+      },
+      "routePorts": [
+        {
+          "id": "M01:MP0",
+          "x": 263.0,
+          "y": 222.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M01:MP1",
+          "x": 263.0,
+          "y": 285.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M01:MP2",
+          "x": 195.0,
+          "y": 286.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M02",
+      "index": 2,
+      "x": 227,
+      "y": 513,
+      "labelRect": {
+        "minX": 182,
+        "minY": 503,
+        "maxX": 272,
+        "maxY": 523,
+        "width": 91,
+        "height": 21,
+        "pixels": 712,
+        "centerX": 227,
+        "centerY": 513
+      },
+      "journeyProgress": 6.79,
+      "islandCenter": {
+        "x": 226.4,
+        "y": 460.3
+      },
+      "routePorts": [
+        {
+          "id": "M02:MP0",
+          "x": 219.0,
+          "y": 436.0,
+          "source": "compatibility_silhouette"
+        },
+        {
+          "id": "M02:MP1",
+          "x": 239.0,
+          "y": 434.0,
+          "source": "compatibility_silhouette"
+        },
+        {
+          "id": "M02:MP2",
+          "x": 240.0,
+          "y": 479.0,
+          "source": "compatibility_silhouette"
+        }
+      ],
+      "previewTypeOnly": "EVENT",
+      "previewLabelOnly": "随机事件"
+    },
+    {
+      "id": "M03",
+      "index": 3,
+      "x": 338,
+      "y": 217,
+      "labelRect": {
+        "minX": 292,
+        "minY": 207,
+        "maxX": 384,
+        "maxY": 227,
+        "width": 93,
+        "height": 21,
+        "pixels": 706,
+        "centerX": 338,
+        "centerY": 217
+      },
+      "journeyProgress": 12.95,
+      "islandCenter": {
+        "x": 346.3,
+        "y": 165
+      },
+      "routePorts": [
+        {
+          "id": "M03:MP0",
+          "x": 308.5,
+          "y": 200.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M03:MP1",
+          "x": 381.0,
+          "y": 200.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M04",
+      "index": 4,
+      "x": 340,
+      "y": 408.5,
+      "labelRect": {
+        "minX": 294,
+        "minY": 398,
+        "maxX": 386,
+        "maxY": 419,
+        "width": 93,
+        "height": 22,
+        "pixels": 770,
+        "centerX": 340,
+        "centerY": 408.5
+      },
+      "journeyProgress": 13.06,
+      "islandCenter": {
+        "x": 347.8,
+        "y": 347.4
+      },
+      "routePorts": [
+        {
+          "id": "M04:MP0",
+          "x": 305.0,
+          "y": 324.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M04:MP1",
+          "x": 381.5,
+          "y": 333.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M04:MP2",
+          "x": 381.0,
+          "y": 392.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "REST",
+      "previewLabelOnly": "休息"
+    },
+    {
+      "id": "M05",
+      "index": 5,
+      "x": 373.5,
+      "y": 630.5,
+      "labelRect": {
+        "minX": 328,
+        "minY": 620,
+        "maxX": 419,
+        "maxY": 641,
+        "width": 92,
+        "height": 22,
+        "pixels": 755,
+        "centerX": 373.5,
+        "centerY": 630.5
+      },
+      "journeyProgress": 14.92,
+      "islandCenter": {
+        "x": 385.1,
+        "y": 593
+      },
+      "routePorts": [
+        {
+          "id": "M05:MP0",
+          "x": 373.0,
+          "y": 553.0,
+          "source": "compatibility_silhouette"
+        },
+        {
+          "id": "M05:MP1",
+          "x": 381.0,
+          "y": 551.0,
+          "source": "compatibility_silhouette"
+        }
+      ],
+      "previewTypeOnly": "TREASURE",
+      "previewLabelOnly": "宝箱"
+    },
+    {
+      "id": "M06",
+      "index": 6,
+      "x": 454.5,
+      "y": 314.5,
+      "labelRect": {
+        "minX": 408,
+        "minY": 304,
+        "maxX": 501,
+        "maxY": 325,
+        "width": 94,
+        "height": 22,
+        "pixels": 873,
+        "centerX": 454.5,
+        "centerY": 314.5
+      },
+      "journeyProgress": 19.41,
+      "islandCenter": {
+        "x": 460.3,
+        "y": 260.8
+      },
+      "routePorts": [
+        {
+          "id": "M06:MP0",
+          "x": 515.5,
+          "y": 251.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M06:MP1",
+          "x": 428.0,
+          "y": 290.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M07",
+      "index": 7,
+      "x": 454.5,
+      "y": 524.5,
+      "labelRect": {
+        "minX": 408,
+        "minY": 514,
+        "maxX": 501,
+        "maxY": 535,
+        "width": 94,
+        "height": 22,
+        "pixels": 681,
+        "centerX": 454.5,
+        "centerY": 524.5
+      },
+      "journeyProgress": 19.41,
+      "islandCenter": {
+        "x": 472.7,
+        "y": 459.8
+      },
+      "routePorts": [
+        {
+          "id": "M07:MP0",
+          "x": 424.5,
+          "y": 422.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M07:MP1",
+          "x": 546.5,
+          "y": 460.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "SHOP",
+      "previewLabelOnly": "商店"
+    },
+    {
+      "id": "M08",
+      "index": 8,
+      "x": 561.5,
+      "y": 228.5,
+      "labelRect": {
+        "minX": 516,
+        "minY": 218,
+        "maxX": 607,
+        "maxY": 239,
+        "width": 92,
+        "height": 22,
+        "pixels": 587,
+        "centerX": 561.5,
+        "centerY": 228.5
+      },
+      "journeyProgress": 25.35,
+      "islandCenter": {
+        "x": 567.5,
+        "y": 193.2
+      },
+      "routePorts": [
+        {
+          "id": "M08:MP0",
+          "x": 560.0,
+          "y": 213.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M09",
+      "index": 9,
+      "x": 598.5,
+      "y": 397.5,
+      "labelRect": {
+        "minX": 552,
+        "minY": 387,
+        "maxX": 645,
+        "maxY": 408,
+        "width": 94,
+        "height": 22,
+        "pixels": 802,
+        "centerX": 598.5,
+        "centerY": 397.5
+      },
+      "journeyProgress": 27.4,
+      "islandCenter": {
+        "x": 616.2,
+        "y": 342.8
+      },
+      "routePorts": [
+        {
+          "id": "M09:MP0",
+          "x": 656.5,
+          "y": 320.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M09:MP1",
+          "x": 546.5,
+          "y": 333.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "EVENT",
+      "previewLabelOnly": "随机事件"
+    },
+    {
+      "id": "M10",
+      "index": 10,
+      "x": 667.5,
+      "y": 588,
+      "labelRect": {
+        "minX": 622,
+        "minY": 578,
+        "maxX": 713,
+        "maxY": 598,
+        "width": 92,
+        "height": 21,
+        "pixels": 635,
+        "centerX": 667.5,
+        "centerY": 588
+      },
+      "journeyProgress": 31.23,
+      "islandCenter": {
+        "x": 672.8,
+        "y": 529.9
+      },
+      "routePorts": [
+        {
+          "id": "M10:MP0",
+          "x": 656.0,
+          "y": 494.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M10:MP1",
+          "x": 713.0,
+          "y": 535.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "TREASURE",
+      "previewLabelOnly": "宝箱"
+    },
+    {
+      "id": "M11",
+      "index": 11,
+      "x": 714,
+      "y": 282.5,
+      "labelRect": {
+        "minX": 668,
+        "minY": 272,
+        "maxX": 760,
+        "maxY": 293,
+        "width": 93,
+        "height": 22,
+        "pixels": 801,
+        "centerX": 714,
+        "centerY": 282.5
+      },
+      "journeyProgress": 33.8,
+      "islandCenter": {
+        "x": 726.9,
+        "y": 229.6
+      },
+      "routePorts": [
+        {
+          "id": "M11:MP0",
+          "x": 777.0,
+          "y": 242.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M11:MP1",
+          "x": 677.5,
+          "y": 260.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M12",
+      "index": 12,
+      "x": 753.5,
+      "y": 448.5,
+      "labelRect": {
+        "minX": 707,
+        "minY": 438,
+        "maxX": 800,
+        "maxY": 459,
+        "width": 94,
+        "height": 22,
+        "pixels": 909,
+        "centerX": 753.5,
+        "centerY": 448.5
+      },
+      "journeyProgress": 36,
+      "islandCenter": {
+        "x": 760.2,
+        "y": 394.5
+      },
+      "routePorts": [
+        {
+          "id": "M12:MP0",
+          "x": 807.0,
+          "y": 374.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M12:MP1",
+          "x": 703.5,
+          "y": 384.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "ELITE",
+      "previewLabelOnly": "精英战斗"
+    },
+    {
+      "id": "M13",
+      "index": 13,
+      "x": 861.5,
+      "y": 344.5,
+      "labelRect": {
+        "minX": 816,
+        "minY": 334,
+        "maxX": 907,
+        "maxY": 355,
+        "width": 92,
+        "height": 22,
+        "pixels": 641,
+        "centerX": 861.5,
+        "centerY": 344.5
+      },
+      "journeyProgress": 41.99,
+      "islandCenter": {
+        "x": 863.1,
+        "y": 291.6
+      },
+      "routePorts": [
+        {
+          "id": "M13:MP0",
+          "x": 883.5,
+          "y": 269.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M13:MP1",
+          "x": 844.0,
+          "y": 337.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M14",
+      "index": 14,
+      "x": 870,
+      "y": 524.5,
+      "labelRect": {
+        "minX": 826,
+        "minY": 514,
+        "maxX": 914,
+        "maxY": 535,
+        "width": 89,
+        "height": 22,
+        "pixels": 841,
+        "centerX": 870,
+        "centerY": 524.5
+      },
+      "journeyProgress": 42.46,
+      "islandCenter": {
+        "x": 907.3,
+        "y": 454.2
+      },
+      "routePorts": [
+        {
+          "id": "M14:MP0",
+          "x": 835.5,
+          "y": 458.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M14:MP1",
+          "x": 963.5,
+          "y": 459.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "REST",
+      "previewLabelOnly": "休息"
+    },
+    {
+      "id": "M15",
+      "index": 15,
+      "x": 963,
+      "y": 249,
+      "labelRect": {
+        "minX": 918,
+        "minY": 239,
+        "maxX": 1008,
+        "maxY": 259,
+        "width": 91,
+        "height": 21,
+        "pixels": 606,
+        "centerX": 963,
+        "centerY": 249
+      },
+      "journeyProgress": 47.62,
+      "islandCenter": {
+        "x": 962.8,
+        "y": 183.4
+      },
+      "routePorts": [
+        {
+          "id": "M15:MP0",
+          "x": 1015.0,
+          "y": 208.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M15:MP1",
+          "x": 931.5,
+          "y": 221.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M16",
+      "index": 16,
+      "x": 980,
+      "y": 569,
+      "labelRect": {
+        "minX": 936,
+        "minY": 559,
+        "maxX": 1024,
+        "maxY": 579,
+        "width": 89,
+        "height": 21,
+        "pixels": 834,
+        "centerX": 980,
+        "centerY": 569
+      },
+      "journeyProgress": 48.56,
+      "islandCenter": {
+        "x": 977.8,
+        "y": 526.1
+      },
+      "routePorts": [
+        {
+          "id": "M16:MP0",
+          "x": 1023.5,
+          "y": 526.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "SHOP",
+      "previewLabelOnly": "商店"
+    },
+    {
+      "id": "M17",
+      "index": 17,
+      "x": 1037.5,
+      "y": 398,
+      "labelRect": {
+        "minX": 991,
+        "minY": 388,
+        "maxX": 1084,
+        "maxY": 408,
+        "width": 94,
+        "height": 21,
+        "pixels": 699,
+        "centerX": 1037.5,
+        "centerY": 398
+      },
+      "journeyProgress": 51.75,
+      "islandCenter": {
+        "x": 1044.7,
+        "y": 340.6
+      },
+      "routePorts": [
+        {
+          "id": "M17:MP0",
+          "x": 1002.5,
+          "y": 302.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M17:MP1",
+          "x": 1068.5,
+          "y": 366.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "ELITE",
+      "previewLabelOnly": "精英战斗"
+    },
+    {
+      "id": "M18",
+      "index": 18,
+      "x": 1146,
+      "y": 260.5,
+      "labelRect": {
+        "minX": 1100,
+        "minY": 250,
+        "maxX": 1192,
+        "maxY": 271,
+        "width": 93,
+        "height": 22,
+        "pixels": 768,
+        "centerX": 1146,
+        "centerY": 260.5
+      },
+      "journeyProgress": 57.76,
+      "islandCenter": {
+        "x": 1128.4,
+        "y": 196.4
+      },
+      "routePorts": [
+        {
+          "id": "M18:MP0",
+          "x": 1085.5,
+          "y": 217.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M18:MP1",
+          "x": 1189.5,
+          "y": 225.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M19",
+      "index": 19,
+      "x": 1227.5,
+      "y": 482,
+      "labelRect": {
+        "minX": 1182,
+        "minY": 472,
+        "maxX": 1273,
+        "maxY": 492,
+        "width": 92,
+        "height": 21,
+        "pixels": 655,
+        "centerX": 1227.5,
+        "centerY": 482
+      },
+      "journeyProgress": 62.29,
+      "islandCenter": {
+        "x": 1196,
+        "y": 354
+      },
+      "routePorts": [
+        {
+          "id": "M19:MP0",
+          "x": 1148.5,
+          "y": 357.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M19:MP1",
+          "x": 1307.5,
+          "y": 364.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M19:MP2",
+          "x": 1165.5,
+          "y": 440.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "GUARD",
+      "previewLabelOnly": "必经守卫"
+    },
+    {
+      "id": "M20",
+      "index": 20,
+      "x": 1350.5,
+      "y": 314.5,
+      "labelRect": {
+        "minX": 1304,
+        "minY": 304,
+        "maxX": 1397,
+        "maxY": 325,
+        "width": 94,
+        "height": 22,
+        "pixels": 880,
+        "centerX": 1350.5,
+        "centerY": 314.5
+      },
+      "journeyProgress": 69.11,
+      "islandCenter": {
+        "x": 1347.9,
+        "y": 257.4
+      },
+      "routePorts": [
+        {
+          "id": "M20:MP0",
+          "x": 1400.5,
+          "y": 251.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M20:MP1",
+          "x": 1303.0,
+          "y": 281.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M21",
+      "index": 21,
+      "x": 1406.5,
+      "y": 524,
+      "labelRect": {
+        "minX": 1360,
+        "minY": 513,
+        "maxX": 1453,
+        "maxY": 535,
+        "width": 94,
+        "height": 23,
+        "pixels": 800,
+        "centerX": 1406.5,
+        "centerY": 524
+      },
+      "journeyProgress": 72.21,
+      "islandCenter": {
+        "x": 1407,
+        "y": 479.3
+      },
+      "routePorts": [
+        {
+          "id": "M21:MP0",
+          "x": 1376.5,
+          "y": 432.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M21:MP1",
+          "x": 1457.0,
+          "y": 468.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "EVENT",
+      "previewLabelOnly": "随机事件"
+    },
+    {
+      "id": "M22",
+      "index": 22,
+      "x": 1472.5,
+      "y": 249.5,
+      "labelRect": {
+        "minX": 1426,
+        "minY": 239,
+        "maxX": 1519,
+        "maxY": 260,
+        "width": 94,
+        "height": 22,
+        "pixels": 720,
+        "centerX": 1472.5,
+        "centerY": 249.5
+      },
+      "journeyProgress": 75.87,
+      "islandCenter": {
+        "x": 1460.7,
+        "y": 201.7
+      },
+      "routePorts": [
+        {
+          "id": "M22:MP0",
+          "x": 1491.0,
+          "y": 196.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M22:MP1",
+          "x": 1423.0,
+          "y": 217.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M23",
+      "index": 23,
+      "x": 1499.5,
+      "y": 438,
+      "labelRect": {
+        "minX": 1453,
+        "minY": 428,
+        "maxX": 1546,
+        "maxY": 448,
+        "width": 94,
+        "height": 21,
+        "pixels": 685,
+        "centerX": 1499.5,
+        "centerY": 438
+      },
+      "journeyProgress": 77.37,
+      "islandCenter": {
+        "x": 1501.5,
+        "y": 362.5
+      },
+      "routePorts": [
+        {
+          "id": "M23:MP0",
+          "x": 1530.5,
+          "y": 338.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M23:MP1",
+          "x": 1457.5,
+          "y": 383.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M23:MP2",
+          "x": 1539.0,
+          "y": 410.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "REST",
+      "previewLabelOnly": "休息"
+    },
+    {
+      "id": "M24",
+      "index": 24,
+      "x": 1610,
+      "y": 558.5,
+      "labelRect": {
+        "minX": 1566,
+        "minY": 548,
+        "maxX": 1654,
+        "maxY": 569,
+        "width": 89,
+        "height": 22,
+        "pixels": 912,
+        "centerX": 1610,
+        "centerY": 558.5
+      },
+      "journeyProgress": 83.5,
+      "islandCenter": {
+        "x": 1614.4,
+        "y": 501.7
+      },
+      "routePorts": [
+        {
+          "id": "M24:MP0",
+          "x": 1580.0,
+          "y": 476.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M24:MP1",
+          "x": 1663.5,
+          "y": 507.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "TREASURE",
+      "previewLabelOnly": "宝箱"
+    },
+    {
+      "id": "M25",
+      "index": 25,
+      "x": 1628.5,
+      "y": 342.5,
+      "labelRect": {
+        "minX": 1582,
+        "minY": 332,
+        "maxX": 1675,
+        "maxY": 353,
+        "width": 94,
+        "height": 22,
+        "pixels": 885,
+        "centerX": 1628.5,
+        "centerY": 342.5
+      },
+      "journeyProgress": 84.53,
+      "islandCenter": {
+        "x": 1632.9,
+        "y": 259.7
+      },
+      "routePorts": [
+        {
+          "id": "M25:MP0",
+          "x": 1691.5,
+          "y": 268.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M25:MP1",
+          "x": 1572.0,
+          "y": 298.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M26",
+      "index": 26,
+      "x": 1759.5,
+      "y": 233,
+      "labelRect": {
+        "minX": 1714,
+        "minY": 223,
+        "maxX": 1805,
+        "maxY": 243,
+        "width": 92,
+        "height": 21,
+        "pixels": 708,
+        "centerX": 1759.5,
+        "centerY": 233
+      },
+      "journeyProgress": 91.79,
+      "islandCenter": {
+        "x": 1743.9,
+        "y": 185.5
+      },
+      "routePorts": [
+        {
+          "id": "M26:MP0",
+          "x": 1757.5,
+          "y": 225.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "ELITE",
+      "previewLabelOnly": "精英战斗"
+    },
+    {
+      "id": "M27",
+      "index": 27,
+      "x": 1770,
+      "y": 504.5,
+      "labelRect": {
+        "minX": 1724,
+        "minY": 494,
+        "maxX": 1816,
+        "maxY": 515,
+        "width": 93,
+        "height": 22,
+        "pixels": 641,
+        "centerX": 1770,
+        "centerY": 504.5
+      },
+      "journeyProgress": 92.37,
+      "islandCenter": {
+        "x": 1770.2,
+        "y": 437.8
+      },
+      "routePorts": [
+        {
+          "id": "M27:MP0",
+          "x": 1725.5,
+          "y": 371.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M27:MP1",
+          "x": 1809.5,
+          "y": 423.5,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M27:MP2",
+          "x": 1725.5,
+          "y": 451.0,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "SHOP",
+      "previewLabelOnly": "商店"
+    },
+    {
+      "id": "M28",
+      "index": 28,
+      "x": 1841.5,
+      "y": 363,
+      "labelRect": {
+        "minX": 1795,
+        "minY": 353,
+        "maxX": 1888,
+        "maxY": 373,
+        "width": 94,
+        "height": 21,
+        "pixels": 766,
+        "centerX": 1841.5,
+        "centerY": 363
+      },
+      "journeyProgress": 96.34,
+      "islandCenter": {
+        "x": 1839.7,
+        "y": 307.5
+      },
+      "routePorts": [
+        {
+          "id": "M28:MP0",
+          "x": 1801.0,
+          "y": 290.0,
+          "source": "manual_circle"
+        },
+        {
+          "id": "M28:MP1",
+          "x": 1870.0,
+          "y": 346.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "NORMAL",
+      "previewLabelOnly": "普通战斗"
+    },
+    {
+      "id": "M29",
+      "index": 29,
+      "x": 1907.5,
+      "y": 513,
+      "labelRect": {
+        "minX": 1861,
+        "minY": 503,
+        "maxX": 1954,
+        "maxY": 523,
+        "width": 94,
+        "height": 21,
+        "pixels": 768,
+        "centerX": 1907.5,
+        "centerY": 513
+      },
+      "journeyProgress": 100,
+      "islandCenter": {
+        "x": 1990,
+        "y": 335
+      },
+      "routePorts": [
+        {
+          "id": "M29:MP0",
+          "x": 1866.0,
+          "y": 422.5,
+          "source": "manual_circle"
+        }
+      ],
+      "previewTypeOnly": "BOSS",
+      "previewLabelOnly": "首领"
+    }
+  ],
+  "ranks": [
+    [
+      "M00"
+    ],
+    [
+      "M01",
+      "M02"
+    ],
+    [
+      "M03",
+      "M04",
+      "M05"
+    ],
+    [
+      "M06",
+      "M07"
+    ],
+    [
+      "M08",
+      "M09",
+      "M10"
+    ],
+    [
+      "M11",
+      "M12"
+    ],
+    [
+      "M13",
+      "M14"
+    ],
+    [
+      "M15",
+      "M16",
+      "M17",
+      "M18"
+    ],
+    [
+      "M19"
+    ],
+    [
+      "M20",
+      "M21"
+    ],
+    [
+      "M22",
+      "M23"
+    ],
+    [
+      "M24",
+      "M25"
+    ],
+    [
+      "M26",
+      "M27"
+    ],
+    [
+      "M28"
+    ],
+    [
+      "M29"
+    ]
+  ],
+  "candidateEdges": [
+    [
+      "M00",
+      "M01"
+    ],
+    [
+      "M00",
+      "M02"
+    ],
+    [
+      "M01",
+      "M03"
+    ],
+    [
+      "M01",
+      "M04"
+    ],
+    [
+      "M02",
+      "M04"
+    ],
+    [
+      "M02",
+      "M05"
+    ],
+    [
+      "M03",
+      "M06"
+    ],
+    [
+      "M04",
+      "M06"
+    ],
+    [
+      "M04",
+      "M07"
+    ],
+    [
+      "M05",
+      "M07"
+    ],
+    [
+      "M06",
+      "M08"
+    ],
+    [
+      "M06",
+      "M09"
+    ],
+    [
+      "M07",
+      "M09"
+    ],
+    [
+      "M07",
+      "M10"
+    ],
+    [
+      "M08",
+      "M11"
+    ],
+    [
+      "M09",
+      "M11"
+    ],
+    [
+      "M09",
+      "M12"
+    ],
+    [
+      "M10",
+      "M12"
+    ],
+    [
+      "M11",
+      "M13"
+    ],
+    [
+      "M11",
+      "M14"
+    ],
+    [
+      "M12",
+      "M14"
+    ],
+    [
+      "M13",
+      "M15"
+    ],
+    [
+      "M13",
+      "M16"
+    ],
+    [
+      "M14",
+      "M16"
+    ],
+    [
+      "M14",
+      "M17"
+    ],
+    [
+      "M15",
+      "M18"
+    ],
+    [
+      "M16",
+      "M18"
+    ],
+    [
+      "M17",
+      "M18"
+    ],
+    [
+      "M18",
+      "M19"
+    ],
+    [
+      "M19",
+      "M20"
+    ],
+    [
+      "M19",
+      "M21"
+    ],
+    [
+      "M20",
+      "M22"
+    ],
+    [
+      "M20",
+      "M23"
+    ],
+    [
+      "M21",
+      "M23"
+    ],
+    [
+      "M22",
+      "M24"
+    ],
+    [
+      "M22",
+      "M25"
+    ],
+    [
+      "M23",
+      "M24"
+    ],
+    [
+      "M24",
+      "M27"
+    ],
+    [
+      "M25",
+      "M26"
+    ],
+    [
+      "M25",
+      "M27"
+    ],
+    [
+      "M26",
+      "M28"
+    ],
+    [
+      "M27",
+      "M28"
+    ],
+    [
+      "M28",
+      "M29"
+    ],
+    [
+      "M01",
+      "M06"
+    ],
+    [
+      "M02",
+      "M07"
+    ],
+    [
+      "M06",
+      "M11"
+    ],
+    [
+      "M07",
+      "M12"
+    ],
+    [
+      "M03",
+      "M04"
+    ],
+    [
+      "M08",
+      "M09"
+    ],
+    [
+      "M09",
+      "M10"
+    ],
+    [
+      "M12",
+      "M13"
+    ],
+    [
+      "M21",
+      "M22"
+    ],
+    [
+      "M11",
+      "M12"
+    ],
+    [
+      "M20",
+      "M21"
+    ]
+  ],
+  "candidateEdgePortBindings": [
+    {
+      "id": "CE00",
+      "source": "M00",
+      "target": "M01",
+      "sourcePortId": "M00:MP0",
+      "targetPortId": "M01:MP2",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE01",
+      "source": "M00",
+      "target": "M02",
+      "sourcePortId": "M00:MP1",
+      "targetPortId": "M02:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE02",
+      "source": "M01",
+      "target": "M03",
+      "sourcePortId": "M01:MP0",
+      "targetPortId": "M03:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE03",
+      "source": "M01",
+      "target": "M04",
+      "sourcePortId": "M01:MP1",
+      "targetPortId": "M04:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE04",
+      "source": "M02",
+      "target": "M04",
+      "sourcePortId": "M02:MP1",
+      "targetPortId": "M04:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE05",
+      "source": "M02",
+      "target": "M05",
+      "sourcePortId": "M02:MP2",
+      "targetPortId": "M05:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE06",
+      "source": "M03",
+      "target": "M06",
+      "sourcePortId": "M03:MP1",
+      "targetPortId": "M06:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE07",
+      "source": "M04",
+      "target": "M06",
+      "sourcePortId": "M04:MP1",
+      "targetPortId": "M06:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE08",
+      "source": "M04",
+      "target": "M07",
+      "sourcePortId": "M04:MP2",
+      "targetPortId": "M07:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE09",
+      "source": "M05",
+      "target": "M07",
+      "sourcePortId": "M05:MP1",
+      "targetPortId": "M07:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE10",
+      "source": "M06",
+      "target": "M08",
+      "sourcePortId": "M06:MP0",
+      "targetPortId": "M08:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE11",
+      "source": "M06",
+      "target": "M09",
+      "sourcePortId": "M06:MP0",
+      "targetPortId": "M09:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE12",
+      "source": "M07",
+      "target": "M09",
+      "sourcePortId": "M07:MP1",
+      "targetPortId": "M09:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE13",
+      "source": "M07",
+      "target": "M10",
+      "sourcePortId": "M07:MP1",
+      "targetPortId": "M10:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE14",
+      "source": "M08",
+      "target": "M11",
+      "sourcePortId": "M08:MP0",
+      "targetPortId": "M11:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE15",
+      "source": "M09",
+      "target": "M11",
+      "sourcePortId": "M09:MP0",
+      "targetPortId": "M11:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE16",
+      "source": "M09",
+      "target": "M12",
+      "sourcePortId": "M09:MP0",
+      "targetPortId": "M12:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE17",
+      "source": "M10",
+      "target": "M12",
+      "sourcePortId": "M10:MP0",
+      "targetPortId": "M12:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE18",
+      "source": "M11",
+      "target": "M13",
+      "sourcePortId": "M11:MP0",
+      "targetPortId": "M13:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE19",
+      "source": "M11",
+      "target": "M14",
+      "sourcePortId": "M11:MP0",
+      "targetPortId": "M14:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "CE20",
+      "source": "M12",
+      "target": "M14",
+      "sourcePortId": "M12:MP0",
+      "targetPortId": "M14:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE21",
+      "source": "M13",
+      "target": "M15",
+      "sourcePortId": "M13:MP0",
+      "targetPortId": "M15:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE22",
+      "source": "M13",
+      "target": "M16",
+      "sourcePortId": "M13:MP1",
+      "targetPortId": "M16:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE23",
+      "source": "M14",
+      "target": "M16",
+      "sourcePortId": "M14:MP1",
+      "targetPortId": "M16:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE24",
+      "source": "M14",
+      "target": "M17",
+      "sourcePortId": "M14:MP1",
+      "targetPortId": "M17:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE25",
+      "source": "M15",
+      "target": "M18",
+      "sourcePortId": "M15:MP0",
+      "targetPortId": "M18:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE26",
+      "source": "M16",
+      "target": "M18",
+      "sourcePortId": "M16:MP0",
+      "targetPortId": "M18:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE27",
+      "source": "M17",
+      "target": "M18",
+      "sourcePortId": "M17:MP0",
+      "targetPortId": "M18:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE28",
+      "source": "M18",
+      "target": "M19",
+      "sourcePortId": "M18:MP1",
+      "targetPortId": "M19:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE29",
+      "source": "M19",
+      "target": "M20",
+      "sourcePortId": "M19:MP1",
+      "targetPortId": "M20:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE30",
+      "source": "M19",
+      "target": "M21",
+      "sourcePortId": "M19:MP1",
+      "targetPortId": "M21:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE31",
+      "source": "M20",
+      "target": "M22",
+      "sourcePortId": "M20:MP0",
+      "targetPortId": "M22:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE32",
+      "source": "M20",
+      "target": "M23",
+      "sourcePortId": "M20:MP0",
+      "targetPortId": "M23:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "CE33",
+      "source": "M21",
+      "target": "M23",
+      "sourcePortId": "M21:MP1",
+      "targetPortId": "M23:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE34",
+      "source": "M22",
+      "target": "M24",
+      "sourcePortId": "M22:MP0",
+      "targetPortId": "M24:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE35",
+      "source": "M22",
+      "target": "M25",
+      "sourcePortId": "M22:MP0",
+      "targetPortId": "M25:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE36",
+      "source": "M23",
+      "target": "M24",
+      "sourcePortId": "M23:MP2",
+      "targetPortId": "M24:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE37",
+      "source": "M24",
+      "target": "M27",
+      "sourcePortId": "M24:MP1",
+      "targetPortId": "M27:MP2",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE38",
+      "source": "M25",
+      "target": "M26",
+      "sourcePortId": "M25:MP0",
+      "targetPortId": "M26:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE39",
+      "source": "M25",
+      "target": "M27",
+      "sourcePortId": "M25:MP0",
+      "targetPortId": "M27:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE40",
+      "source": "M26",
+      "target": "M28",
+      "sourcePortId": "M26:MP0",
+      "targetPortId": "M28:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE41",
+      "source": "M27",
+      "target": "M28",
+      "sourcePortId": "M27:MP1",
+      "targetPortId": "M28:MP1",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE42",
+      "source": "M28",
+      "target": "M29",
+      "sourcePortId": "M28:MP1",
+      "targetPortId": "M29:MP0",
+      "skeletons": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "id": "CE43",
+      "source": "M01",
+      "target": "M06",
+      "sourcePortId": "M01:MP1",
+      "targetPortId": "M06:MP1",
+      "skeletons": [
+        "B"
+      ]
+    },
+    {
+      "id": "CE44",
+      "source": "M02",
+      "target": "M07",
+      "sourcePortId": "M02:MP1",
+      "targetPortId": "M07:MP0",
+      "skeletons": [
+        "B"
+      ]
+    },
+    {
+      "id": "CE45",
+      "source": "M06",
+      "target": "M11",
+      "sourcePortId": "M06:MP0",
+      "targetPortId": "M11:MP1",
+      "skeletons": [
+        "B"
+      ]
+    },
+    {
+      "id": "CE46",
+      "source": "M07",
+      "target": "M12",
+      "sourcePortId": "M07:MP1",
+      "targetPortId": "M12:MP1",
+      "skeletons": [
+        "B"
+      ]
+    },
+    {
+      "id": "CE47",
+      "source": "M03",
+      "target": "M04",
+      "sourcePortId": "M03:MP0",
+      "targetPortId": "M04:MP0",
+      "skeletons": [
+        "C"
+      ]
+    },
+    {
+      "id": "CE48",
+      "source": "M08",
+      "target": "M09",
+      "sourcePortId": "M08:MP0",
+      "targetPortId": "M09:MP1",
+      "skeletons": [
+        "C"
+      ]
+    },
+    {
+      "id": "CE49",
+      "source": "M09",
+      "target": "M10",
+      "sourcePortId": "M09:MP0",
+      "targetPortId": "M10:MP0",
+      "skeletons": [
+        "C"
+      ]
+    },
+    {
+      "id": "CE50",
+      "source": "M12",
+      "target": "M13",
+      "sourcePortId": "M12:MP0",
+      "targetPortId": "M13:MP1",
+      "skeletons": [
+        "D"
+      ]
+    },
+    {
+      "id": "CE51",
+      "source": "M21",
+      "target": "M22",
+      "sourcePortId": "M21:MP0",
+      "targetPortId": "M22:MP1",
+      "skeletons": [
+        "D"
+      ]
+    },
+    {
+      "id": "CE52",
+      "source": "M11",
+      "target": "M12",
+      "sourcePortId": "M11:MP1",
+      "targetPortId": "M12:MP1",
+      "skeletons": [
+        "D"
+      ]
+    },
+    {
+      "id": "CE53",
+      "source": "M20",
+      "target": "M21",
+      "sourcePortId": "M20:MP1",
+      "targetPortId": "M21:MP0",
+      "skeletons": [
+        "D"
+      ]
+    }
+  ],
+  "skeletons": {
+    "A": [
+      [
+        "M00",
+        "M01"
+      ],
+      [
+        "M00",
+        "M02"
+      ],
+      [
+        "M01",
+        "M03"
+      ],
+      [
+        "M01",
+        "M04"
+      ],
+      [
+        "M02",
+        "M04"
+      ],
+      [
+        "M02",
+        "M05"
+      ],
+      [
+        "M03",
+        "M06"
+      ],
+      [
+        "M04",
+        "M06"
+      ],
+      [
+        "M04",
+        "M07"
+      ],
+      [
+        "M05",
+        "M07"
+      ],
+      [
+        "M06",
+        "M08"
+      ],
+      [
+        "M06",
+        "M09"
+      ],
+      [
+        "M07",
+        "M09"
+      ],
+      [
+        "M07",
+        "M10"
+      ],
+      [
+        "M08",
+        "M11"
+      ],
+      [
+        "M09",
+        "M11"
+      ],
+      [
+        "M09",
+        "M12"
+      ],
+      [
+        "M10",
+        "M12"
+      ],
+      [
+        "M11",
+        "M13"
+      ],
+      [
+        "M11",
+        "M14"
+      ],
+      [
+        "M12",
+        "M14"
+      ],
+      [
+        "M13",
+        "M15"
+      ],
+      [
+        "M13",
+        "M16"
+      ],
+      [
+        "M14",
+        "M16"
+      ],
+      [
+        "M14",
+        "M17"
+      ],
+      [
+        "M15",
+        "M18"
+      ],
+      [
+        "M16",
+        "M18"
+      ],
+      [
+        "M17",
+        "M18"
+      ],
+      [
+        "M18",
+        "M19"
+      ],
+      [
+        "M19",
+        "M20"
+      ],
+      [
+        "M19",
+        "M21"
+      ],
+      [
+        "M20",
+        "M22"
+      ],
+      [
+        "M20",
+        "M23"
+      ],
+      [
+        "M21",
+        "M23"
+      ],
+      [
+        "M22",
+        "M24"
+      ],
+      [
+        "M22",
+        "M25"
+      ],
+      [
+        "M23",
+        "M24"
+      ],
+      [
+        "M24",
+        "M27"
+      ],
+      [
+        "M25",
+        "M26"
+      ],
+      [
+        "M25",
+        "M27"
+      ],
+      [
+        "M26",
+        "M28"
+      ],
+      [
+        "M27",
+        "M28"
+      ],
+      [
+        "M28",
+        "M29"
+      ]
+    ],
+    "B": [
+      [
+        "M00",
+        "M01"
+      ],
+      [
+        "M00",
+        "M02"
+      ],
+      [
+        "M01",
+        "M03"
+      ],
+      [
+        "M01",
+        "M04"
+      ],
+      [
+        "M02",
+        "M04"
+      ],
+      [
+        "M02",
+        "M05"
+      ],
+      [
+        "M03",
+        "M06"
+      ],
+      [
+        "M04",
+        "M06"
+      ],
+      [
+        "M04",
+        "M07"
+      ],
+      [
+        "M05",
+        "M07"
+      ],
+      [
+        "M06",
+        "M08"
+      ],
+      [
+        "M06",
+        "M09"
+      ],
+      [
+        "M07",
+        "M09"
+      ],
+      [
+        "M07",
+        "M10"
+      ],
+      [
+        "M08",
+        "M11"
+      ],
+      [
+        "M09",
+        "M11"
+      ],
+      [
+        "M09",
+        "M12"
+      ],
+      [
+        "M10",
+        "M12"
+      ],
+      [
+        "M11",
+        "M13"
+      ],
+      [
+        "M11",
+        "M14"
+      ],
+      [
+        "M12",
+        "M14"
+      ],
+      [
+        "M13",
+        "M15"
+      ],
+      [
+        "M13",
+        "M16"
+      ],
+      [
+        "M14",
+        "M16"
+      ],
+      [
+        "M14",
+        "M17"
+      ],
+      [
+        "M15",
+        "M18"
+      ],
+      [
+        "M16",
+        "M18"
+      ],
+      [
+        "M17",
+        "M18"
+      ],
+      [
+        "M18",
+        "M19"
+      ],
+      [
+        "M19",
+        "M20"
+      ],
+      [
+        "M19",
+        "M21"
+      ],
+      [
+        "M20",
+        "M22"
+      ],
+      [
+        "M20",
+        "M23"
+      ],
+      [
+        "M21",
+        "M23"
+      ],
+      [
+        "M22",
+        "M24"
+      ],
+      [
+        "M22",
+        "M25"
+      ],
+      [
+        "M23",
+        "M24"
+      ],
+      [
+        "M24",
+        "M27"
+      ],
+      [
+        "M25",
+        "M26"
+      ],
+      [
+        "M25",
+        "M27"
+      ],
+      [
+        "M26",
+        "M28"
+      ],
+      [
+        "M27",
+        "M28"
+      ],
+      [
+        "M28",
+        "M29"
+      ],
+      [
+        "M01",
+        "M06"
+      ],
+      [
+        "M02",
+        "M07"
+      ],
+      [
+        "M06",
+        "M11"
+      ],
+      [
+        "M07",
+        "M12"
+      ]
+    ],
+    "C": [
+      [
+        "M00",
+        "M01"
+      ],
+      [
+        "M00",
+        "M02"
+      ],
+      [
+        "M01",
+        "M03"
+      ],
+      [
+        "M01",
+        "M04"
+      ],
+      [
+        "M02",
+        "M04"
+      ],
+      [
+        "M02",
+        "M05"
+      ],
+      [
+        "M03",
+        "M06"
+      ],
+      [
+        "M04",
+        "M06"
+      ],
+      [
+        "M04",
+        "M07"
+      ],
+      [
+        "M05",
+        "M07"
+      ],
+      [
+        "M06",
+        "M08"
+      ],
+      [
+        "M06",
+        "M09"
+      ],
+      [
+        "M07",
+        "M09"
+      ],
+      [
+        "M07",
+        "M10"
+      ],
+      [
+        "M08",
+        "M11"
+      ],
+      [
+        "M09",
+        "M11"
+      ],
+      [
+        "M09",
+        "M12"
+      ],
+      [
+        "M10",
+        "M12"
+      ],
+      [
+        "M11",
+        "M13"
+      ],
+      [
+        "M11",
+        "M14"
+      ],
+      [
+        "M12",
+        "M14"
+      ],
+      [
+        "M13",
+        "M15"
+      ],
+      [
+        "M13",
+        "M16"
+      ],
+      [
+        "M14",
+        "M16"
+      ],
+      [
+        "M14",
+        "M17"
+      ],
+      [
+        "M15",
+        "M18"
+      ],
+      [
+        "M16",
+        "M18"
+      ],
+      [
+        "M17",
+        "M18"
+      ],
+      [
+        "M18",
+        "M19"
+      ],
+      [
+        "M19",
+        "M20"
+      ],
+      [
+        "M19",
+        "M21"
+      ],
+      [
+        "M20",
+        "M22"
+      ],
+      [
+        "M20",
+        "M23"
+      ],
+      [
+        "M21",
+        "M23"
+      ],
+      [
+        "M22",
+        "M24"
+      ],
+      [
+        "M22",
+        "M25"
+      ],
+      [
+        "M23",
+        "M24"
+      ],
+      [
+        "M24",
+        "M27"
+      ],
+      [
+        "M25",
+        "M26"
+      ],
+      [
+        "M25",
+        "M27"
+      ],
+      [
+        "M26",
+        "M28"
+      ],
+      [
+        "M27",
+        "M28"
+      ],
+      [
+        "M28",
+        "M29"
+      ],
+      [
+        "M03",
+        "M04"
+      ],
+      [
+        "M08",
+        "M09"
+      ],
+      [
+        "M09",
+        "M10"
+      ]
+    ],
+    "D": [
+      [
+        "M00",
+        "M01"
+      ],
+      [
+        "M00",
+        "M02"
+      ],
+      [
+        "M01",
+        "M03"
+      ],
+      [
+        "M01",
+        "M04"
+      ],
+      [
+        "M02",
+        "M04"
+      ],
+      [
+        "M02",
+        "M05"
+      ],
+      [
+        "M03",
+        "M06"
+      ],
+      [
+        "M04",
+        "M06"
+      ],
+      [
+        "M04",
+        "M07"
+      ],
+      [
+        "M05",
+        "M07"
+      ],
+      [
+        "M06",
+        "M08"
+      ],
+      [
+        "M06",
+        "M09"
+      ],
+      [
+        "M07",
+        "M09"
+      ],
+      [
+        "M07",
+        "M10"
+      ],
+      [
+        "M08",
+        "M11"
+      ],
+      [
+        "M09",
+        "M11"
+      ],
+      [
+        "M09",
+        "M12"
+      ],
+      [
+        "M10",
+        "M12"
+      ],
+      [
+        "M11",
+        "M13"
+      ],
+      [
+        "M12",
+        "M13"
+      ],
+      [
+        "M12",
+        "M14"
+      ],
+      [
+        "M13",
+        "M15"
+      ],
+      [
+        "M13",
+        "M16"
+      ],
+      [
+        "M14",
+        "M16"
+      ],
+      [
+        "M14",
+        "M17"
+      ],
+      [
+        "M15",
+        "M18"
+      ],
+      [
+        "M16",
+        "M18"
+      ],
+      [
+        "M17",
+        "M18"
+      ],
+      [
+        "M18",
+        "M19"
+      ],
+      [
+        "M19",
+        "M20"
+      ],
+      [
+        "M19",
+        "M21"
+      ],
+      [
+        "M20",
+        "M22"
+      ],
+      [
+        "M21",
+        "M22"
+      ],
+      [
+        "M21",
+        "M23"
+      ],
+      [
+        "M22",
+        "M24"
+      ],
+      [
+        "M22",
+        "M25"
+      ],
+      [
+        "M23",
+        "M24"
+      ],
+      [
+        "M24",
+        "M27"
+      ],
+      [
+        "M25",
+        "M26"
+      ],
+      [
+        "M25",
+        "M27"
+      ],
+      [
+        "M26",
+        "M28"
+      ],
+      [
+        "M27",
+        "M28"
+      ],
+      [
+        "M28",
+        "M29"
+      ],
+      [
+        "M11",
+        "M12"
+      ],
+      [
+        "M20",
+        "M21"
+      ]
+    ]
+  },
+  "fixedNodes": {
+    "start": "M00",
+    "mandatoryGuard": "M19",
+    "finalCombat": "M28",
+    "boss": "M29"
+  },
+  "degreeOverrides": {
+    "M00": {
+      "inDegree": 0,
+      "outDegreeMin": 2,
+      "outDegreeMax": 3
+    },
+    "M29": {
+      "inDegree": 1,
+      "outDegree": 0,
+      "onlyPredecessor": "M28"
+    }
+  },
+  "bossRevealAnchors": [
+    "M24",
+    "M25"
+  ],
+  "bossPreparationFlow": {
+    "from": [
+      "M24",
+      "M25"
+    ],
+    "choice": [
+      "M26",
+      "M27"
+    ],
+    "mandatoryFinalCombat": "M28",
+    "destination": "M29"
+  },
+  "runtimeTypeQuota": {
+    "Start": 1,
+    "NormalBattle": 14,
+    "EliteBattle": 3,
+    "MandatoryGuard": 1,
+    "Boss": 1,
+    "Supply": 2,
+    "Event": 2,
+    "Shop": 2,
+    "Rest": 2,
+    "Treasure": 2,
+    "HighRiskBattle": 0
+  },
+  "typeEligibility": {
+    "noOptionalElite": [
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05",
+      "M06",
+      "M07"
+    ],
+    "optionalEliteBeforeGuard": [
+      "M08",
+      "M09",
+      "M10",
+      "M11",
+      "M12",
+      "M13",
+      "M14",
+      "M15",
+      "M16",
+      "M17",
+      "M18"
+    ],
+    "optionalEliteAfterGuard": [
+      "M20",
+      "M21",
+      "M22",
+      "M23",
+      "M24",
+      "M25",
+      "M26",
+      "M27"
+    ],
+    "fixedNormalBattle": [
+      "M28"
+    ]
+  },
+  "constraints": {
+    "routeLengthMin": 12,
+    "routeLengthMax": 18,
+    "routeLengthMedianTarget": 15,
+    "combatNodesPerRouteMin": 8,
+    "combatBeforeGuardMin": 4,
+    "combatAfterGuardBeforeBossMin": 2,
+    "consecutiveNonCombatMax": 2,
+    "ordinaryOutDegreeMax": 3,
+    "decisionNodesPerRouteMin": 4,
+    "allAnchorsReachableFromStart": true,
+    "allAnchorsCanReachBoss": true,
+    "directedAcyclic": true,
+    "everyEdgeTargetXStrictlyGreaterThanSourceX": true,
+    "guardMandatory": true,
+    "bossOnlyPredecessor": "M28",
+    "challengeModifiersEnabled": false
+  },
+  "contentGeneration": {
+    "fixedAssignments": {
+      "M00": "Start",
+      "M19": "MandatoryGuard",
+      "M28": "NormalBattle",
+      "M29": "Boss"
+    },
+    "remainingAssignments": {
+      "NormalBattle": 13,
+      "EliteBattle": 3,
+      "Supply": 2,
+      "Event": 2,
+      "Shop": 2,
+      "Rest": 2,
+      "Treasure": 2
+    },
+    "rules": [
+      "M01 and M02 cannot both be non-combat.",
+      "No optional elite may be assigned to M01-M07.",
+      "At least one optional elite is assigned in M08-M18 and one in M20-M27.",
+      "One Shop is assigned in M08-M18 and one in M20-M27.",
+      "At least one of M26/M27 is NormalBattle, EliteBattle, Supply or Shop.",
+      "Every complete path has at least 8 combat nodes including M19 and M29.",
+      "Every complete path has at least 4 combat nodes before M19.",
+      "Every complete path has at least 2 combat nodes after M19 and before M29.",
+      "No complete path contains more than 2 consecutive non-combat nodes."
+    ],
+    "deterministicStreams": {
+      "topology": "graybox v0.2 exact rule: skeletons[(uint32(mapSeed) - 1) mod 4], ordered A/B/C/D",
+      "contentAttempt": "port rngFor(seed, imul(attemptIndex + 1, 0x85ebca6b)) from referenceSimulator with exact uint32 overflow semantics",
+      "encounter": "hash(mapSeed, nodeId, encounterVersion)",
+      "reward": "hash(mapSeed, nodeId, rewardVersion)"
+    },
+    "assignmentOrder": [
+      "pick one EliteBattle from M08-M18",
+      "pick one EliteBattle from M20-M27",
+      "pick a third EliteBattle from the remaining M08-M18 or M20-M27",
+      "pick one Shop from remaining M08-M18",
+      "pick one Shop from remaining M20-M27",
+      "shuffle and assign 13 NormalBattle plus 2 each Supply/Event/Rest/Treasure to remaining anchors",
+      "validate all path constraints; on failure increment attemptIndex and repeat"
+    ],
+    "maximumContentAttempts": 2048,
+    "failurePolicy": "Do not silently relax constraints. Log seed and reject run creation if no valid assignment is found."
+  },
+  "fogGraybox": {
+    "startDelayTicks": 2,
+    "advanceProgressPerCompletedNode": 6.5,
+    "safeGapMin": 12,
+    "approachingGapMin": 5,
+    "erodedGapExclusiveMin": 0,
+    "enemyHealthMultiplierBasisPoints": 12000,
+    "enemyAttackAndHealMultiplierBasisPoints": 11500,
+    "escapeBattleEnabled": false
+  },
+  "simulationEvidence": {
+    "contentSeeds": 100000,
+    "failures": 0,
+    "skeletons": {
+      "A": {
+        "seeds": 25000,
+        "averageAttempts": 8.519,
+        "maximumAttempts": 109,
+        "pathCount": 270
+      },
+      "B": {
+        "seeds": 25000,
+        "averageAttempts": 20.696,
+        "maximumAttempts": 202,
+        "pathCount": 480
+      },
+      "C": {
+        "seeds": 25000,
+        "averageAttempts": 11.42,
+        "maximumAttempts": 174,
+        "pathCount": 600
+      },
+      "D": {
+        "seeds": 25000,
+        "averageAttempts": 10.788,
+        "maximumAttempts": 96,
+        "pathCount": 990
+      }
+    },
+    "fogAtAdvance6_5": {
+      "A": {
+        "15": {
+          "safe": 270,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        }
+      },
+      "B": {
+        "13": {
+          "safe": 30,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "14": {
+          "safe": 180,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "15": {
+          "safe": 270,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        }
+      },
+      "C": {
+        "15": {
+          "safe": 270,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "16": {
+          "safe": 240,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "17": {
+          "safe": 0,
+          "approaching": 80,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "18": {
+          "safe": 0,
+          "approaching": 0,
+          "eroded": 10,
+          "swallowed": 0
+        }
+      },
+      "D": {
+        "15": {
+          "safe": 378,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "16": {
+          "safe": 468,
+          "approaching": 0,
+          "eroded": 0,
+          "swallowed": 0
+        },
+        "17": {
+          "safe": 0,
+          "approaching": 144,
+          "eroded": 0,
+          "swallowed": 0
+        }
+      }
+    }
+  },
+  "implementationNotes": [
+    "Art preview types and labels are not runtime assignments except fixed nodes.",
+    "Route rendering must use island route ports, never label centers.",
+    "M29 has one logical predecessor M28 even if art renders a decorative double-stroke route.",
+    "Battle retry keeps the same content assignment, encounter seed and fog combat snapshot.",
+    "Boss victory is final before any post-battle fog animation or reward-signature wait."
+  ]
+}

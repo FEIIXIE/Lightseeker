@@ -1,0 +1,115 @@
+{
+  "version": "4.6",
+  "coordinateSystem": "top-left origin, pixels on reference canvas",
+  "pages": {
+    "roguelikeUpgrade": {
+      "canvas": { "width": 841, "height": 1871 },
+      "underlay": "ui-roguelike-archive-runtime-underlay-v4.6.png",
+      "topControls": {
+        "back": [426, 23, 164, 56],
+        "abandon": [640, 23, 163, 56],
+        "round": [49, 153, 229, 59],
+        "coins": [302, 153, 228, 59],
+        "life": [560, 153, 229, 59]
+      },
+      "archive": {
+        "title": [196, 482, 449, 68],
+        "subtitle": [198, 575, 445, 41],
+        "cards": [
+          [61, 673, 723, 228],
+          [61, 930, 723, 228],
+          [61, 1187, 723, 228]
+        ],
+        "footerRound": [330, 1451, 181, 36]
+      },
+      "cardRelative": {
+        "buffIcon": [21, 12, 218, 207],
+        "rarityText": [14, 4, 91, 47],
+        "name": [261, 40, 286, 50],
+        "description": [261, 111, 314, 72],
+        "selectHitArea": [534, 149, 179, 61],
+        "selectText": [534, 149, 179, 61]
+      }
+    },
+    "preparationShop": {
+      "canvas": { "width": 841, "height": 1870 },
+      "underlay": "ui-preparation-ledger-runtime-underlay-v4.6.png",
+      "topControls": {
+        "back": [31, 51, 92, 100],
+        "abandon": [629, 81, 173, 55],
+        "round": [40, 196, 249, 57],
+        "coins": [302, 196, 237, 57],
+        "life": [554, 196, 246, 57]
+      },
+      "lineupPanel": [30, 272, 781, 281],
+      "lineupTitle": [70, 291, 355, 47],
+      "lineupSlotCenters": [
+        [106, 411], [243, 411], [379, 411], [516, 411], [653, 411], [788, 411]
+      ],
+      "lineupSlotDiameter": 107,
+      "shopPanel": [30, 576, 781, 840],
+      "shopTitle": [157, 610, 355, 63],
+      "refreshHitArea": [610, 604, 171, 65],
+      "offers": [
+        [42, 727, 757, 207],
+        [42, 945, 757, 212],
+        [42, 1176, 757, 210]
+      ],
+      "offerRelative": {
+        "characterArt": [7, 7, 235, 193],
+        "name": [259, 28, 267, 42],
+        "professionTag": [258, 75, 135, 34],
+        "factionTag": [405, 75, 144, 34],
+        "description": [258, 114, 320, 36],
+        "stats": [258, 153, 320, 43],
+        "price": [585, 20, 135, 46],
+        "recruitHitArea": [572, 96, 164, 69],
+        "recruitText": [572, 96, 164, 69]
+      },
+      "benchPanel": [30, 1429, 781, 248],
+      "benchTitle": [72, 1448, 285, 44],
+      "backpackHitArea": [568, 1442, 108, 53],
+      "recycleHitArea": [680, 1442, 109, 53],
+      "benchSlotCenters": [
+        [105, 1573], [230, 1573], [355, 1573], [480, 1573], [605, 1573], [730, 1573]
+      ],
+      "benchSlotDiameter": 102,
+      "closeShopHitArea": [31, 1681, 779, 113],
+      "closeShopText": [145, 1697, 551, 80]
+    }
+  },
+  "quality": {
+    "common": { "displayNameZh": "普通", "asset": "buff-card-common-v4.6.png" },
+    "uncommon": { "displayNameZh": "罕见", "asset": "buff-card-uncommon-v4.6.png" },
+    "rare": { "displayNameZh": "稀有", "asset": "buff-card-rare-v4.6.png" },
+    "epic": { "displayNameZh": "史诗", "asset": "buff-card-epic-v4.6.png" },
+    "legendary": { "displayNameZh": "传说", "asset": "buff-card-legendary-v4.6.png" }
+  },
+  "buffIcons": {
+    "upgrade.might": "buff-icon-attack-v4.6.png",
+    "upgrade.vitality": "buff-icon-health-v4.6.png",
+    "upgrade.treasure": "buff-icon-treasure-v4.6.png"
+  },
+  "factions": {
+    "faction.steel": {
+      "displayNameZh": "灯守",
+      "normal": "faction-tag-lantern-normal-v4.6.png",
+      "compact": "faction-tag-lantern-compact-v4.6.png"
+    },
+    "faction.wild": {
+      "displayNameZh": "苔庭",
+      "normal": "faction-tag-moss-normal-v4.6.png",
+      "compact": "faction-tag-moss-compact-v4.6.png"
+    },
+    "faction.starlight": {
+      "displayNameZh": "裂岩",
+      "normal": "faction-tag-riftrock-normal-v4.6.png",
+      "compact": "faction-tag-riftrock-compact-v4.6.png"
+    }
+  },
+  "professions": {
+    "profession.guardian": "profession-tag-guardian-v4.6.png",
+    "profession.support": "profession-tag-support-v4.6.png",
+    "profession.output": "profession-tag-output-v4.6.png"
+  }
+}

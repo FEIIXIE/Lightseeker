@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "file": "atlases/ART-UI-SHARED-TOP-ICONS-ATLAS-01.png",
+  "size": [
+    688,
+    144
+  ],
+  "sprites": [
+    {
+      "semanticKey": "action.back",
+      "source": "runtime/actions/ART-UI-SHARED-ACTION-BACK-01.png",
+      "rect": [
+        8,
+        8,
+        128,
+        128
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "alpha": {
+        "bbox": [
+          6,
+          25,
+          122,
+          103
+        ],
+        "size": [
+          116,
+          78
+        ]
+      }
+    },
+    {
+      "semanticKey": "action.abandon.flag.white",
+      "source": "runtime/actions/ART-UI-SHARED-ACTION-ABANDON-FLAG-01.png",
+      "rect": [
+        144,
+        8,
+        128,
+        128
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "alpha": {
+        "bbox": [
+          11,
+          6,
+          117,
+          122
+        ],
+        "size": [
+          106,
+          116
+        ]
+      }
+    },
+    {
+      "semanticKey": "status.round",
+      "source": "runtime/status/ART-UI-SHARED-STATUS-ROUND-01.png",
+      "rect": [
+        280,
+        8,
+        128,
+        128
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "alpha": {
+        "bbox": [
+          19,
+          6,
+          108,
+          122
+        ],
+        "size": [
+          89,
+          116
+        ]
+      }
+    },
+    {
+      "semanticKey": "currency.coin",
+      "source": "runtime/status/ART-UI-SHARED-CURRENCY-COIN-01.png",
+      "rect": [
+        416,
+        8,
+        128,
+        128
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "alpha": {
+        "bbox": [
+          7,
+          6,
+          121,
+          121
+        ],
+        "size": [
+          114,
+          115
+        ]
+      }
+    },
+    {
+      "semanticKey": "status.life",
+      "source": "runtime/status/ART-UI-SHARED-STATUS-LIFE-01.png",
+      "rect": [
+        552,
+        8,
+        128,
+        128
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "alpha": {
+        "bbox": [
+          6,
+          14,
+          122,
+          113
+        ],
+        "size": [
+          116,
+          99
+        ]
+      }
+    }
+  ]
+}

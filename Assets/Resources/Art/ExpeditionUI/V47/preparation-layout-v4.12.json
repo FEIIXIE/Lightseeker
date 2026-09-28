@@ -1,0 +1,56 @@
+{
+  "version": "4.12",
+  "referenceCanvas": { "width": 841, "height": 1870 },
+  "layers": {
+    "battlefield": "ART-BATTLE-CHAPTER-01-ABANDONED-SIGNAL-YARD-READABILITY-02.png",
+    "chrome": "ui-preparation-floating-chrome-v4.12.png",
+    "mainParchment": "ui-preparation-main-parchment-v4.12.png",
+    "offerCard": "ui-preparation-offer-card-v4.12.png"
+  },
+  "rects": {
+    "mainParchment": [20, 265, 801, 1395],
+    "back": [31, 82, 92, 96],
+    "abandon": [642, 119, 164, 52],
+    "round": [36, 195, 254, 59],
+    "coins": [302, 195, 238, 59],
+    "life": [553, 195, 254, 59],
+    "currentLineupTitle": [54, 285, 350, 48],
+    "currentLineupSlots": {
+      "centers": [[90, 392], [222, 392], [354, 392], [486, 392], [618, 392], [750, 392]],
+      "diameter": 104
+    },
+    "shopTitle": [145, 505, 350, 54],
+    "shopSubtitle": [145, 555, 360, 34],
+    "refresh": [570, 496, 240, 90],
+    "refreshIcon": [596, 525, 30, 30],
+    "refreshText": [633, 514, 148, 52],
+    "offerCards": [[42, 720, 757, 210], [42, 955, 757, 210], [42, 1190, 757, 210]],
+    "offerLocal": {
+      "characterArt": [8, 8, 220, 194],
+      "professionEmblem": [235, 18, 44, 44],
+      "nameAndLevel": [289, 15, 270, 50],
+      "factionTag": [235, 72, 104, 40],
+      "stats": [235, 116, 330, 62],
+      "priceFrame": [580, 40, 142, 48],
+      "priceIcon": [590, 51, 26, 26],
+      "priceText": [619, 40, 96, 48],
+      "recruitFrame": [550, 101, 180, 72],
+      "recruitText": [550, 101, 180, 72]
+    },
+    "benchTitle": [54, 1436, 350, 48],
+    "benchUtilities": [565, 1434, 218, 52],
+    "benchSlots": {
+      "centers": [[90, 1546], [222, 1546], [354, 1546], [486, 1546], [618, 1546], [750, 1546]],
+      "diameter": 104
+    },
+    "closeShop": [24, 1680, 793, 118]
+  },
+  "alignment": {
+    "sectionLeft": 54,
+    "offerContentLeft": 235,
+    "offerNameBeginsAfterEmblem": 289,
+    "priceAnchor": "center of priceFrame",
+    "recruitAnchor": "center of recruitFrame",
+    "refreshAnchor": "combined icon and text group centered in refresh"
+  }
+}

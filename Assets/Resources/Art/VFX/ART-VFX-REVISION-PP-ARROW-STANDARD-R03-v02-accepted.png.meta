@@ -1,0 +1,37 @@
+fileFormatVersion: 2
+guid: bc7ee7c671a84098b91a6e5db516152d
+TextureImporter:
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  spriteMode: 1
+  alignment: 9
+  spritePivot: {x: 0.8, y: 0.5}
+  spritePixelsToUnits: 100
+  textureType: 8
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  platformSettings: []
+  spriteSheet:
+    serializedVersion: 2
+    sprites: []
+    outline: []
+    physicsShape: []
+    bones: []
+    vertices: []
+    indices: []
+    edges: []
+    weights: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0

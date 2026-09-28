@@ -1,0 +1,79 @@
+{
+  "version": "4.8",
+  "page": "preparationShop",
+  "coordinateSystem": "top-left origin, pixels on 841x1870 reference canvas",
+  "underlay": "ui-preparation-ledger-runtime-underlay-v4.7.png",
+  "canvas": { "width": 841, "height": 1870 },
+  "alignment": {
+    "shopHeaderLeftX": 157,
+    "offerContentLeftXRelative": 240,
+    "rule": "Shop title, character name, profession tag outer edge, run level and stats share one left edge. Tag text remains centered inside each tag."
+  },
+  "topControls": {
+    "back": [31, 51, 92, 100],
+    "abandon": [645, 119, 159, 51],
+    "round": [40, 196, 249, 57],
+    "coins": [302, 196, 237, 57],
+    "life": [554, 196, 246, 57]
+  },
+  "lineupTitle": [70, 291, 355, 47],
+  "lineupSlotCenters": [[106, 411], [243, 411], [379, 411], [516, 411], [653, 411], [788, 411]],
+  "lineupSlotDiameter": 107,
+  "shopTitle": [157, 610, 355, 63],
+  "shopTitleAnchor": "MiddleLeft",
+  "refreshFrameAndHitArea": [610, 619, 171, 57],
+  "offers": [[42, 727, 757, 207], [42, 945, 757, 212], [42, 1176, 757, 210]],
+  "offerRelative": {
+    "characterArt": [7, 7, 226, 193],
+    "nameAndLevel": [240, 15, 330, 52],
+    "professionTag": [240, 69, 119, 40],
+    "factionTag": [367, 69, 100, 40],
+    "visibleTagGap": 8,
+    "runLevel": [240, 111, 335, 39],
+    "stats": [240, 151, 335, 47],
+    "priceFrameAndHitArea": [575, 40, 148, 47],
+    "priceIcon": [586, 50, 27, 27],
+    "priceText": [615, 40, 104, 47],
+    "recruitFrameAndHitArea": [564, 100, 171, 74],
+    "recruitText": [564, 100, 171, 74]
+  },
+  "benchTitle": [72, 1448, 285, 44],
+  "backpackHitArea": [568, 1442, 108, 53],
+  "recycleHitArea": [680, 1442, 109, 53],
+  "benchSlotCenters": [[105, 1573], [230, 1573], [355, 1573], [480, 1573], [605, 1573], [730, 1573]],
+  "benchSlotDiameter": 102,
+  "closeShopHitArea": [31, 1681, 779, 113],
+  "closeShopText": [145, 1697, 551, 80],
+  "typography": {
+    "tiers": {
+      "large": 32,
+      "medium": 26,
+      "small": 19
+    },
+    "elementTier": {
+      "shopTitle": "large",
+      "closeShop": "large",
+      "lineupTitle": "medium",
+      "benchTitle": "medium",
+      "characterName": "medium",
+      "refresh": "medium",
+      "recruit": "medium",
+      "abandon": "medium",
+      "topStats": "small",
+      "professionTag": "small",
+      "factionTag": "small",
+      "runLevel": "small",
+      "characterStats": "small",
+      "price": "small",
+      "backpack": "small",
+      "recycle": "small"
+    },
+    "lightParchmentText": "#173542",
+    "darkButtonText": "#F3E7C8",
+    "professionTagText": "#173542",
+    "factionTagText": "#F3E7C8",
+    "minimumAlpha": 0.95,
+    "lineHeightMultiplier": 1.2,
+    "maximumDistinctFontSizes": 3
+  }
+}

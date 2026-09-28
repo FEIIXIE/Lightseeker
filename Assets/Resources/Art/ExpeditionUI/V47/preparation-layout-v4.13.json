@@ -1,0 +1,59 @@
+{
+  "version": "4.13",
+  "referenceCanvas": { "width": 841, "height": 1870 },
+  "layers": {
+    "battlefield": "ART-BATTLE-CHAPTER-01-ABANDONED-SIGNAL-YARD-READABILITY-02.png",
+    "mainParchment": "ui-preparation-main-parchment-v4.13.png",
+    "offerCard": "ui-preparation-offer-card-v4.13.png",
+    "floatingChrome": "ui-preparation-floating-chrome-v4.13.png"
+  },
+  "drawOrder": ["battlefield", "mainParchment", "offerCard x3", "dynamicContent", "floatingChrome", "chromeTextAndIcons"],
+  "rects": {
+    "mainParchment": [28, 265, 785, 1390],
+    "currentLineupTitle": [58, 282, 340, 48],
+    "currentLineupSlots": {
+      "centers": [[95, 390], [225, 390], [355, 390], [485, 390], [615, 390], [745, 390]],
+      "diameter": 88
+    },
+    "shopTitle": [185, 500, 300, 50],
+    "shopSubtitle": [185, 548, 350, 34],
+    "refresh": [575, 490, 205, 78],
+    "refreshIcon": [585, 511, 28, 28],
+    "refreshText": [620, 500, 145, 52],
+    "offerCards": [[42, 680, 757, 210], [42, 920, 757, 210], [42, 1160, 757, 210]],
+    "offerLocal": {
+      "characterArt": [12, 10, 198, 188],
+      "nameAndLevel": [225, 17, 315, 44],
+      "professionIcon": [225, 69, 34, 34],
+      "professionText": [263, 67, 62, 38],
+      "factionTag": [335, 68, 112, 38],
+      "stats": [225, 120, 320, 50],
+      "priceFrame": [565, 27, 166, 56],
+      "priceIcon": [579, 40, 24, 24],
+      "priceText": [607, 31, 108, 42],
+      "recruitFrame": [545, 95, 190, 82],
+      "recruitText": [552, 103, 178, 68]
+    },
+    "benchTitle": [58, 1418, 320, 48],
+    "backpack": [584, 1414, 100, 52],
+    "recycle": [694, 1414, 100, 52],
+    "benchSlots": {
+      "centers": [[95, 1535], [225, 1535], [355, 1535], [485, 1535], [615, 1535], [745, 1535]],
+      "diameter": 88
+    },
+    "back": [31, 82, 92, 96],
+    "abandon": [642, 119, 164, 52],
+    "round": [36, 195, 254, 59],
+    "coins": [302, 195, 238, 59],
+    "life": [553, 195, 254, 59],
+    "closeShop": [24, 1680, 793, 118],
+    "closeShopText": [150, 1698, 541, 78]
+  },
+  "safeLayoutRules": {
+    "noDecorativeLinesThroughDynamicContent": true,
+    "pageMinimumHorizontalInset": 28,
+    "offerColumns": ["character 12-210", "identity and stats 225-545", "price and action 545-735"],
+    "tagsShareOneRow": true,
+    "typographySizes": [19, 26, 32]
+  }
+}

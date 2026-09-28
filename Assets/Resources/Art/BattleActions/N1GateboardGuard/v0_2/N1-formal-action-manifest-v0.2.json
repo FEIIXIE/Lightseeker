@@ -1,0 +1,101 @@
+{
+  "assetId": "N1-gateboard-guard",
+  "version": "0.2",
+  "status": "FORMAL_ANIMATION_CANDIDATE_PENDING_ART_AND_RUNTIME_ACCEPTANCE",
+  "canvas": { "width": 1212, "height": 1297, "format": "RGBA" },
+  "ground": { "x": 606, "y": 1267, "validatedOnAllFrames": true },
+  "clips": {
+    "Idle": {
+      "loop": true,
+      "durationMs": 1000,
+      "frames": [
+        [0, "frames/idle-base.png"],
+        [500, "frames/idle-breathe-up.png"],
+        [750, "frames/idle-base.png"]
+      ],
+      "preview": "preview/N1-Idle-formal-v0.2.gif"
+    },
+    "Basic_GateShieldStrike": {
+      "durationMs": 1250,
+      "reviewPlayback": "30fps",
+      "releaseAtMs": 200,
+      "impactAtMs": 300,
+      "frames": [
+        [0, "frames/basic-gateshieldstrike/N1-Basic-frame-00-000ms.png"],
+        [50, "frames/basic-gateshieldstrike/N1-Basic-frame-01-050ms.png"],
+        [100, "frames/basic-gateshieldstrike/N1-Basic-frame-02-100ms.png"],
+        [150, "frames/basic-gateshieldstrike/N1-Basic-frame-03-150ms.png"],
+        [200, "frames/basic-gateshieldstrike/N1-Basic-frame-04-200ms-release.png"],
+        [233, "frames/basic-gateshieldstrike/N1-Basic-frame-05-233ms.png"],
+        [267, "frames/basic-gateshieldstrike/N1-Basic-frame-06-267ms.png"],
+        [350, "frames/basic-gateshieldstrike/N1-Basic-frame-07-350ms.png"],
+        [433, "frames/basic-gateshieldstrike/N1-Basic-frame-08-433ms.png"],
+        [517, "frames/basic-gateshieldstrike/N1-Basic-frame-09-517ms.png"],
+        [600, "frames/basic-gateshieldstrike/N1-Basic-frame-10-600ms.png"],
+        [750, "frames/basic-gateshieldstrike/N1-Basic-frame-11-750ms.png"],
+        [833, "frames/basic-gateshieldstrike/N1-Basic-frame-12-833ms.png"],
+        [1000, "frames/basic-gateshieldstrike/N1-Basic-frame-13-1000ms.png"],
+        [1250, "frames/basic-gateshieldstrike/N1-Basic-frame-14-1250ms.png"]
+      ],
+      "preview": "preview/N1-Basic_GateShieldStrike-formal-30fps-v0.2.gif"
+    },
+    "Variant_GateStand": {
+      "reuseTier": "B",
+      "durationMs": 1250,
+      "reviewPlayback": "30fps",
+      "releaseAtMs": 200,
+      "impactAtMs": 300,
+      "mechanics": "No extra target, damage, projectile, physical wall, or collision object; white shield-seam light only.",
+      "frames": [
+        [0, "frames/variant-gatestand/N1-GateStand-frame-00-000ms.png"],
+        [50, "frames/variant-gatestand/N1-GateStand-frame-01-050ms.png"],
+        [100, "frames/variant-gatestand/N1-GateStand-frame-02-100ms.png"],
+        [150, "frames/variant-gatestand/N1-GateStand-frame-03-150ms.png"],
+        [200, "frames/variant-gatestand/N1-GateStand-frame-04-200ms-release.png"],
+        [233, "frames/variant-gatestand/N1-GateStand-frame-05-233ms.png"],
+        [267, "frames/variant-gatestand/N1-GateStand-frame-06-267ms.png"],
+        [350, "frames/variant-gatestand/N1-GateStand-frame-07-350ms.png"],
+        [433, "frames/variant-gatestand/N1-GateStand-frame-08-433ms.png"],
+        [517, "frames/variant-gatestand/N1-GateStand-frame-09-517ms.png"],
+        [600, "frames/variant-gatestand/N1-GateStand-frame-10-600ms.png"],
+        [750, "frames/variant-gatestand/N1-GateStand-frame-11-750ms.png"],
+        [833, "frames/variant-gatestand/N1-GateStand-frame-12-833ms.png"],
+        [1000, "frames/variant-gatestand/N1-GateStand-frame-13-1000ms.png"],
+        [1250, "frames/variant-gatestand/N1-GateStand-frame-14-1250ms.png"]
+      ],
+      "preview": "preview/N1-Variant_GateStand-formal-30fps-v0.2.gif"
+    },
+    "Hit": {
+      "durationMs": 150,
+      "reviewPlayback": "60fps",
+      "frames": [
+        [0, "frames/hit/N1-Hit-frame-00-000ms.png"],
+        [20, "frames/hit/N1-Hit-frame-01-020ms.png"],
+        [40, "frames/hit/N1-Hit-frame-02-040ms.png"],
+        [60, "frames/hit/N1-Hit-frame-03-060ms-peak.png"],
+        [80, "frames/hit/N1-Hit-frame-04-080ms.png"],
+        [100, "frames/hit/N1-Hit-frame-05-100ms.png"],
+        [120, "frames/hit/N1-Hit-frame-06-120ms.png"],
+        [150, "frames/hit/N1-Hit-frame-07-150ms.png"]
+      ],
+      "preview": "preview/N1-Hit-formal-60fps-v0.2.gif"
+    },
+    "Defeat": {
+      "resolvesAtMs": 650,
+      "previewHoldUntilMs": 1000,
+      "frames": [
+        [0, "frames/defeat/N1-Defeat-frame-00-000ms.png"],
+        [100, "frames/defeat/N1-Defeat-frame-01-100ms.png"],
+        [250, "frames/defeat/N1-Defeat-frame-02-250ms.png"],
+        [400, "frames/defeat/N1-Defeat-frame-03-400ms.png"],
+        [550, "frames/defeat/N1-Defeat-frame-04-550ms.png"],
+        [650, "frames/defeat/N1-Defeat-frame-05-650ms-final.png"]
+      ],
+      "preview": "preview/N1-Defeat-formal-v0.2.gif"
+    }
+  },
+  "limitations": [
+    "Frames are full-body flattened RGBA candidates; part-layer export and engine rig data are pending.",
+    "Candidate must pass art continuity and runtime event validation before APPROVED status."
+  ]
+}

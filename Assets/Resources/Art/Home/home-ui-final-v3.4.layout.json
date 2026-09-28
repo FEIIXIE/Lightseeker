@@ -1,0 +1,40 @@
+{
+  "version": "3.4",
+  "status": "approved_for_integration",
+  "referenceCanvas": { "width": 841, "height": 1870, "aspectRatio": "40:89" },
+  "coordinateSystem": "normalized_top_left",
+  "layout": {
+    "playerProfile": { "x": 0.045, "y": 0.022, "w": 0.31, "h": 0.058, "anchor": "top-left" },
+    "resourceRow": { "x": 0.60, "y": 0.024, "w": 0.355, "h": 0.042, "anchor": "top-right" },
+    "utilityActions": { "x": 0.73, "y": 0.065, "w": 0.225, "h": 0.052, "anchor": "top-right" },
+    "seasonEntry": { "x": 0.30, "y": 0.194, "w": 0.40, "h": 0.044, "anchor": "top-center" },
+    "chapterHeading": { "x": 0.27, "y": 0.228, "w": 0.46, "h": 0.054, "anchor": "top-center" },
+    "islandHero": { "x": 0.19, "y": 0.315, "w": 0.62, "h": 0.33, "anchor": "center" },
+    "repairCard": { "x": 0.175, "y": 0.67, "w": 0.65, "h": 0.105, "anchor": "center" },
+    "expeditionButton": { "x": 0.175, "y": 0.785, "w": 0.65, "h": 0.052, "anchor": "center" },
+    "bottomNavigation": { "x": 0.0, "y": 0.912, "w": 1.0, "h": 0.088, "anchor": "bottom-stretch" }
+  },
+  "copy": {
+    "playerName": "逐光者",
+    "power": "战力 1,260",
+    "season": "Seazon 0",
+    "chapter": "第一章 · 白潮群岛",
+    "island": "潮灯岛",
+    "repairState": "白汐灯塔 · 待修复",
+    "cta": "开始远征",
+    "utilityActions": ["事务", "仓库"],
+    "bottomNavigation": ["商城", "卡组", "主页", "竞技", "港口"]
+  },
+  "initialValues": {
+    "energy": 5,
+    "skr": 0,
+    "tideCrystal": 0
+  },
+  "interaction": {
+    "seasonEntry": "open_current_season_leaderboard",
+    "energy": "consume_1_per_rewarded_expedition",
+    "zeroEnergy": "allow_free_expedition_without_rewards",
+    "warehouse": "open_warehouse",
+    "harbor": "open_harbor"
+  }
+}

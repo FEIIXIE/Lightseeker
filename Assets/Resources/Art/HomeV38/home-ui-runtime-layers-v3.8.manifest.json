@@ -1,0 +1,229 @@
+{
+  "documentVersion": "3.8",
+  "status": "runtime_layers_ready",
+  "visualBaseline": "../v3.7-home-ui-concept-locked/preview/ART-UI-HOME-CONCEPT-LOCKED-SEEKER-1080x2400-v3.7.png",
+  "cleanPlateSource": "source/ART-UI-HOME-CLEAN-PLATE-GENERATED-841x1870-v3.8.png",
+  "cleanPlateRegions": [
+    {
+      "name": "profile-copy",
+      "x": 150,
+      "y": 42,
+      "width": 265,
+      "height": 145,
+      "feather": 22
+    },
+    {
+      "name": "balance-values",
+      "x": 690,
+      "y": 44,
+      "width": 370,
+      "height": 88,
+      "feather": 14
+    },
+    {
+      "name": "chapter-copy",
+      "x": 230,
+      "y": 390,
+      "width": 620,
+      "height": 430,
+      "feather": 34
+    },
+    {
+      "name": "status-copy",
+      "x": 188,
+      "y": 1640,
+      "width": 704,
+      "height": 238,
+      "feather": 20
+    },
+    {
+      "name": "expedition-copy",
+      "x": 184,
+      "y": 1870,
+      "width": 712,
+      "height": 158,
+      "feather": 12
+    }
+  ],
+  "coordinateSystem": {
+    "width": 1080,
+    "height": 2400
+  },
+  "staticBase": "runtime/ART-UI-HOME-STATIC-NO-DYNAMIC-TEXT-1080x2400-01.png",
+  "dynamicRects": [
+    {
+      "name": "player-name",
+      "x": 176,
+      "y": 65,
+      "width": 130,
+      "height": 46,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": 105
+    },
+    {
+      "name": "player-power",
+      "x": 217,
+      "y": 118,
+      "width": 152,
+      "height": 40,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": 92
+    },
+    {
+      "name": "energy-value",
+      "x": 704,
+      "y": 62,
+      "width": 40,
+      "height": 46,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": -44
+    },
+    {
+      "name": "skr-value",
+      "x": 851,
+      "y": 62,
+      "width": 40,
+      "height": 46,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": -44
+    },
+    {
+      "name": "tide-value",
+      "x": 1000,
+      "y": 62,
+      "width": 44,
+      "height": 46,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": -44
+    },
+    {
+      "name": "season-label",
+      "x": 406,
+      "y": 470,
+      "width": 270,
+      "height": 73,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": -122
+    },
+    {
+      "name": "chapter-title",
+      "x": 317,
+      "y": 546,
+      "width": 446,
+      "height": 68,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": -154
+    },
+    {
+      "name": "island-name",
+      "x": 457,
+      "y": 652,
+      "width": 167,
+      "height": 51,
+      "method": "clone",
+      "sourceDx": 0,
+      "sourceDy": 67
+    },
+    {
+      "name": "status-title",
+      "x": 375,
+      "y": 1664,
+      "width": 333,
+      "height": 62,
+      "method": "parchment",
+      "sourceDx": 0,
+      "sourceDy": 0
+    },
+    {
+      "name": "stone-count",
+      "x": 356,
+      "y": 1777,
+      "width": 101,
+      "height": 44,
+      "method": "parchment",
+      "sourceDx": 0,
+      "sourceDy": 0
+    },
+    {
+      "name": "oil-count",
+      "x": 566,
+      "y": 1777,
+      "width": 100,
+      "height": 44,
+      "method": "parchment",
+      "sourceDx": 0,
+      "sourceDy": 0
+    },
+    {
+      "name": "lens-count",
+      "x": 772,
+      "y": 1777,
+      "width": 101,
+      "height": 44,
+      "method": "parchment",
+      "sourceDx": 0,
+      "sourceDy": 0
+    },
+    {
+      "name": "expedition-label",
+      "x": 399,
+      "y": 1911,
+      "width": 286,
+      "height": 77,
+      "method": "button",
+      "sourceDx": 0,
+      "sourceDy": 0
+    }
+  ],
+  "buttonRect": {
+    "name": "expedition-button",
+    "x": 186,
+    "y": 1880,
+    "width": 708,
+    "height": 123,
+    "method": "clone",
+    "sourceDx": 0,
+    "sourceDy": 0
+  },
+  "buttonStates": {
+    "normal": "runtime/buttons/ART-UI-HOME-EXPEDITION-NORMAL-NO-TEXT-01.png",
+    "continue": "runtime/buttons/ART-UI-HOME-EXPEDITION-CONTINUE-NO-TEXT-01.png",
+    "freeNoReward": "runtime/buttons/ART-UI-HOME-EXPEDITION-FREE-NO-REWARD-NO-TEXT-01.png",
+    "disabled": "runtime/buttons/ART-UI-HOME-EXPEDITION-DISABLED-NO-TEXT-01.png"
+  },
+  "bottomNavRect": {
+    "name": "bottom-nav",
+    "x": 0,
+    "y": 2187,
+    "width": 1080,
+    "height": 213
+  },
+  "bottomNavStates": {
+    "shop": "runtime/bottom-nav/ART-UI-HOME-BOTTOM-NAV-SHOP-ACTIVE-01.png",
+    "deck": "runtime/bottom-nav/ART-UI-HOME-BOTTOM-NAV-DECK-ACTIVE-01.png",
+    "home": "runtime/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HOME-ACTIVE-01.png",
+    "pvp": "runtime/bottom-nav/ART-UI-HOME-BOTTOM-NAV-PVP-ACTIVE-01.png",
+    "harbor": "runtime/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HARBOR-ACTIVE-01.png"
+  },
+  "localizedStates": {
+    "en": {
+      "staticBase": "runtime/localized/en/ART-UI-HOME-STATIC-EN-1080x2400-01.png",
+      "bottomNavStates": {
+        "shop": "runtime/localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-SHOP-ACTIVE-EN-01.png",
+        "deck": "runtime/localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-DECK-ACTIVE-EN-01.png",
+        "home": "runtime/localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HOME-ACTIVE-EN-01.png",
+        "pvp": "runtime/localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-PVP-ACTIVE-EN-01.png",
+        "harbor": "runtime/localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HARBOR-ACTIVE-EN-01.png"
+      }
+    }
+  },
+  "typography": "home-ui-runtime-typography-v3.8.json",
+  "acceptance": "Outside cleanPlateRegions, buttonRect and bottomNavRect, compare against v3.7 baseline at 50% overlay. No other visible differences are allowed."
+}
