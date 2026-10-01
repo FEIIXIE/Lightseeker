@@ -50,17 +50,17 @@ namespace SeekerAutoChess.Core
 
         public static int AttackSpeedBasisPoints(CombatSpeedTier tier)
         {
-            switch (tier)
-            {
-                case CombatSpeedTier.Slow: return 8000;
-                case CombatSpeedTier.Fast: return 12000;
-                default: return 10000;
-            }
+            return ContinuousAttackSpeedRules.FromTier(tier);
         }
 
         public static string FormatAttackSpeed(CombatSpeedTier tier)
         {
-            return (AttackSpeedBasisPoints(tier) / 10000d).ToString("0.00",
+            return FormatAttackSpeed(AttackSpeedBasisPoints(tier));
+        }
+
+        public static string FormatAttackSpeed(int attackSpeedBasisPoints)
+        {
+            return (attackSpeedBasisPoints / 10000d).ToString("0.00",
                 System.Globalization.CultureInfo.InvariantCulture);
         }
     }

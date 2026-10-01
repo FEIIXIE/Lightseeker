@@ -9,20 +9,25 @@ namespace SeekerAutoChess.Tests
     public sealed class AvatarAndPreparationLayoutTests
     {
         [Test]
-        public void AvatarPack_UsesSixUniqueLatestWaistUpResources()
+        public void AvatarPack_UsesSixCharactersAndFiveRarities()
         {
-            Assert.That(AvatarArtContract.Entries.Count, Is.EqualTo(6));
+            Assert.That(AvatarArtContract.Entries.Count, Is.EqualTo(30));
             var definitions = new HashSet<string>();
             var resources = new HashSet<string>();
             foreach (var entry in AvatarArtContract.Entries)
             {
-                Assert.That(definitions.Add(entry.DefinitionId), Is.True, entry.DefinitionId);
+                Assert.That(definitions.Add(entry.DefinitionId + "|" + entry.QualityId), Is.True,
+                    entry.DefinitionId + "|" + entry.QualityId);
                 Assert.That(resources.Add(entry.ResourceId), Is.True, entry.ResourceId);
             }
 
             AvatarArtEntry herbalist;
             Assert.That(AvatarArtContract.TryGet("unit.archer", out herbalist), Is.True);
-            Assert.That(herbalist.ResourceId, Is.EqualTo("ART-AVATAR-C04-MOSS-HERBALIST-COMMON-05"));
+            Assert.That(herbalist.ResourceId, Is.EqualTo("ART-AVATAR-C04-HERBALIST-COMMON-v01"));
+            AvatarArtEntry legendaryHerbalist;
+            Assert.That(AvatarArtContract.TryGet("unit.archer", "legendary", out legendaryHerbalist), Is.True);
+            Assert.That(legendaryHerbalist.ResourceId,
+                Is.EqualTo("ART-AVATAR-C04-MILA-LEGENDARY-TIDEMARSH-MASTER-v01"));
             Assert.That(AvatarArtContract.RequiredLayerOrder,
                 Is.EqualTo("SlotSurface -> Avatar -> ForegroundFrameAndInfo"));
             Assert.That(AvatarArtContract.OccupiedSlotSurfaceResourceId,

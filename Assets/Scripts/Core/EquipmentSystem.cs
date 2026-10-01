@@ -295,16 +295,27 @@ namespace SeekerAutoChess.Core
             EquipmentLoadoutSnapshot loadout)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
-            var baseStats = definition.CalculateCombatStats(power, runLevel);
+            return Calculate(definition.CalculateCombatStats(power, runLevel), loadout);
+        }
+
+        public static CombatStatBlock Calculate(
+            CombatStatBlock baseStats,
+            EquipmentLoadoutSnapshot loadout)
+        {
+            if (baseStats == null) throw new ArgumentNullException(nameof(baseStats));
             var modifier = loadout == null ? new EquipmentStatModifier() : loadout.Modifier;
-            var speed = Math.Max((int)CombatSpeedTier.Slow,
-                Math.Min((int)CombatSpeedTier.Fast, (int)baseStats.SpeedTier + modifier.SpeedTierShift));
+            var speedBonus = modifier.SpeedTierShift >= 0
+                ? Math.Min(2500, modifier.SpeedTierShift * 1500)
+                : Math.Max(-3500, modifier.SpeedTierShift * 1800);
+            var attackSpeed = ContinuousAttackSpeedRules.CalculateFinal(
+                baseStats.AttackSpeedBasisPoints, speedBonus);
             return new CombatStatBlock(
                 baseStats.MaxHealth + modifier.MaxHealth,
                 baseStats.AttackDamage + modifier.AttackDamage,
                 baseStats.HealAmount + modifier.HealAmount,
                 Math.Max(0, Math.Min(80, baseStats.Armor + modifier.Armor)),
-                (CombatSpeedTier)speed);
+                baseStats.SpeedTier,
+                attackSpeed);
         }
     }
 }

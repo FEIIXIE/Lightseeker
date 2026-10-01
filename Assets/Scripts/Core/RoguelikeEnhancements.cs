@@ -102,7 +102,7 @@ namespace SeekerAutoChess.Core
 
     public static class RoguelikeEnhancementRules
     {
-        public const int RulesVersion = 1;
+        public const int RulesVersion = 2;
 
         private static readonly RoguelikeEffectDefinition[] definitions =
         {
@@ -115,6 +115,7 @@ namespace SeekerAutoChess.Core
             new RoguelikeEffectDefinition("B10", "rogue.B10.name", "rogue.scope.focus", 2, true, 4, 6, 9, 13, 18),
             // B12 is deliberately registered for stable IDs/save compatibility, but is neither offered nor effective in D1.
             new RoguelikeEffectDefinition("B12", "rogue.B12.name", "rogue.scope.escort", 1, false, 0, 0, 0, 0, 0),
+            new RoguelikeEffectDefinition("B13", "rogue.B13.name", "rogue.scope.team", 2, true, 400, 600, 900, 1300, 1800),
             new RoguelikeEffectDefinition("B14", "rogue.B14.name", "rogue.scope.team", 1, true, 600, 800, 1100, 1500, 2000),
             new RoguelikeEffectDefinition("B15", "rogue.B15.name", "rogue.scope.lowHealth", 2, true, 600, 900, 1200, 1700, 2300)
         };
@@ -142,6 +143,7 @@ namespace SeekerAutoChess.Core
                 case "B10": return context.DirectAttackerCount >= 2;
                 case "B01":
                 case "B02":
+                case "B13":
                 case "B14":
                 case "B15": return true;
                 default: return false;
@@ -185,6 +187,13 @@ namespace SeekerAutoChess.Core
         {
             return ApplyBasisPointIncreaseFloor(baseMaximumHealth,
                 SumValueBasisPoints(acquired, "B02", 10000));
+        }
+
+        public static int EffectiveAttackSpeedBasisPoints(int baseAttackSpeedBasisPoints,
+            IEnumerable<RoguelikeAcquiredEffect> acquired)
+        {
+            return ContinuousAttackSpeedRules.CalculateFinal(baseAttackSpeedBasisPoints,
+                SumValueBasisPoints(acquired, "B13", 3000));
         }
 
         public static int EffectiveArmor(int baseArmor, string factionId, string professionId,
@@ -450,7 +459,7 @@ namespace SeekerAutoChess.Core
             text.Append("runId=").Append(runId ?? string.Empty).Append('\n');
             text.Append("roguelikeRunStateVersion=").Append(StateVersion).Append('\n');
             text.Append("roguelikeRulesVersion=").Append(RoguelikeEnhancementRules.RulesVersion).Append('\n');
-            text.Append("attackSpeedRulesVersion=0\n");
+            text.Append("attackSpeedRulesVersion=1\n");
             text.Append("choiceSetId=").Append(PendingChoiceSet == null ? "none" : PendingChoiceSet.choiceSetId).Append('\n');
             text.Append("options=");
             if (PendingChoiceSet != null && PendingChoiceSet.options != null)
@@ -466,7 +475,7 @@ namespace SeekerAutoChess.Core
                 if (i > 0) text.Append('|');
                 text.Append(acquired[i].effectId).Append(':').Append(acquired[i].rarityId).Append('x').Append(acquired[i].stackCount);
             }
-            text.Append("\nunitAttackSpeeds=legacy-tier\nactionPeriods=legacy-1250/1000/833\n");
+            text.Append("\nunitAttackSpeeds=continuous-basis-points\nactionPeriods=integer-e27\n");
             text.Append("lastActionReceipt=").Append(LastActionReceipt ?? string.Empty).Append('\n');
             return text.ToString();
         }

@@ -178,7 +178,21 @@ namespace SeekerAutoChess.Tests.EditMode
         {
             Assert.That(RoguelikeEnhancementRules.Definitions.Any(x => x.EffectId == "upgrade.might"), Is.False);
             Assert.That(RoguelikeEnhancementRules.Get("B12").EnabledInD1, Is.False);
-            Assert.That(RoguelikeEnhancementRules.RulesVersion, Is.EqualTo(1));
+            Assert.That(RoguelikeEnhancementRules.RulesVersion, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void D15_B13UsesContinuousAttackSpeedAndThirtyPercentCap()
+        {
+            var effects = new[] {
+                Effect("B13", RoguelikeRarity.Legendary),
+                Effect("B13", RoguelikeRarity.Legendary)
+            };
+            Assert.That(RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B13", 3000),
+                Is.EqualTo(3000));
+            Assert.That(RoguelikeEnhancementRules.EffectiveAttackSpeedBasisPoints(12000, effects),
+                Is.EqualTo(15600));
+            Assert.That(ContinuousAttackSpeedRules.CalculatePeriod(15600), Is.EqualTo(641));
         }
 
         [Test]
@@ -208,6 +222,37 @@ namespace SeekerAutoChess.Tests.EditMode
             Assert.That(result.PlayerUnits[0].AttackDamage, Is.EqualTo(expectedAttack));
             Assert.That(result.PlayerUnits[0].MaxHealth, Is.EqualTo(expectedHealth));
             Assert.That(result.PlayerUnits[0].Armor, Is.EqualTo(expectedArmor));
+        }
+
+        [Test]
+        public void D14_DiagnosticResetClearsStaleChoiceAndAllowsFreshSelection()
+        {
+            var build = new RoguelikeBuildState();
+            var actions = new RunEconomyActionLedger();
+            var staleSet = build.EnsureChoiceSet("old-run", 2500, false, false, true, FullContext());
+            Assert.That(staleSet, Is.Not.Null);
+            Assert.That(staleSet.expectedRunStateVersion, Is.EqualTo(0));
+            actions.Execute("old-action", 0, () => RunEconomyResultCode.Success);
+
+            actions.Reset();
+            build.Reset();
+            build.SynchronizeRunStateVersion(actions.StateVersion);
+            var freshSet = build.EnsureChoiceSet("diag-C10", 2500, false, false, true, FullContext());
+            RoguelikeChoiceReceipt choiceReceipt = null;
+            var receipt = actions.Execute("diag-boon-1", freshSet.expectedRunStateVersion, () =>
+            {
+                choiceReceipt = build.Select(freshSet.choiceSetId, freshSet.options[0].optionId,
+                    "diag-boon-1", freshSet.expectedRunStateVersion);
+                return (RoguelikeChoiceResultCode)choiceReceipt.resultCode == RoguelikeChoiceResultCode.Success
+                    ? RunEconomyResultCode.Success
+                    : RunEconomyResultCode.InvalidTarget;
+            });
+
+            Assert.That(receipt.ResultCode, Is.EqualTo(RunEconomyResultCode.Success));
+            Assert.That(choiceReceipt, Is.Not.Null);
+            Assert.That((RoguelikeChoiceResultCode)choiceReceipt.resultCode,
+                Is.EqualTo(RoguelikeChoiceResultCode.Success));
+            Assert.That(build.AcquiredEffects.Count, Is.EqualTo(1));
         }
 
         private static BattleInput BasicBattle()

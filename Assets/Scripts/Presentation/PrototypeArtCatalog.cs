@@ -43,7 +43,6 @@ namespace SeekerAutoChess.Prototype.Presentation
 
     internal static class PrototypeArtResourceIds
     {
-        public const string HomeChapterOneHero = "ART-HOME-CHAPTER-01-LIGHTHOUSE-HERO-CENTERED-02";
         public const string HomeSeaChartBackground = "ART-HOME-SEA-CHART-BG-04";
         public const string HomeChapterOneIsland = "ART-HOME-CH01-LIGHTHOUSE-ISLAND-04";
         public const string HomeCloudFar = "ART-HOME-CLOUD-FAR-02";
@@ -91,13 +90,8 @@ namespace SeekerAutoChess.Prototype.Presentation
         public const string HomeV38BottomNavPvpEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-PVP-ACTIVE-EN-01";
         public const string HomeV38BottomNavHarborEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HARBOR-ACTIVE-EN-01";
 
-        public const string BattleAbandonedSignalYard = "ART-BATTLE-CHAPTER-01-ABANDONED-SIGNAL-YARD-01";
         public const string BattleAbandonedSignalYardReadability =
             "ART-BATTLE-CHAPTER-01-ABANDONED-SIGNAL-YARD-READABILITY-02";
-        public const string BattleFarSea = "ART-BATTLE-WHITE-TIDE-FAR-SEA-01";
-        public const string BattleIslandGround = "ART-BATTLE-WHITE-TIDE-ISLAND-GROUND-01";
-        public const string BattleDeploymentMarkers = "ART-BATTLE-WHITE-TIDE-DEPLOYMENT-MARKERS-01";
-        public const string BattleForegroundDock = "ART-BATTLE-WHITE-TIDE-FOREGROUND-DOCK-01";
 
         public const string MapSeaBase = "ART-MAP-WHITE-TIDE-SEA-BASE-01";
         public const string MapDistantIslands = "ART-MAP-WHITE-TIDE-DISTANT-ISLANDS-01";
@@ -160,14 +154,18 @@ namespace SeekerAutoChess.Prototype.Presentation
             "v942/icons/ART-UI-FORMATION-SHOP-ICON-96-V9.4.2";
         public const string FormationBattleV944BackpackIcon =
             "v944/icons/ART-UI-FORMATION-BACKPACK-ICON-96-V9.4.4";
-        public const string FormationBattleV951StatusTrack =
-            "v951/frames/ART-UI-BATTLE-STATUS-BAR-PROW-TRACK-420x46-V9.5.1";
-        public const string FormationBattleV951HealthFill =
-            "v951/frames/ART-UI-BATTLE-STATUS-BAR-HEALTH-FILL-GREEN-420x46-V9.5.1";
-        public const string FormationBattleV951ShieldFill =
-            "v951/frames/ART-UI-BATTLE-STATUS-BAR-SHIELD-FILL-BLUE-420x46-V9.5.1";
-        public const string FormationBattleV951CapacityNotch =
-            "v951/frames/ART-UI-BATTLE-STATUS-BAR-CAPACITY-NOTCH-18x16-V9.5.1";
+        public const string BattleStatusBarV102Track =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-TRACK-720x44-V1.0.2";
+        public const string BattleStatusBarV102HealthFill =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-HEALTH-FILL-640x37-V1.0.2";
+        public const string BattleStatusBarV102DamageLagFill =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-DAMAGE-LAG-FILL-640x37-V1.0.2";
+        public const string BattleStatusBarV102ShieldRail =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-SHIELD-RAIL-640x14-V1.0.2";
+        public const string BattleStatusBarV102CapacityNotch =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-CAPACITY-NOTCH-8x64-V1.0.2";
+        public const string BattleStatusBarV102ShieldIcon =
+            "v102/frames/ART-UI-BATTLE-STATUS-BAR-SHIELD-ICON-96x129-V1.0.2";
 
         public const string DetailTideWindowShell = "frames/detail-tide-window-shell-880x1360";
         public const string DetailMetadataUnderline = "ornaments/detail-meta-underline-230x18";
@@ -332,6 +330,8 @@ namespace SeekerAutoChess.Prototype.Presentation
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> characterAvatarResourceIds =
             new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> characterQualityAvatarResourceIds =
+            new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> characterAvatarSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> characterSlotAvatarSprites =
@@ -359,7 +359,7 @@ namespace SeekerAutoChess.Prototype.Presentation
             foreach (var entry in CharacterRarityArtContract.Entries) Register(entry);
 
             foreach (var entry in AvatarArtContract.Entries)
-                RegisterAvatar(entry.DefinitionId, entry.ResourceId);
+                RegisterAvatar(entry.DefinitionId, entry.QualityId, entry.ResourceId);
 
             RegisterEquipmentIcon("equipment.lanternHelm", PrototypeArtResourceIds.LanternHelm);
             RegisterEquipmentIcon("equipment.oldVoyageClothes", PrototypeArtResourceIds.OldVoyageClothes);
@@ -478,16 +478,25 @@ namespace SeekerAutoChess.Prototype.Presentation
             return unitDefinitionId + "|" + qualityId;
         }
 
-        private void RegisterAvatar(string unitDefinitionId, string resourceId)
+        private void RegisterAvatar(string unitDefinitionId, string qualityId, string resourceId)
         {
-            characterAvatarResourceIds[unitDefinitionId] = resourceId;
+            characterQualityAvatarResourceIds[CharacterRarityKey(unitDefinitionId, qualityId)] = resourceId;
+            if (string.Equals(qualityId, "common", StringComparison.Ordinal))
+                characterAvatarResourceIds[unitDefinitionId] = resourceId;
         }
 
         public bool TryGetCharacterAvatar(string unitDefinitionId, out Sprite sprite)
         {
+            return TryGetCharacterAvatar(unitDefinitionId, "common", out sprite);
+        }
+
+        public bool TryGetCharacterAvatar(string unitDefinitionId, string qualityId, out Sprite sprite)
+        {
             sprite = null;
             string resourceId;
-            if (!characterAvatarResourceIds.TryGetValue(unitDefinitionId, out resourceId)) return false;
+            if (!characterQualityAvatarResourceIds.TryGetValue(
+                    CharacterRarityKey(unitDefinitionId, qualityId), out resourceId))
+                return TryGetCharacterAvatar(unitDefinitionId, out sprite);
             if (!characterAvatarSprites.TryGetValue(resourceId, out sprite))
             {
                 sprite = Resources.Load<Sprite>(AvatarArtContract.ResourcesFolder + resourceId);
@@ -498,9 +507,18 @@ namespace SeekerAutoChess.Prototype.Presentation
 
         public bool TryGetCharacterSlotAvatar(string unitDefinitionId, out Sprite sprite)
         {
+            return TryGetCharacterSlotAvatar(unitDefinitionId, "common", out sprite);
+        }
+
+        public bool TryGetCharacterSlotAvatar(string unitDefinitionId, string qualityId, out Sprite sprite)
+        {
             sprite = null;
             string resourceId;
-            if (!characterAvatarResourceIds.TryGetValue(unitDefinitionId, out resourceId)) return false;
+            if (!characterQualityAvatarResourceIds.TryGetValue(
+                    CharacterRarityKey(unitDefinitionId, qualityId), out resourceId))
+            {
+                if (!characterAvatarResourceIds.TryGetValue(unitDefinitionId, out resourceId)) return false;
+            }
             var slotResourceId = resourceId + AvatarArtContract.SlotResourceSuffix;
             if (!characterSlotAvatarSprites.TryGetValue(slotResourceId, out sprite))
             {

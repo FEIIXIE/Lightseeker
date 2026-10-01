@@ -124,7 +124,53 @@ namespace SeekerAutoChess.Core
                 if (!definition.IsCollectible) continue;
                 entries.Add(new OwnedCharacterState(definition.DefinitionId, 1, 0, CharacterQuality.Common));
             }
-            return new PlayerCollection(catalog, entries);
+            return new PlayerCollection(catalog, AddMissingFormalQualityVariants(catalog, entries));
+        }
+
+        public static List<OwnedCharacterState> AddMissingFormalQualityVariants(
+            CharacterCatalog catalog, IEnumerable<OwnedCharacterState> source)
+        {
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            var result = new List<OwnedCharacterState>();
+            var qualityKeys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in source)
+            {
+                if (entry == null) continue;
+                result.Add(entry);
+                qualityKeys.Add(FormalQualityKey(entry.DefinitionId, entry.Quality));
+            }
+
+            foreach (var definition in catalog.Definitions)
+            {
+                if (!definition.IsCollectible) continue;
+                AddFormalQualityVariant(result, qualityKeys, definition.DefinitionId, CharacterQuality.Common);
+                AddFormalQualityVariant(result, qualityKeys, definition.DefinitionId, CharacterQuality.Epic);
+                AddFormalQualityVariant(result, qualityKeys, definition.DefinitionId, CharacterQuality.Legendary);
+            }
+            return result;
+        }
+
+        public static string FormalQualityInstanceId(string definitionId, CharacterQuality quality)
+        {
+            return "character." + definitionId + "." + quality.ToString().ToLowerInvariant();
+        }
+
+        private static string FormalQualityKey(string definitionId, CharacterQuality quality)
+        {
+            return definitionId + "|" + ((int)quality).ToString();
+        }
+
+        private static void AddFormalQualityVariant(
+            List<OwnedCharacterState> entries,
+            HashSet<string> qualityKeys,
+            string definitionId,
+            CharacterQuality quality)
+        {
+            if (!qualityKeys.Add(FormalQualityKey(definitionId, quality))) return;
+            entries.Add(new OwnedCharacterState(
+                FormalQualityInstanceId(definitionId, quality), definitionId, 1, 0, quality));
         }
     }
 
@@ -157,7 +203,7 @@ namespace SeekerAutoChess.Core
             if (collection == null) throw new ArgumentNullException(nameof(collection));
             if (initialIds == null) throw new ArgumentNullException(nameof(initialIds));
             if (maximumSize <= 0) throw new ArgumentOutOfRangeException(nameof(maximumSize));
-            if (minimumSize <= 0 || minimumSize > maximumSize) throw new ArgumentOutOfRangeException(nameof(minimumSize));
+            if (minimumSize < 0 || minimumSize > maximumSize) throw new ArgumentOutOfRangeException(nameof(minimumSize));
             this.collection = collection;
             MaximumSize = maximumSize;
             MinimumSize = minimumSize;
