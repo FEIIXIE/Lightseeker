@@ -41,9 +41,12 @@ namespace SeekerAutoChess.Prototype.Presentation
         public const string HiddenSpringSeed = "PP_HIDDEN_SPRING_SEED";
         public const string ArrowWhiteTrail = "PP_ARROW_WHITE_TRAIL";
         public const string FirePot = "PP_FIRE_POT";
+        public const string FireShare = "PP_FIRE_SHARE";
+        public const string FireCauldron = "PP_FIRE_CAULDRON";
         public const string CrossbowStandard = "PP_CROSSBOW_STANDARD";
         public const string CrossbowHeavy = "PP_CROSSBOW_HEAVY";
         public const string ClothHeal = "PP_CLOTH_HEAL";
+        public const string BossLampBeam = "PP_BOSS_LAMP_BEAM";
     }
 
     internal static class BattleFeedbackProfileIds
@@ -56,11 +59,26 @@ namespace SeekerAutoChess.Prototype.Presentation
         public const string OpenDawn = "FX_C01_OPEN_DAWN";
         public const string OlinTide = "FX_C01_OLIN_TIDE";
         public const string RescueBeam = "PP_RESCUE_BEAM";
+        public const string ReturnBeaconRing = "FX_C02_RETURN_BEACON_RING";
         public const string HitReaction = "HIT_REACTION";
         public const string HostileHitFeedbackV2 = "HIT_FEEDBACK_HOSTILE_V2";
         public const string C03WhiteMark = "FX_C03_WHITE_MARK";
         public const string C03MarkTransfer = "FX_C03_MARK_TRANSFER";
         public const string C04AfterSpringRelease = "FX_C04_AFTER_SPRING_RELEASE";
+        public const string C05Barrier = "FX_C05_BRIDGE_BARRIER";
+        public const string C05BarrierBreak = "FX_C05_BRIDGE_BREAK_BUFF";
+        public const string C05ColumnActionBuff = "FX_C05_COLUMN_ACTION_BUFF";
+        public const string C06FireCharge = "FX_C06_FIRE_CHARGE_PIP";
+        public const string C06ReturnFireBuff = "FX_C06_RETURN_FIRE_BUFF";
+        public const string N1HoldGateStamp = "FX_N1_HOLD_GATE_STAMP";
+        public const string N2CrossCutSlash = "FX_N2_CROSS_CUT_SLASH";
+        public const string N4MistHuntCrescent = "FX_N4_MIST_HUNT_CRESCENT";
+        public const string E1SteadyLine = "FX_E1_STEADY_LINE_PULSE_R40";
+        public const string E2TrackJudgment = "FX_E2_TRACK_JUDGMENT_HOOK_R41";
+        public const string E3BellReturn = "FX_E3_BELL_RETURN_CHIME_R42";
+        public const string B1BlockadeQuake = "FX_B1_BLOCKADE_QUAKE_R45";
+        public const string B2RecallLost = "FX_B2_RECALL_LOST_SIGNAL";
+        public const string B2DeviantLight = "FX_B2_DEVIANT_LIGHT_MARK";
     }
 
     internal static class BattleProjectileProfiles
@@ -83,6 +101,10 @@ namespace SeekerAutoChess.Prototype.Presentation
             "Art/VFX/ART-VFX-REVISION-PP-ARROW-WHITE-TRAIL-R07-v01-accepted";
         public const string FirePotResourcePath =
             "Art/VFX/ART-VFX-REVISION-PP-FIRE-POT-R11-v01-accepted";
+        public const string FireShareResourcePath =
+            "Art/VFX/ART-VFX-REVISION-PP-FIRE-SHARE-R33-v01-accepted";
+        public const string FireCauldronResourcePath =
+            "Art/VFX/ART-VFX-REVISION-PP-FIRE-CAULDRON-R35-v01-accepted";
         public const string CrossbowStandardResourcePath =
             "Art/VFX/ART-VFX-REVISION-PP-CROSSBOW-STANDARD-R12-v01-accepted";
         public const string CrossbowHeavyResourcePath =
@@ -117,6 +139,41 @@ namespace SeekerAutoChess.Prototype.Presentation
             "Art/VFX/ART-VFX-REVISION-FX-C03-MARK-TRANSFER-R27-v01-accepted";
         public const string C04AfterSpringReleaseResourcePath =
             "Art/VFX/ART-VFX-REVISION-FX-C04-AFTER-SPRING-RELEASE-R28-v01-accepted";
+        public const string C05BarrierResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-C05-BRIDGE-BARRIER-R30-v01-accepted";
+        public const string C05BarrierBreakResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-C05-BRIDGE-BREAK-BUFF-R31-v01-accepted";
+        public const string C05ColumnActionBuffResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-C05-COLUMN-ACTION-BUFF-R32-v01-accepted";
+        public const string C06FireChargeResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-C06-FIRE-CHARGE-PIP-R34-v01-accepted";
+        public const string C06ReturnFireBuffResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-C06-RETURN-FIRE-BUFF-R36-v01-accepted";
+        public const string N1HoldGateStampResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-N1-HOLD-GATE-STAMP-R37-v01-accepted";
+        public const string N2CrossCutSlashResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-N2-CROSS-CUT-SLASH-R38-v01-accepted";
+        public const string N4MistHuntCrescentResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-N4-MIST-HUNT-CRESCENT-R39-v01-accepted";
+        public const string E1SteadyLineResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-E1-STEADY-LINE-PULSE-R40-v01-accepted";
+        public const string E2TrackJudgmentResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-E2-TRACK-JUDGMENT-HOOK-R41-v01-accepted";
+        public const string E3BellReturnResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-E3-BELL-RETURN-CHIME-R42-v01-accepted";
+        public const string B1BlockadeQuakeResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-B1-BLOCKADE-QUAKE-R45-v01-accepted";
+        public const string B2LampBeamResourcePath =
+            "Art/VFX/ART-VFX-REVISION-PP-BOSS-LAMP-BEAM-R46-v01-accepted";
+        public const string B2RecallLostResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-B2-RECALL-LOST-SIGNAL-R47-v01-accepted";
+        public const string B2DeviantLightResourcePath =
+            "Art/VFX/ART-VFX-REVISION-FX-B2-DEVIANT-LIGHT-MARK-R48-v01-accepted";
+        public const float N1HoldGateStampDisplayScale = 0.8f;
+        public const float E2TrackJudgmentDisplayScale = 1.6f;
+        public const float E2TrackJudgmentDurationSeconds = 0.36f;
+        public const float B2LampBeamDurationSeconds = 0.36f;
+        public const float B2RecallDurationSeconds = 0.28f;
         public const int LightHitTravelMilliseconds = 220;
         public const int LightHealTravelMilliseconds = 260;
         public const int ArrowStandardTravelMilliseconds = 260;
@@ -151,12 +208,22 @@ namespace SeekerAutoChess.Prototype.Presentation
                     StringComparison.Ordinal)) return ArrowWhiteTrailResourcePath;
             if (string.Equals(profileId, BattleProjectileProfileIds.FirePot,
                     StringComparison.Ordinal)) return FirePotResourcePath;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal)) return FireShareResourcePath;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal)) return FireCauldronResourcePath;
             if (string.Equals(profileId, BattleProjectileProfileIds.CrossbowStandard,
                     StringComparison.Ordinal)) return CrossbowStandardResourcePath;
             if (string.Equals(profileId, BattleProjectileProfileIds.CrossbowHeavy,
                     StringComparison.Ordinal)) return CrossbowHeavyResourcePath;
             if (string.Equals(profileId, BattleProjectileProfileIds.ClothHeal,
                     StringComparison.Ordinal)) return ClothHealResourcePath;
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return B2LampBeamResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2RecallLost,
+                    StringComparison.Ordinal)) return B2RecallLostResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2DeviantLight,
+                    StringComparison.Ordinal)) return B2DeviantLightResourcePath;
             return string.Empty;
         }
 
@@ -182,8 +249,14 @@ namespace SeekerAutoChess.Prototype.Presentation
                     StringComparison.Ordinal)) return SeedDurationSeconds;
             if (string.Equals(profileId, BattleProjectileProfileIds.FirePot,
                     StringComparison.Ordinal)) return 0.66f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal)) return 0.44f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal)) return 0.66f;
             if (string.Equals(profileId, BattleProjectileProfileIds.ClothHeal,
                     StringComparison.Ordinal)) return 0.52f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return B2LampBeamDurationSeconds;
             return 0f;
         }
 
@@ -205,12 +278,18 @@ namespace SeekerAutoChess.Prototype.Presentation
                     StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.CrossbowStandard,
                     StringComparison.Ordinal) ||
-                string.Equals(profileId, BattleProjectileProfileIds.CrossbowHeavy,
-                    StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.ClothHeal,
                     StringComparison.Ordinal)) return BaseDisplayWidth * 1.5f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.CrossbowHeavy,
+                    StringComparison.Ordinal)) return BaseDisplayWidth * 1.8f;
             if (string.Equals(profileId, BattleProjectileProfileIds.FirePot,
                     StringComparison.Ordinal)) return BaseDisplayWidth * 1.5f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal)) return BaseDisplayWidth * 0.8f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal)) return BaseDisplayWidth * 2f;
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return BaseDisplayWidth * 1.65f;
             return BaseDisplayWidth * DefaultProjectileDisplayScale;
         }
 
@@ -270,6 +349,108 @@ namespace SeekerAutoChess.Prototype.Presentation
                 return new Rect(182f / 1024f, 198f / 1536f,
                     661f / 1024f, 1121f / 1536f);
             }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05Barrier,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(276f / 1774f, 318f / 887f,
+                    1222f / 1774f, 274f / 887f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05BarrierBreak,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(182f / 1774f, 318f / 887f,
+                    1410f / 1774f, 251f / 887f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(430f / 1536f, 443f / 1024f,
+                    676f / 1536f, 137f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C06FireCharge,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(481f / 1254f, 475f / 1254f,
+                    286f / 1254f, 397f / 1254f);
+            }
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(401f / 1536f, 476f / 1024f,
+                    663f / 1536f, 175f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C06ReturnFireBuff,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(222f / 1774f, 317f / 887f,
+                    1342f / 1774f, 166f / 887f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(337f / 1086f, 198f / 1448f,
+                    418f / 1086f, 1022f / 1448f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N2CrossCutSlash,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(237f / 1536f, 180f / 1024f,
+                    1055f / 1536f, 587f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N4MistHuntCrescent,
+                     StringComparison.Ordinal))
+            {
+                return new Rect(161f / 1536f, 364f / 1024f,
+                    1214f / 1536f, 296f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E2TrackJudgment,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(215f / 1536f, 177f / 1024f,
+                    1023f / 1536f, 727f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E1SteadyLine,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(336f / 1536f, 215f / 1024f,
+                    864f / 1536f, 656f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E3BellReturn,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(95f / 1536f, 349f / 1024f,
+                    1312f / 1536f, 339f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B1BlockadeQuake,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(130f / 1774f, 301f / 887f,
+                    1511f / 1774f, 482f / 887f);
+            }
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(58f / 1536f, (1024f - 748f) / 1024f,
+                    1358f / 1536f, 447f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2RecallLost,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(406f / 1536f, (1024f - 794f) / 1024f,
+                    724f / 1536f, 593f / 1024f);
+            }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2DeviantLight,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(377f / 1024f, (1536f - 1260f) / 1536f,
+                    272f / 1024f, 1058f / 1536f);
+            }
+            if (string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(257f / 1536f, 333f / 1024f,
+                    943f / 1536f, 394f / 1024f);
+            }
             if (string.Equals(profileId, BattleFeedbackProfileIds.OpenDawn,
                     StringComparison.Ordinal))
             {
@@ -288,6 +469,12 @@ namespace SeekerAutoChess.Prototype.Presentation
                 return new Rect(227f / 1774f, 343f / 887f,
                     1314f / 1774f, 181f / 887f);
             }
+            if (string.Equals(profileId, BattleFeedbackProfileIds.ReturnBeaconRing,
+                    StringComparison.Ordinal))
+            {
+                return new Rect(173f / 1536f, 393f / 1024f,
+                    1191f / 1536f, 254f / 1024f);
+            }
             return new Rect(0f, 0f, 1f, 1f);
         }
 
@@ -300,6 +487,8 @@ namespace SeekerAutoChess.Prototype.Presentation
 
         public static float ReleaseProgressFor(string profileId)
         {
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return 0f;
             if (string.Equals(profileId, BattleProjectileProfileIds.LightHit,
                     StringComparison.Ordinal)) return LightHitReleaseProgress;
             if (string.Equals(profileId, BattleProjectileProfileIds.LightHeal,
@@ -320,13 +509,21 @@ namespace SeekerAutoChess.Prototype.Presentation
                     StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.FirePot,
                     StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.ClothHeal,
-                    StringComparison.Ordinal)) return 0.45f;
+                    StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return 0.38f;
             return -1f;
         }
 
         public static float ImpactProgressFor(string profileId)
         {
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                    StringComparison.Ordinal)) return 1f;
             if (string.Equals(profileId, BattleProjectileProfileIds.LightHit,
                     StringComparison.Ordinal)) return LightHitImpactProgress;
             if (string.Equals(profileId, BattleProjectileProfileIds.LightHeal,
@@ -347,7 +544,13 @@ namespace SeekerAutoChess.Prototype.Presentation
                     StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.FirePot,
                     StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal) ||
                 string.Equals(profileId, BattleProjectileProfileIds.ClothHeal,
+                    StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
                     StringComparison.Ordinal)) return 0.90f;
             return -1f;
         }
@@ -369,7 +572,7 @@ namespace SeekerAutoChess.Prototype.Presentation
         public readonly int HealAmount;
         public readonly int Armor;
         public readonly CombatSpeedTier SpeedTier;
-        public readonly int MaxShield;
+        public int MaxShield { get; internal set; }
         public readonly int RunLevel;
         public readonly Vector2 FormationFootPosition;
         public int CurrentHealth;
@@ -757,11 +960,28 @@ namespace SeekerAutoChess.Prototype.Presentation
         }
 
         private static string ProjectileProfileFor(
-            BattleEventType type, string actorDefinitionId, bool isSecondary)
+            BattleEventType type, string actorDefinitionId, bool isSecondary, string sourceEffectId)
         {
+            if (isSecondary && string.Equals(sourceEffectId,
+                    C06ActiveSkillIntegration.ReturnFireAbilityId, StringComparison.Ordinal))
+                return BattleProjectileProfileIds.FireCauldron;
             if (isSecondary) return string.Empty;
+            if (type == BattleEventType.Attack &&
+                (string.Equals(sourceEffectId, B2ActiveSkillIntegration.BasicAbilityId,
+                    StringComparison.Ordinal) ||
+                 string.Equals(sourceEffectId, B2ActiveSkillIntegration.DoubleLightAbilityId,
+                    StringComparison.Ordinal)))
+                return BattleProjectileProfileIds.BossLampBeam;
+            if (type == BattleEventType.Attack && string.Equals(sourceEffectId,
+                    C03ActiveSkillIntegration.WhiteTrailAbilityId, StringComparison.Ordinal))
+                return BattleProjectileProfileIds.ArrowWhiteTrail;
+            if (type == BattleEventType.Attack && string.Equals(sourceEffectId,
+                    N3ActiveSkillIntegration.HeavyBoltAbilityId, StringComparison.Ordinal))
+                return BattleProjectileProfileIds.CrossbowHeavy;
             if (type == BattleEventType.Heal)
             {
+                if (string.Equals(sourceEffectId, C04ActiveSkillIntegration.AfterSpringAbilityId,
+                        StringComparison.Ordinal)) return string.Empty;
                 if (string.Equals(actorDefinitionId, "enemy.n5.support", StringComparison.Ordinal))
                     return BattleProjectileProfileIds.ClothHeal;
                 return string.Equals(actorDefinitionId, "unit.archer", StringComparison.Ordinal)
@@ -787,10 +1007,65 @@ namespace SeekerAutoChess.Prototype.Presentation
         {
             switch (battleEvent.Type)
             {
+                case BattleEventType.Shield:
+                case BattleEventType.Status:
+                    if (string.Equals(battleEvent.SourceEffectId,
+                            C06ActiveSkillIntegration.ShareFireAbilityId,
+                            StringComparison.Ordinal) && battleEvent.Amount > 0)
+                    {
+                        return new BattlePresentationCue(
+                            battleEvent,
+                            BattlePresentationIds.Idle,
+                            BattlePresentationIds.Idle,
+                            BattlePresentationIds.AttackEffect,
+                            BattleProjectileProfileIds.FireShare,
+                            BattlePresentationIds.SkillOriginAnchor,
+                            BattlePresentationIds.WeaponAnchor,
+                            BattleProjectileProfiles.DurationSecondsFor(
+                                BattleProjectileProfileIds.FireShare),
+                            BattleProjectileProfiles.ReleaseProgressFor(
+                                BattleProjectileProfileIds.FireShare),
+                            BattleProjectileProfiles.ImpactProgressFor(
+                                BattleProjectileProfileIds.FireShare),
+                            false);
+                    }
+                    if (string.Equals(battleEvent.SourceEffectId,
+                            C04ActiveSkillIntegration.HiddenSpringAbilityId,
+                            StringComparison.Ordinal) && battleEvent.Amount > 0)
+                    {
+                        return new BattlePresentationCue(
+                            battleEvent,
+                            BattlePresentationIds.Idle,
+                            BattlePresentationIds.Idle,
+                            BattlePresentationIds.HealEffect,
+                            BattleProjectileProfileIds.HiddenSpringSeed,
+                            BattlePresentationIds.SkillOriginAnchor,
+                            BattlePresentationIds.BodyAnchor,
+                            BattleProjectileProfiles.DurationSecondsFor(
+                                BattleProjectileProfileIds.HiddenSpringSeed),
+                            BattleProjectileProfiles.ReleaseProgressFor(
+                                BattleProjectileProfileIds.HiddenSpringSeed),
+                            BattleProjectileProfiles.ImpactProgressFor(
+                                BattleProjectileProfileIds.HiddenSpringSeed),
+                            false);
+                    }
+                    return new BattlePresentationCue(
+                        battleEvent,
+                        BattlePresentationIds.Idle,
+                        BattlePresentationIds.Idle,
+                        string.Empty,
+                        string.Empty,
+                        BattlePresentationIds.SkillOriginAnchor,
+                        BattlePresentationIds.BodyAnchor,
+                        battleEvent.Type == BattleEventType.Status ? 0.28f : 0.42f,
+                        -1f,
+                        0.25f,
+                        false);
                 case BattleEventType.Heal:
                 {
                     var projectileProfileId = ProjectileProfileFor(
-                        BattleEventType.Heal, actorDefinitionId, battleEvent.IsSecondary);
+                        BattleEventType.Heal, actorDefinitionId, battleEvent.IsSecondary,
+                        battleEvent.SourceEffectId);
                     var usesProjectile = !string.IsNullOrEmpty(projectileProfileId);
                     return new BattlePresentationCue(
                         battleEvent,
@@ -840,7 +1115,7 @@ namespace SeekerAutoChess.Prototype.Presentation
                             : FormalBattleAnimationIds.BasicGateShieldStrike;
                         var clip = FormalBattleAnimationContract.GetClip(clipId);
                         var formalProjectileProfileId = ProjectileProfileFor(BattleEventType.Attack,
-                            actorDefinitionId, battleEvent.IsSecondary);
+                            actorDefinitionId, battleEvent.IsSecondary, battleEvent.SourceEffectId);
                         var formalUsesProjectile = !string.IsNullOrEmpty(formalProjectileProfileId);
                         return new BattlePresentationCue(
                             battleEvent,
@@ -862,7 +1137,7 @@ namespace SeekerAutoChess.Prototype.Presentation
                             true);
                     }
                     var attackProjectileProfileId = ProjectileProfileFor(BattleEventType.Attack,
-                        actorDefinitionId, battleEvent.IsSecondary);
+                        actorDefinitionId, battleEvent.IsSecondary, battleEvent.SourceEffectId);
                     var attackUsesProjectile = !string.IsNullOrEmpty(attackProjectileProfileId);
                     return new BattlePresentationCue(
                         battleEvent,
@@ -903,6 +1178,10 @@ namespace SeekerAutoChess.Prototype.Presentation
         private readonly Dictionary<string, BattleUnitViewDriver> viewsById =
             new Dictionary<string, BattleUnitViewDriver>(StringComparer.Ordinal);
         private readonly PooledBattleEffectPool effectPool = new PooledBattleEffectPool();
+        private readonly List<BattlePresentationCue> activeCues =
+            new List<BattlePresentationCue>();
+        private readonly List<IBattleEffectHandle> activeEffects =
+            new List<IBattleEffectHandle>();
         private IBattleEffectHandle activeEffect;
 
         public IReadOnlyList<BattleUnitPresentationState> PlayerUnits { get { return playerUnits; } }
@@ -945,40 +1224,63 @@ namespace SeekerAutoChess.Prototype.Presentation
 
         public BattlePresentationCue BeginCue(BattleEvent battleEvent)
         {
-            var actorState = FindUnit(battleEvent.ActorId);
-            var targetState = FindUnit(battleEvent.TargetId);
-            ActiveCue = BattlePresentationCue.FromBattleEvent(
-                battleEvent,
-                actorState == null ? null : actorState.DefinitionId,
-                targetState == null ? null : targetState.DefinitionId);
-            var actor = FindView(ActiveCue.ActorId);
-            var target = FindView(ActiveCue.TargetId);
-            if (actor != null)
+            return BeginCueGroup(new[] { battleEvent });
+        }
+
+        public BattlePresentationCue BeginCueGroup(IList<BattleEvent> battleEvents)
+        {
+            EndCue();
+            if (battleEvents == null || battleEvents.Count == 0) return null;
+            for (var index = 0; index < battleEvents.Count; index++)
             {
-                actor.RestoreFormation();
-                actor.PlayAnimation(ActiveCue.ActorAnimationId);
+                var battleEvent = battleEvents[index];
+                if (battleEvent == null) continue;
+                var actorState = FindUnit(battleEvent.ActorId);
+                var targetState = FindUnit(battleEvent.TargetId);
+                var cue = BattlePresentationCue.FromBattleEvent(
+                    battleEvent,
+                    actorState == null ? null : actorState.DefinitionId,
+                    targetState == null ? null : targetState.DefinitionId);
+                if (ActiveCue == null) ActiveCue = cue;
+                activeCues.Add(cue);
+                var actor = FindView(cue.ActorId);
+                var target = FindView(cue.TargetId);
+                if (actor != null)
+                {
+                    actor.RestoreFormation();
+                    actor.PlayAnimation(cue.ActorAnimationId);
+                }
+                if (target != null)
+                {
+                    target.RestoreFormation();
+                    target.PlayAnimation(cue.TargetAnimationId);
+                }
+                var effect = effectPool.Play(cue, actor, target);
+                activeEffects.Add(effect);
+                if (index == 0) activeEffect = effect;
             }
-            if (target != null)
-            {
-                target.RestoreFormation();
-                target.PlayAnimation(ActiveCue.TargetAnimationId);
-            }
-            activeEffect = effectPool.Play(ActiveCue, actor, target);
             return ActiveCue;
         }
 
         public void SetCueProgress(float progress)
         {
-            if (ActiveCue == null) return;
-            ActiveCue.Progress = Mathf.Clamp01(progress);
-            var actor = FindView(ActiveCue.ActorId);
-            var target = FindView(ActiveCue.TargetId);
-            if (actor != null && target != null && ActiveCue.Type != BattleEventType.Defeat &&
-                ActiveCue.DrivesActorAction)
-                actor.ApplyActionPose(ActiveCue, target);
-            if (target != null && ActiveCue.Type != BattleEventType.Defeat)
-                target.ApplyTargetPose(ActiveCue, actor);
-            if (target != null && ActiveCue.Type == BattleEventType.Defeat)
+            if (activeCues.Count == 0) return;
+            for (var index = 0; index < activeCues.Count; index++)
+                SetCueProgress(activeCues[index], activeEffects[index], progress);
+        }
+
+        private void SetCueProgress(BattlePresentationCue cue,
+            IBattleEffectHandle effect, float progress)
+        {
+            cue.Progress = Mathf.Clamp01(progress);
+            var actor = FindView(cue.ActorId);
+            var target = FindView(cue.TargetId);
+            if (actor != null && target != null && cue.Type != BattleEventType.Defeat &&
+                cue.DrivesActorAction)
+                actor.ApplyActionPose(cue, target);
+            if (target != null && cue.Type != BattleEventType.Defeat)
+                target.ApplyTargetPose(cue, actor);
+            if (target != null && cue.Type == BattleEventType.Defeat)
             {
                 if (FormalBattleAnimationContract.SupportsDefinition(target.State.DefinitionId))
                 {
@@ -987,12 +1289,12 @@ namespace SeekerAutoChess.Prototype.Presentation
                 }
                 else
                 {
-                    target.SetOpacity(1f - ActiveCue.Progress);
+                    target.SetOpacity(1f - cue.Progress);
                     target.SetFootPosition(target.State.FormationFootPosition +
-                        new Vector2(0f, -34f * ActiveCue.Progress));
+                        new Vector2(0f, -34f * cue.Progress));
                 }
             }
-            effectPool.SetProgress(activeEffect, ActiveCue.Progress);
+            effectPool.SetProgress(effect, cue.Progress);
         }
 
         public void UpdateIdlePoses(float timeSeconds)
@@ -1001,8 +1303,17 @@ namespace SeekerAutoChess.Prototype.Presentation
             {
                 var view = pair.Value;
                 if (!view.IsVisible) continue;
-                if (ActiveCue != null &&
-                    (ActiveCue.ActorId == view.UnitId || ActiveCue.TargetId == view.UnitId)) continue;
+                var isActiveUnit = false;
+                for (var cueIndex = 0; cueIndex < activeCues.Count; cueIndex++)
+                {
+                    var cue = activeCues[cueIndex];
+                    if (cue.ActorId == view.UnitId || cue.TargetId == view.UnitId)
+                    {
+                        isActiveUnit = true;
+                        break;
+                    }
+                }
+                if (isActiveUnit) continue;
                 view.ApplyIdlePose(timeSeconds);
             }
         }
@@ -1014,6 +1325,7 @@ namespace SeekerAutoChess.Prototype.Presentation
             {
                 target.CurrentHealth = battleEvent.TargetHealthAfter;
                 target.CurrentShield = battleEvent.TargetShieldAfter;
+                target.MaxShield = Math.Max(target.MaxShield, target.CurrentShield);
             }
         }
 
@@ -1033,30 +1345,40 @@ namespace SeekerAutoChess.Prototype.Presentation
 
         public void EndCue()
         {
-            if (ActiveCue != null)
+            if (activeCues.Count > 0)
             {
-                var actor = FindView(ActiveCue.ActorId);
-                var target = FindView(ActiveCue.TargetId);
-                if (actor != null)
+                var restored = new HashSet<string>(StringComparer.Ordinal);
+                for (var index = 0; index < activeCues.Count; index++)
                 {
-                    actor.RestoreFormation();
-                    if (actor.IsVisible) actor.PlayAnimation(BattlePresentationIds.Idle);
+                    var cue = activeCues[index];
+                    var actor = FindView(cue.ActorId);
+                    var target = FindView(cue.TargetId);
+                    if (actor != null && restored.Add(actor.UnitId))
+                    {
+                        actor.RestoreFormation();
+                        if (actor.IsVisible) actor.PlayAnimation(BattlePresentationIds.Idle);
+                    }
+                    if (target != null && restored.Add(target.UnitId))
+                    {
+                        target.RestoreFormation();
+                        if (target.IsVisible && target.State.IsAlive)
+                        {
+                            target.SetOpacity(1f);
+                            target.PlayAnimation(BattlePresentationIds.Idle);
+                        }
+                    }
                 }
-                if (target != null)
+                foreach (var pair in viewsById)
                 {
-                    target.RestoreFormation();
-                    if (ActiveCue.Type == BattleEventType.Defeat && !target.State.IsAlive)
-                    {
-                        target.Recycle();
-                    }
-                    else if (target.IsVisible && target.State.IsAlive)
-                    {
-                        target.SetOpacity(1f);
-                        target.PlayAnimation(BattlePresentationIds.Idle);
-                    }
+                    var view = pair.Value;
+                    if (view.State != null && !view.State.IsAlive && view.IsVisible)
+                        view.Recycle();
                 }
             }
-            effectPool.Recycle(activeEffect);
+            for (var index = 0; index < activeEffects.Count; index++)
+                effectPool.Recycle(activeEffects[index]);
+            activeEffects.Clear();
+            activeCues.Clear();
             activeEffect = null;
             ActiveCue = null;
         }
@@ -1065,6 +1387,8 @@ namespace SeekerAutoChess.Prototype.Presentation
         {
             foreach (var pair in viewsById) pair.Value.Recycle();
             effectPool.RecycleAll();
+            activeEffects.Clear();
+            activeCues.Clear();
             activeEffect = null;
             ActiveCue = null;
             playerUnits.Clear();

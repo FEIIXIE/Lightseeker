@@ -56,6 +56,17 @@ namespace SeekerAutoChess.Core
             if (ImpactEmissionMode == CardBattleImpactEmissionMode.SingleEventSingleTarget && MaxTargetCount != 1)
                 throw new InvalidOperationException("Single-target emission requires MaxTargetCount=1.");
             if (ReselectLimit < 0) throw new ArgumentOutOfRangeException("ReselectLimit");
+            if (string.Equals(TargetRule, "TR_COLUMN_BOUND", StringComparison.Ordinal) &&
+                HasTag("attack-speed-percent"))
+                throw new InvalidOperationException(
+                    "Column-bound C05 presentation rules cannot approximate attack speed.");
+        }
+
+        private bool HasTag(string expected)
+        {
+            foreach (var tag in Tags ?? new List<string>())
+                if (string.Equals(tag, expected, StringComparison.Ordinal)) return true;
+            return false;
         }
 
         private static void Require(string value, string name)
@@ -98,8 +109,10 @@ namespace SeekerAutoChess.Core
         public long ActionSequence;
         public int RulesVersion = CardBattleContract.RulesVersion;
         public string UnitId;
+        public string SourceId;
         public string ActionId;
         public string AbilityId;
+        public long AuthorityTick;
         public long StartedAt;
         public long CompletedAt;
         public long ResolvedAt;
@@ -118,6 +131,7 @@ namespace SeekerAutoChess.Core
         public string StatusValueBefore;
         public string StatusValueAfter;
         public int StatusPriority;
+        public string StateHashAfter;
         public List<CardBattleTargetResult> Results = new List<CardBattleTargetResult>();
 
         public string IdempotencyKey { get { return CardBattleIdempotency.TopLevel(BattleId, EventSequence); } }
@@ -145,16 +159,17 @@ namespace SeekerAutoChess.Core
         internal bool ImpactResolved;
         internal bool ProjectileReleased;
         internal CardBattleActionHandle(string battleId, string unitId, string actionId, string abilityId,
-            long actionSequence, CardBattlePresentationRule rule)
+            long actionSequence, CardBattlePresentationRule rule, long startedAt)
         {
             BattleId = battleId; UnitId = unitId; ActionId = actionId; AbilityId = abilityId;
-            ActionSequence = actionSequence; Rule = rule;
+            ActionSequence = actionSequence; Rule = rule; StartedAt = startedAt;
         }
         public string BattleId { get; private set; }
         public string UnitId { get; private set; }
         public string ActionId { get; private set; }
         public string AbilityId { get; private set; }
         public long ActionSequence { get; private set; }
+        public long StartedAt { get; private set; }
         public CardBattlePresentationRule Rule { get; private set; }
     }
 
@@ -178,12 +193,12 @@ namespace SeekerAutoChess.Core
             if (rule == null) throw new ArgumentNullException("rule");
             rule.Validate(); RequireText(unitId, "unitId"); RequireText(actionId, "actionId");
             var handle = new CardBattleActionHandle(battleId, unitId, actionId, rule.AbilityId,
-                nextActionSequence++, rule);
+                nextActionSequence++, rule, startedAt);
             events.Add(new CardBattleEvent {
                 Kind = CardBattleEventKind.ActionStarted, BattleId = battleId,
                 EventSequence = nextEventSequence++, ActionSequence = handle.ActionSequence,
-                RulesVersion = rule.BattlePresentationRulesVersion, UnitId = unitId,
-                ActionId = actionId, AbilityId = rule.AbilityId, StartedAt = startedAt
+                RulesVersion = rule.BattlePresentationRulesVersion, UnitId = unitId, SourceId = unitId,
+                ActionId = actionId, AbilityId = rule.AbilityId, StartedAt = startedAt, AuthorityTick = startedAt
             });
             return handle;
         }
@@ -207,10 +222,11 @@ namespace SeekerAutoChess.Core
             events.Add(new CardBattleEvent {
                 Kind = CardBattleEventKind.ProjectileReleased, BattleId = battleId,
                 EventSequence = nextEventSequence++, ActionSequence = action.ActionSequence,
-                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId,
+                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId, SourceId = action.UnitId,
                 ActionId = action.ActionId, AbilityId = action.AbilityId, ProjectileId = projectileId,
                 DeliveryMode = action.Rule.DeliveryMode, OriginAnchor = originAnchor,
-                TargetAnchor = targetAnchor, ProfileId = profileId, TravelMs = travelMs
+                TargetAnchor = targetAnchor, ProfileId = profileId, TravelMs = travelMs,
+                AuthorityTick = action.StartedAt
             });
         }
 
@@ -244,9 +260,11 @@ namespace SeekerAutoChess.Core
             events.Add(new CardBattleEvent {
                 Kind = CardBattleEventKind.ImpactResolved, BattleId = battleId,
                 EventSequence = nextEventSequence++, ActionSequence = action.ActionSequence,
-                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId,
-                ActionId = action.ActionId, AbilityId = action.AbilityId, ImpactId = impactId,
-                ResolvedAt = resolvedAt, Results = copy
+                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId, SourceId = action.UnitId,
+                ActionId = action.ActionId, AbilityId = action.AbilityId, DeliveryMode = action.Rule.DeliveryMode,
+                ImpactId = impactId,
+                ResolvedAt = resolvedAt, AuthorityTick = resolvedAt,
+                TargetId = copy.Count == 0 ? null : copy[0].TargetId, Results = copy
             });
         }
 
@@ -257,10 +275,10 @@ namespace SeekerAutoChess.Core
             events.Add(new CardBattleEvent {
                 Kind = CardBattleEventKind.StatusFeedback, BattleId = battleId,
                 EventSequence = nextEventSequence++, ActionSequence = action.ActionSequence,
-                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId,
+                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId, SourceId = action.UnitId,
                 ActionId = action.ActionId, AbilityId = action.AbilityId, TargetId = targetId,
                 StatusKey = statusKey, StatusValueBefore = before, StatusValueAfter = after,
-                StatusPriority = priority
+                StatusPriority = priority, AuthorityTick = action.StartedAt
             });
         }
 
@@ -284,9 +302,9 @@ namespace SeekerAutoChess.Core
             events.Add(new CardBattleEvent {
                 Kind = CardBattleEventKind.ActionCompleted, BattleId = battleId,
                 EventSequence = nextEventSequence++, ActionSequence = action.ActionSequence,
-                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId,
+                RulesVersion = action.Rule.BattlePresentationRulesVersion, UnitId = action.UnitId, SourceId = action.UnitId,
                 ActionId = action.ActionId, AbilityId = action.AbilityId, CompletedAt = completedAt,
-                Outcome = outcome, CancelReason = cancelReason, InterruptReason = interruptReason
+                AuthorityTick = completedAt, Outcome = outcome, CancelReason = cancelReason, InterruptReason = interruptReason
             });
         }
 

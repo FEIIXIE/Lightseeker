@@ -12,7 +12,8 @@ namespace SeekerAutoChess.EditorTools
     {
         // A project-root request file lets an already-open Editor build without a second Unity process.
         private const string RequestFileName = "BuildVisualTest.request";
-        private const string BuildVersion = "0.43.96";
+        private const string BuildVersion = "0.43.179";
+        private const int BuildVersionCode = 417;
 
         static PrototypeAndroidBuilder()
         {
@@ -25,12 +26,11 @@ namespace SeekerAutoChess.EditorTools
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             var requestPath = Path.Combine(projectRoot, RequestFileName);
             if (!File.Exists(requestPath)) return;
-            if (EditorApplication.isPlaying)
-            {
-                EditorApplication.isPlaying = false;
-                return;
-            }
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            // A request can arrive before Auto Refresh notices source/resource changes.
+            // Force a synchronous refresh first; if it triggers compilation/domain reload,
+            // the request remains and the freshly loaded builder will consume it afterwards.
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlaying)
                 return;
 
             EditorApplication.update -= BuildWhenRequested;
@@ -55,6 +55,7 @@ namespace SeekerAutoChess.EditorTools
 
             EditorUserBuildSettings.buildAppBundle = false;
             PlayerSettings.bundleVersion = BuildVersion;
+            PlayerSettings.Android.bundleVersionCode = BuildVersionCode;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -62,7 +63,7 @@ namespace SeekerAutoChess.EditorTools
                 scenes = scenes,
                 locationPathName = outputPath,
                 target = BuildTarget.Android,
-                options = BuildOptions.Development
+                options = BuildOptions.Development | BuildOptions.CleanBuildCache
             });
 
             if (report.summary.result != BuildResult.Succeeded)

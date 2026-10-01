@@ -62,6 +62,7 @@ namespace SeekerAutoChess.Core
             if (map == null) return visible;
             var current = map.GetNode(currentNodeId) ?? map.GetNode("M00");
             if (current == null) return visible;
+            var maximumVisibleLayer = current.Layer + VisibleRouteDepth;
 
             // Previously exposed branches remain visible but de-emphasized. Only
             // future nodes reachable from the current node within three actual route
@@ -84,7 +85,7 @@ namespace SeekerAutoChess.Core
                 foreach (var nextId in node.NextNodeIds)
                 {
                     var next = map.GetNode(nextId);
-                    if (next == null) continue;
+                    if (next == null || next.Layer > maximumVisibleLayer) continue;
                     visible.Add(next.Id);
                     nodes.Enqueue(next);
                     depths.Enqueue(depth + 1);

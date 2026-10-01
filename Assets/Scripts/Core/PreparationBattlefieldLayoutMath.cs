@@ -59,6 +59,16 @@ namespace SeekerAutoChess.Core
                 FormationBattleV94Layout.RecycleControl.Height) * 0.5f;
             var benchY = Lerp(1580f, FormationBattleV94Layout.BenchCenterY -
                 FormationBattleV94Layout.BenchSlotDiameter * 0.5f, t);
+            var playerBackFootY = Lerp(1310f, FormationBattleV94Layout.PlayerRearFootY, t) +
+                PlayerFormationVerticalShift;
+            var buffY = startButtonY - (FormationBattleV94Layout.StartControl.Y -
+                FormationBattleV94Layout.BuffSingleRowY);
+            var minimumBuffY = playerBackFootY + 76f + 24f +
+                FormationBattleV94Layout.BuffTileSize * 0.5f;
+            var maximumBuffY = startButtonY - 24f -
+                FormationBattleV94Layout.BuffTileSize * 0.5f;
+            if (minimumBuffY <= maximumBuffY)
+                buffY = Math.Max(minimumBuffY, Math.Min(maximumBuffY, buffY));
 
             return new PreparationBattlefieldLayoutData(
                 0f,
@@ -70,12 +80,10 @@ namespace SeekerAutoChess.Core
                     EnemyFormationVerticalShift,
                 Lerp(1120f, FormationBattleV94Layout.PlayerFrontFootY, t) +
                     PlayerFormationVerticalShift,
-                Lerp(1310f, FormationBattleV94Layout.PlayerRearFootY, t) +
-                    PlayerFormationVerticalShift,
+                playerBackFootY,
                 startButtonY,
                 toolsY,
-                startButtonY - (FormationBattleV94Layout.StartControl.Y -
-                    FormationBattleV94Layout.BuffSingleRowY),
+                buffY,
                 benchY - (FormationBattleV94Layout.BenchCenterY -
                     FormationBattleV94Layout.BenchSlotDiameter * 0.5f -
                     FormationBattleV94Layout.BenchLabel.Y),

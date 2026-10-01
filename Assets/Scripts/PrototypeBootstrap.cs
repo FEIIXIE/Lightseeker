@@ -22,17 +22,21 @@ namespace SeekerAutoChess.Prototype
         private const float ContentWidth = ContentRight - ContentLeft;
         private const float HeaderButtonWidth = 145f;
         private const float HeaderButtonGap = 10f;
-        private const string ClientVersionLabel = "v0.43.96";
+        private const string ClientVersionLabel = "v0.43.184";
         private const float BattleUnitBaseAlignmentDropPercent = 0.05f;
         private static readonly Dictionary<string, Sprite> battleVfxSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> battleShieldOverlayOpacities =
             new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> battleHealthLagPercents =
+            new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> persistentMilaHiddenSpringSeeds =
+            new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> diagnosticQualityOverrides =
             new Dictionary<string, string>(StringComparer.Ordinal);
         private const int RunEconomyRulesVersion = 1;
         private const int RoguelikeRulesVersion = RoguelikeEnhancementRules.RulesVersion;
-        private const int AttackSpeedRulesVersion = 0;
+        private const int AttackSpeedRulesVersion = 1;
         private const int FinalRound = ExpeditionMapGraph.ChapterLayerCount;
         private const int MinimumRecruitCost = 3;
         private const int ShopOfferCount = 3;
@@ -44,7 +48,7 @@ namespace SeekerAutoChess.Prototype
         private static readonly Rect WarehouseEquipmentDetailPanel = new Rect(215f, 350f, 650f, 1110f);
         // v0.27 persists first-island Boss and lighthouse progression.
         // Existing saves remain readable and do not infer an unverified Boss clear.
-        private const int SaveSchemaVersion = 26;
+        private const int SaveSchemaVersion = 32;
         private const int MinimumCompatibleSaveVersion = 5;
         private const string SaveKey = "seeker-auto-chess.prototype.run.v1";
         private const string LanguagePreferenceKey = "seeker-auto-chess.preference.language.v1";
@@ -99,6 +103,29 @@ namespace SeekerAutoChess.Prototype
         private string eventFamilyTacticalNodeId;
         private int eventFamilyTacticalSelection;
         private bool runEconomyDiagnosticsOpen;
+        private bool audioDiagnosticsOpen;
+        private long audioDiagnosticSequence;
+        private readonly BattleAudioEventRouter battleAudioRouter = new BattleAudioEventRouter();
+        private readonly UiAudioEventRouter uiAudioRouter = new UiAudioEventRouter();
+        private UiMainClickAudioPlayer uiMainClickAudioPlayer;
+        private BattleAudioPlayer battleAudioPlayer;
+        private long battleAudioEventSequence;
+        private readonly HashSet<string> consumedBattleAudioActionKeys =
+            new HashSet<string>(StringComparer.Ordinal);
+        private bool c01SkillDiagnosticActive;
+        private string c01SkillDiagnosticQuality;
+        private bool c02SkillDiagnosticActive;
+        private string c02SkillDiagnosticQuality;
+        private bool c03SkillDiagnosticActive;
+        private string c03SkillDiagnosticQuality;
+        private bool c04SkillDiagnosticActive;
+        private string c04SkillDiagnosticQuality;
+        private bool c05SkillDiagnosticActive;
+        private string c05SkillDiagnosticQuality;
+        private bool c06SkillDiagnosticActive;
+        private string c06SkillDiagnosticQuality;
+        private bool b1SkillDiagnosticActive;
+        private bool b2SkillDiagnosticActive;
         private bool roguelikeBuildDiagnosticsOpen;
         private int roguelikeDiagnosticStateIndex;
         private bool roguelikeDiagnosticSuppressChoiceSet;
@@ -110,6 +137,8 @@ namespace SeekerAutoChess.Prototype
             new List<BattleFeedbackVisual>();
         private readonly HashSet<string> consumedBattleFeedbackKeys =
             new HashSet<string>(StringComparer.Ordinal);
+        private readonly Dictionary<int, string> c05BarrierOwnerByColumn =
+            new Dictionary<int, string>();
         private readonly SpatialBattleGrayboxReplay spatialG1Replay = new SpatialBattleGrayboxReplay();
         private SpatialBattleInput spatialG1Input;
         private SpatialBattleResult spatialG1Result;
@@ -151,6 +180,7 @@ namespace SeekerAutoChess.Prototype
         private int selectedRunSlot = -1;
         private bool preparationShopOpen;
         private bool preparationUnitDetailOpen;
+        private UnitData arenaFormationDetailUnit;
         private int preparationDetailSlot = -1;
         private bool preparationDetailIsMonster;
         private int preparationDetailEnemyIndex = -1;
@@ -177,6 +207,20 @@ namespace SeekerAutoChess.Prototype
         private int finalScore;
         private int expeditionEnergy = ExpeditionEnergyRules.InitialEnergy;
         private int skrBalance;
+        private int storePurchaseSerial;
+        private int storeEpicPitySkr;
+        private int storeLegendaryPitySkr;
+        private readonly List<string> ownedBasePackIds = new List<string>();
+        private readonly IWalletSignatureGateway walletSignatureGateway =
+            new LocalSkrWalletSignatureGateway();
+        private string storeStatusMessage = "store.status.ready";
+        private bool storeOpeningActive;
+        private float storeOpeningProgress;
+        private int storeRevealSelectedIndex = 1;
+        private string pendingStoreOrderId;
+        private string[] pendingStoreInstanceIds = new string[0];
+        private string[] pendingStoreDefinitionIds = new string[0];
+        private int[] pendingStoreQualities = new int[0];
         private bool currentExpeditionRewardsEnabled = true;
         private bool expeditionEntryCommitted;
         private int tideCrystalBalance;
@@ -191,6 +235,10 @@ namespace SeekerAutoChess.Prototype
         private string detailCharacterInstanceId;
         private string detailEquipmentPreviewId;
         private Vector2 deckCollectionScroll;
+        private Vector2 deckCollectionPointerDown;
+        private Vector2 deckCollectionPointerLast;
+        private bool deckCollectionPointerHeld;
+        private bool deckCollectionPointerDragging;
         private Vector2 detailEquipmentScroll;
         private Vector2 warehouseEquipmentScroll;
         private Vector2 expeditionMapScroll;
@@ -218,8 +266,25 @@ namespace SeekerAutoChess.Prototype
         private bool warehouseEquipmentDetailOpen;
         private string warehouseEquipmentDetailId;
         private string deckEditorMessageKey = "deck.editorHint";
+        private bool deckSaveConfirmationOpen;
         private int selectedDefenseSlot = -1;
         private string defenseMessageKey = "defense.subtitle";
+        private int pendingDefenseRemovedCount;
+        private ArenaPageState arenaPageState;
+        private ArenaOpponentProfile[] arenaOpponents = new ArenaOpponentProfile[0];
+        private int selectedArenaOpponentIndex = -1;
+        private Vector2 arenaRankingScroll;
+        private int arenaRating = ArenaPrototypeRules.TemporaryInitialRating;
+        private int arenaChallengesRemaining = ArenaPrototypeRules.DailyChallengeLimit;
+        private string arenaChallengeDayKey;
+        private readonly UnitData[] arenaAttackSlots = new UnitData[ArenaPrototypeRules.DefenseSlotCount];
+        private readonly UnitData[] arenaAttackBenchSlots = new UnitData[BenchCapacity];
+        private readonly UnitData[] defenseBenchSlots = new UnitData[BenchCapacity];
+        private int selectedArenaAttackSlot = -1;
+        private int arenaPreviousRating;
+        private int arenaRatingDelta;
+        private bool arenaLastBattleWon;
+        private bool arenaBattleActive;
         private string statusKey = "status.recruit";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -237,6 +302,8 @@ namespace SeekerAutoChess.Prototype
         private void Awake()
         {
             EnsureRuntimeState();
+            uiMainClickAudioPlayer = UiMainClickAudioPlayer.CreateOrGet(uiAudioRouter);
+            battleAudioPlayer = BattleAudioPlayer.CreateOrGet(battleAudioRouter, uiAudioRouter.Mixer);
             localization = PrototypeLocalization.CreateDefault();
             language = DetectSystemLanguage();
             GameLanguage savedLanguage;
@@ -245,6 +312,7 @@ namespace SeekerAutoChess.Prototype
             {
                 language = savedLanguage;
             }
+            storeStatusMessage = T("store.status.ready");
             if (!LoadGame())
             {
                 CreateNewExpeditionMap();
@@ -267,7 +335,7 @@ namespace SeekerAutoChess.Prototype
 
         private void OnApplicationQuit()
         {
-            SaveGame();
+            if (!SkillDiagnosticActive) SaveGame();
         }
 
         private void Update()
@@ -286,6 +354,10 @@ namespace SeekerAutoChess.Prototype
                     homeChapterOffset = Mathf.SmoothDamp(homeChapterOffset, 0f,
                         ref homeChapterOffsetVelocity, 0.24f, Mathf.Infinity, Time.unscaledDeltaTime);
                 }
+            }
+            if (storeOpeningActive)
+            {
+                storeOpeningProgress = Mathf.Clamp01(storeOpeningProgress + Time.unscaledDeltaTime / 1.35f);
             }
             else
             {
@@ -367,7 +439,7 @@ namespace SeekerAutoChess.Prototype
             if (nextRunDeckSelection == null)
             {
                 nextRunDeckSelection = new RunDeckSelection(
-                    playerCollection, activeDeckUnitIds, MaximumDeckSize, MinimumDeckSize);
+                    playerCollection, PreferredFormalDeckInstanceIds(), MaximumDeckSize, MinimumDeckSize);
             }
             if (benchSlots == null || benchSlots.Length != BenchCapacity)
             {
@@ -377,6 +449,7 @@ namespace SeekerAutoChess.Prototype
             {
                 runRoster = new RunRoster(6, BenchCapacity);
             }
+            RefreshArenaRuntimeState();
             MigrateLegacyRuntimeRoster();
             if (runDeck == null) runDeck = nextRunDeckSelection.CreateSnapshot();
             var shopNeedsRefresh = shopOffers == null || shopOffers.Length != ShopOfferCount;
@@ -414,15 +487,35 @@ namespace SeekerAutoChess.Prototype
             if (node == null || !IsBattleNode(node.Type)) return;
             currentEncounter = ChapterOneEncounterRules.Generate(
                 expeditionMapSeed, node, !HasCompletedNormalBattle());
+            if (b1SkillDiagnosticActive || b2SkillDiagnosticActive)
+            {
+                var bossId = b1SkillDiagnosticActive ? "enemy.b1.heavy" : "enemy.b2.hunter";
+                var generated = new List<ChapterOneEncounterUnit>
+                {
+                    new ChapterOneEncounterUnit(bossId, 1),
+                    new ChapterOneEncounterUnit("enemy.n2.fighter", 1),
+                    new ChapterOneEncounterUnit("enemy.n3.ranged", 1),
+                    new ChapterOneEncounterUnit(b1SkillDiagnosticActive
+                        ? "enemy.n4.skirmisher" : "enemy.n1.guard", 1)
+                };
+                currentEncounter = new ChapterOneEncounter(
+                    currentEncounter.NodeId, currentEncounter.GenerationVersion,
+                    currentEncounter.BattleSeed, currentEncounter.CoinReward,
+                    currentEncounter.IsElite, true, generated);
+            }
             encounterReward = currentEncounter.CoinReward;
             currentEncounterIsElite = currentEncounter.IsElite;
             foreach (var encounterUnit in currentEncounter.Units)
             {
-                enemyUnits.Add(CreateUnit(
+                var enemyUnit = CreateUnit(
                     encounterUnit.DefinitionId,
                     UnitBasePower(encounterUnit.DefinitionId),
                     EnemyColor(encounterUnit.DefinitionId),
-                    encounterUnit.RunLevel));
+                    encounterUnit.RunLevel);
+                if (b2SkillDiagnosticActive &&
+                    string.Equals(encounterUnit.DefinitionId, "enemy.b2.hunter", StringComparison.Ordinal))
+                    enemyUnit.MaxHealth *= 4;
+                enemyUnits.Add(enemyUnit);
             }
         }
 
@@ -439,6 +532,9 @@ namespace SeekerAutoChess.Prototype
 
         private void OnGUI()
         {
+            // IMGUI state can survive a native Android surface recreation. Always
+            // restore interactivity before drawing the next frame.
+            GUI.enabled = true;
             EnsureRuntimeState();
             ApplyUnifiedGameFont(GUI.skin);
             ActiveUiSkin.ApplyGlobalControls(GUI.skin);
@@ -515,6 +611,12 @@ namespace SeekerAutoChess.Prototype
                 DrawPreparationUnitDetail();
                 GUI.matrix = rootMatrix * Matrix4x4.Translate(new Vector3(0f, layoutSafeTop, 0f));
             }
+            if (IsArenaFormationScreen && arenaFormationDetailUnit != null)
+            {
+                GUI.matrix = rootMatrix;
+                DrawArenaFormationUnitDetail();
+                GUI.matrix = rootMatrix * Matrix4x4.Translate(new Vector3(0f, layoutSafeTop, 0f));
+            }
             DrawBuildVersionOverlay(0f);
             GUI.backgroundColor = previousBackgroundColor;
         }
@@ -580,14 +682,24 @@ namespace SeekerAutoChess.Prototype
             }
             if (currentView == ScreenView.Store)
             {
-                DrawPlaceholderMainScreen("store.title", "store.subtitle");
-                DrawMainNavigation();
+                DrawStoreScreen();
+                if (!storeOpeningActive)
+                {
+                    DrawMainNavigation();
+                }
+                else
+                {
+                    DrawStoreOpeningOverlay();
+                }
                 return;
             }
             if (currentView == ScreenView.Arena)
             {
                 DrawArenaScreen();
-                DrawMainNavigation();
+                if (arenaPageState == ArenaPageState.Ranking ||
+                    arenaPageState == ArenaPageState.OpponentDetail ||
+                    arenaPageState == ArenaPageState.ChallengeConfirm)
+                    DrawMainNavigation();
                 return;
             }
             if (currentView == ScreenView.Leaderboard)
@@ -665,7 +777,8 @@ namespace SeekerAutoChess.Prototype
                 }
                 return;
             }
-            if (battlePresentationActive || IsPreparationScreen || IsPostBattleExpeditionScreen ||
+            if (battlePresentationActive || IsPreparationScreen || IsArenaFormationScreen ||
+                IsPostBattleExpeditionScreen ||
                 IsExpeditionEventFamilyNodeScreen)
             {
                 // The interactive preparation slots are drawn from the same coordinates
@@ -683,6 +796,24 @@ namespace SeekerAutoChess.Prototype
                 return currentView == ScreenView.Expedition && !battlePresentationActive &&
                        expeditionFlow != null && expeditionFlow.CanPrepare;
             }
+        }
+
+        private bool IsArenaFormationScreen
+        {
+            get
+            {
+                return !battlePresentationActive &&
+                       ((currentView == ScreenView.Arena && arenaPageState == ArenaPageState.Preparation) ||
+                        currentView == ScreenView.Defense);
+            }
+        }
+
+        private bool SkillDiagnosticActive
+        {
+            get { return c01SkillDiagnosticActive || c02SkillDiagnosticActive ||
+                         c03SkillDiagnosticActive || c04SkillDiagnosticActive ||
+                         c05SkillDiagnosticActive || c06SkillDiagnosticActive ||
+                         b1SkillDiagnosticActive || b2SkillDiagnosticActive; }
         }
 
         private bool IsPostBattleExpeditionScreen
@@ -1361,28 +1492,47 @@ namespace SeekerAutoChess.Prototype
         {
             var healthRect = FormationStatusBarRect(combatUnit.DefinitionId, centerX,
                 visibleTopY, meaningfulVisibleWidth);
-            DrawFormationStatusBar(healthRect, combatUnit.HealthPercent,
-                FormationStatusCompartmentCount(combatUnit.DefinitionId, combatUnit.MaxHealth),
-                PrototypeArtResourceIds.FormationBattleV951HealthFill,
+            float lagHealthPercent;
+            if (!battleHealthLagPercents.TryGetValue(combatUnit.Id, out lagHealthPercent))
+                lagHealthPercent = combatUnit.HealthPercent;
+            if (combatUnit.HealthPercent >= lagHealthPercent)
+                lagHealthPercent = combatUnit.HealthPercent;
+            else
+                lagHealthPercent = Mathf.MoveTowards(lagHealthPercent,
+                    combatUnit.HealthPercent, Time.unscaledDeltaTime * 0.32f);
+            battleHealthLagPercents[combatUnit.Id] = lagHealthPercent;
+            DrawBattleStatusBarV102(healthRect, combatUnit.HealthPercent, lagHealthPercent,
+                combatUnit.CurrentHealth, combatUnit.MaxHealth, combatUnit.ShieldPercent,
+                combatUnit.CurrentShield, FormationStatusCompartmentCount(combatUnit.MaxHealth),
                 opacity * (combatUnit.IsAlive ? 1f : 0.44f));
-
-            if (combatUnit.MaxShield > 0)
-            {
-                var shieldRect = new Rect(healthRect.x, healthRect.y - healthRect.height - 4f,
-                    healthRect.width, healthRect.height);
-                float shieldVisualOpacity;
-                if (!battleShieldOverlayOpacities.TryGetValue(combatUnit.Id,
-                        out shieldVisualOpacity)) shieldVisualOpacity = combatUnit.CurrentShield > 0 ? 1f : 0f;
-                DrawFormationStatusBar(shieldRect, combatUnit.ShieldPercent,
-                    FormationStatusCompartmentCount(combatUnit.DefinitionId, combatUnit.MaxShield),
-                    PrototypeArtResourceIds.FormationBattleV951ShieldFill,
-                    opacity * shieldVisualOpacity);
-            }
+            DrawPersistentMilaHiddenSpringSeeds(combatUnit.Id, healthRect, opacity);
             var caption = T(combatUnit.DefinitionId);
             const int nameFontSize = 23;
             var nameArea = FormationNameplateRect(caption, nameFontSize, centerX,
                 pieceBaseBottomY);
             DrawFormationUnitNameplate(nameArea, caption, opacity, nameFontSize);
+            GUI.color = Color.white;
+        }
+
+        private void DrawPersistentMilaHiddenSpringSeeds(string unitId, Rect healthRect, float opacity)
+        {
+            int count;
+            if (!persistentMilaHiddenSpringSeeds.TryGetValue(unitId, out count) || count <= 0) return;
+            var sprite = LoadBattleVfxSprite(BattleProjectileProfiles.ResourcePathFor(
+                BattleProjectileProfileIds.HiddenSpringSeed));
+            if (sprite == null || sprite.texture == null) return;
+            const float iconWidth = 22f;
+            const float gap = 4f;
+            var totalWidth = count * iconWidth + (count - 1) * gap;
+            var startX = healthRect.center.x - totalWidth * 0.5f;
+            var y = healthRect.yMax + 3f;
+            GUI.color = WithOpacity(Color.white, opacity);
+            for (var index = 0; index < count; index++)
+            {
+                var iconHeight = iconWidth * sprite.rect.height / Mathf.Max(1f, sprite.rect.width);
+                DrawStaticBattleSprite(new Rect(startX + index * (iconWidth + gap),
+                    y, iconWidth, iconHeight), sprite, false);
+            }
             GUI.color = Color.white;
         }
 
@@ -1499,6 +1649,11 @@ namespace SeekerAutoChess.Prototype
                 DrawFormationBattleV94Header();
                 return;
             }
+            if (IsArenaFormationScreen)
+            {
+                DrawArenaFormationHeader();
+                return;
+            }
             var titleColor = IsExpeditionUiTrialPage ? PreparationTextPrimary : Color.white;
             var subtitleColor = IsExpeditionUiTrialPage ? PreparationTextMuted : new Color(0.36f, 0.82f, 0.77f);
             GUI.Label(new Rect(55f, 34f, 440f, 64f), T("title"), Style(42, titleColor, TextAnchor.MiddleLeft, FontStyle.Normal));
@@ -1527,6 +1682,7 @@ namespace SeekerAutoChess.Prototype
                 }
                 else if (GUI.Button(backArea, T(backKey), ButtonStyle(UiButtonSemantic.Secondary, 16)))
                 {
+                    PlayUiClick(UiAudioCueIds.Cancel, "page-back");
                     if (currentView == ScreenView.Deck)
                     {
                         characterDetailOpen = false;
@@ -1547,6 +1703,7 @@ namespace SeekerAutoChess.Prototype
                     if (GUI.Button(HeaderButtonArea(1), T(abandonKey),
                             ButtonStyle(UiButtonSemantic.Danger, 14)))
                     {
+                        PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-header");
                         if (confirmAbandon) AbandonRun();
                         else
                         {
@@ -1614,6 +1771,7 @@ namespace SeekerAutoChess.Prototype
                 GUI.enabled = !formationOverlayTransitionActive;
                 if (GUI.Button(navigationArea, GUIContent.none, GUIStyle.none))
                 {
+                    PlayUiClick(UiAudioCueIds.Cancel, "formation-page-back");
                     currentView = ScreenView.Home;
                     confirmAbandon = false;
                     selectedFormationSynergyId = null;
@@ -1637,6 +1795,7 @@ namespace SeekerAutoChess.Prototype
             GUI.enabled = !formationOverlayTransitionActive && (!battlePresentationActive || battleControlsEnabled);
             if (GUI.Button(abandonArea, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-formation");
                 if (confirmAbandon) AbandonRun();
                 else
                 {
@@ -1650,6 +1809,42 @@ namespace SeekerAutoChess.Prototype
             DrawFormationBattleStatusCell(1, "ART-UI-PREPARATION-ICON-COIN-V6.7.0", coins.ToString(), opacity);
             DrawFormationBattleStatusCell(2, "ART-UI-PREPARATION-ICON-LIFE-V6.7.0", health.ToString(), opacity);
             DrawFormationBattleSynergyGroup(opacity);
+        }
+
+        private void DrawArenaFormationHeader()
+        {
+            var navigationArea = new Rect(42f, 52f, 116f, 116f);
+            DrawFormationBattleV94Texture(navigationArea,
+                PrototypeArtResourceIds.FormationBattleV94BackFrame, ScaleMode.ScaleToFit, 1f);
+            var glyphArea = new Rect(navigationArea.center.x - 32f, navigationArea.center.y - 32f, 64f, 64f);
+            DrawFormationBattleV94Texture(glyphArea,
+                PrototypeArtResourceIds.FormationBattleV94BackGlyph, ScaleMode.ScaleToFit, 1f);
+            GUI.enabled = arenaFormationDetailUnit == null;
+            if (GUI.Button(navigationArea, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "arena-formation-back");
+                ResetSharedFormationPointer();
+                CloseArenaFormationUnitDetail();
+                if (currentView == ScreenView.Defense) currentView = ScreenView.Arena;
+                else arenaPageState = ArenaPageState.OpponentDetail;
+            }
+            GUI.enabled = true;
+
+            var title = currentView == ScreenView.Defense ? T("defense.title") : T("arena.preparation");
+            GUI.Label(new Rect(180f, 55f, 620f, 62f), title,
+                ArchiveStyle(30, ArchiveColor("F6E8C8"), TextAnchor.MiddleLeft, true));
+            GUI.Label(new Rect(180f, 112f, 620f, 42f),
+                currentView == ScreenView.Defense && pendingDefenseRemovedCount > 0
+                    ? string.Format(T("defense.deckChangedRemoved"), pendingDefenseRemovedCount)
+                    : currentView == ScreenView.Defense ? T(defenseMessageKey) : T("arena.preparationHint"),
+                ArchiveStyle(16, ArchiveColor("A8C5C5"), TextAnchor.MiddleLeft, false));
+
+            var statusArea = new Rect(798f, 64f, 250f, 103f);
+            DrawSharedExpeditionTexture(statusArea, ExpeditionUiSharedFrames.CoinsHud, ScaleMode.ScaleToFit);
+            var status = currentView == ScreenView.Defense
+                ? string.Format(T("arena.power"), CurrentPvpDeckPower())
+                : string.Format(T("arena.daily"), arenaChallengesRemaining, ArenaPrototypeRules.DailyChallengeLimit);
+            GUI.Label(statusArea, status, ArchiveStyle(18, ArchiveColor("F6E8C8"), TextAnchor.MiddleCenter, true));
         }
 
         private void DrawFormationBattleStatusCell(int index, string iconResourceId, string value, float opacity)
@@ -1873,6 +2068,7 @@ namespace SeekerAutoChess.Prototype
             var startPressed = GUI.Button(actionRect, GUIContent.none, GUIStyle.none);
             if (startPressed)
             {
+                PlayUiClick(UiAudioCueIds.Confirm, "home-expedition-entry");
                 if (startsNewRun) RestartRun();
                 homeTopMenu = 0;
                 currentView = ScreenView.Expedition;
@@ -1926,8 +2122,14 @@ namespace SeekerAutoChess.Prototype
             style.normal.textColor = color;
             var area = HomeV38Rect(reference);
             var content = new GUIContent(text);
-            while (style.fontSize > 16 && style.CalcSize(content).x > area.width)
-                style.fontSize--;
+            // A missing or unsupported Android font must not abort the entire IMGUI
+            // frame. The static home composite remains visible, but all controls would
+            // otherwise disappear and become untappable after this exception.
+            if (style.font != null)
+            {
+                while (style.fontSize > 16 && style.CalcSize(content).x > area.width)
+                    style.fontSize--;
+            }
             GUI.Label(area, content, style);
         }
 
@@ -2003,10 +2205,17 @@ namespace SeekerAutoChess.Prototype
         private static bool FontSupportsText(Font font, string text)
         {
             if (font == null || string.IsNullOrEmpty(text)) return font != null;
-            for (var i = 0; i < text.Length; i++)
+            try
             {
-                var character = text[i];
-                if (!char.IsControl(character) && !font.HasCharacter(character)) return false;
+                for (var i = 0; i < text.Length; i++)
+                {
+                    var character = text[i];
+                    if (!char.IsControl(character) && !font.HasCharacter(character)) return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
             return true;
         }
@@ -2511,15 +2720,1026 @@ namespace SeekerAutoChess.Prototype
                 Style(27, new Color(0.62f, 0.74f, 0.79f), TextAnchor.MiddleCenter, FontStyle.Normal));
         }
 
+        private void DrawStoreScreen()
+        {
+            var pageExtra = AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 1f);
+            GUI.Label(new Rect(55f, 180f, 970f, 60f), T("store.title"),
+                Style(34, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(new Rect(55f, 245f, 970f, 48f), T("store.subtitle"),
+                Style(17, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(55f, 296f, 970f, 42f), T("store.skrBalance") + ": " + skrBalance + " SKR",
+                Style(23, new Color(1f, 0.84f, 0.45f), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(55f, 338f, 970f, 38f), storeStatusMessage,
+                Style(15, new Color(0.72f, 0.80f, 0.84f), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(55f, 372f, 970f, 28f),
+                T("store.pity") + " · " + T("quality.epic") + " " + storeEpicPitySkr + "/" + StoreRules.EpicPityThresholdSkr +
+                "  ·  " + T("quality.legendary") + " " + storeLegendaryPitySkr + "/" + StoreRules.LegendaryPityThresholdSkr,
+                Style(13, new Color(0.64f, 0.74f, 0.78f), TextAnchor.MiddleLeft));
+
+            if (storeOpeningActive) return;
+
+            var products = StoreCatalog.Products;
+            DrawCharacterPackCard(new Rect(55f, 400f, 305f, 480f), products[0]);
+            DrawCharacterPackCard(new Rect(387f, 400f, 305f, 480f), products[1]);
+            DrawCharacterPackCard(new Rect(719f, 400f, 305f, 480f), products[2]);
+            DrawBasePackCard(new Rect(55f, 930f, 970f, 300f), products[3]);
+
+            uiSkin.DrawPanel(new Rect(55f, 1270f, 970f, 230f + pageExtra * 0.45f), false);
+            GUI.Label(new Rect(82f, 1295f, 650f, 38f), T("store.signatureTitle"),
+                Style(22, Color.white, TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(82f, 1340f, 875f, 82f), T("store.signatureHint"),
+                Style(15, new Color(0.72f, 0.80f, 0.84f), TextAnchor.UpperLeft));
+            if (GUI.Button(new Rect(82f, 1430f, 360f, 58f), T("store.testGrant"),
+                    ButtonStyle(UiButtonSemantic.Secondary, 15)))
+            {
+                skrBalance += 1000;
+                storeStatusMessage = T("store.status.granted");
+                SaveGame();
+            }
+        }
+
+        private void DrawCharacterPackCard(Rect area, StoreProductDefinition product)
+        {
+            uiSkin.DrawPanel(area, true);
+            GUI.Label(new Rect(area.x + 18f, area.y + 20f, area.width - 36f, 42f),
+                T(product.DisplayNameKey), Style(23, Color.white, TextAnchor.MiddleCenter));
+            GUI.Label(new Rect(area.x + 18f, area.y + 70f, area.width - 36f, 34f),
+                product.PriceSkr + " SKR  ·  " + T("store.drawCount"),
+                Style(17, new Color(1f, 0.84f, 0.45f), TextAnchor.MiddleCenter));
+            GUI.Label(new Rect(area.x + 20f, area.y + 120f, area.width - 40f, 155f),
+                PackProbabilityText(product.PackTier),
+                Style(15, new Color(0.78f, 0.86f, 0.88f), TextAnchor.UpperLeft));
+            GUI.Label(new Rect(area.x + 20f, area.y + 285f, area.width - 40f, 58f),
+                T("store.packIndependent"),
+                Style(14, new Color(0.70f, 0.78f, 0.82f), TextAnchor.UpperLeft));
+            GUI.enabled = skrBalance >= product.PriceSkr;
+            if (GUI.Button(new Rect(area.x + 22f, area.y + 390f, area.width - 44f, 60f),
+                    T("store.purchase"), ButtonStyle(UiButtonSemantic.Primary, 17)))
+            {
+                PlayUiClick(UiAudioCueIds.Purchase, "store-pack-" + product.ProductId);
+                TryPurchaseStoreProduct(product);
+            }
+            GUI.enabled = true;
+        }
+
+        private void DrawBasePackCard(Rect area, StoreProductDefinition product)
+        {
+            uiSkin.DrawPanel(area, true);
+            GUI.Label(new Rect(area.x + 24f, area.y + 20f, 600f, 42f), T(product.DisplayNameKey),
+                Style(23, Color.white, TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(area.x + 24f, area.y + 72f, 650f, 70f),
+                T("store.basePackDescription"),
+                Style(16, new Color(0.78f, 0.86f, 0.88f), TextAnchor.UpperLeft));
+            var owned = ownedBasePackIds.Contains(product.ProductId);
+            GUI.Label(new Rect(area.x + 24f, area.y + 164f, 650f, 35f),
+                owned ? T("store.owned") : product.PriceSkr + " SKR",
+                Style(18, owned ? new Color(0.54f, 0.94f, 0.66f) : new Color(1f, 0.84f, 0.45f),
+                    TextAnchor.MiddleLeft));
+            GUI.enabled = !owned && skrBalance >= product.PriceSkr;
+            if (GUI.Button(new Rect(area.x + 735f, area.y + 70f, 190f, 70f),
+                    T(owned ? "store.owned" : "store.purchase"), ButtonStyle(UiButtonSemantic.Primary, 17)))
+            {
+                PlayUiClick(UiAudioCueIds.Purchase, "store-base-" + product.ProductId);
+                TryPurchaseStoreProduct(product);
+            }
+            GUI.enabled = true;
+        }
+
+        private string PackProbabilityText(CharacterPackTier tier)
+        {
+            switch (tier)
+            {
+                case CharacterPackTier.White: return T("quality.common") + " 70.0%\n" + T("quality.uncommon") + " 24.8%\n" +
+                    T("quality.rare") + " 4.6%\n" + T("quality.epic") + " 0.55%\n" + T("quality.legendary") + " 0.05%";
+                case CharacterPackTier.Blue: return T("quality.common") + " 18.5%\n" + T("quality.uncommon") + " 55.5%\n" +
+                    T("quality.rare") + " 22.8%\n" + T("quality.epic") + " 2.9%\n" + T("quality.legendary") + " 0.3%";
+                default: return T("quality.common") + " 0%\n" + T("quality.uncommon") + " 44.8%\n" +
+                    T("quality.rare") + " 42.2%\n" + T("quality.epic") + " 11.7%\n" + T("quality.legendary") + " 1.3%";
+            }
+        }
+
+        private void TryPurchaseStoreProduct(StoreProductDefinition product)
+        {
+            if (product == null) return;
+            if (storeOpeningActive)
+            {
+                storeStatusMessage = T("store.status.claimFirst");
+                return;
+            }
+            if (product.ProductType == StoreProductType.BasePack && ownedBasePackIds.Contains(product.ProductId))
+            {
+                storeStatusMessage = T("store.status.alreadyOwned");
+                return;
+            }
+            if (skrBalance < product.PriceSkr)
+            {
+                storeStatusMessage = T("store.status.insufficient");
+                return;
+            }
+
+            var orderId = "store-order-" + (storePurchaseSerial + 1);
+            var request = new WalletPurchaseRequest(orderId, product.ProductId, product.PriceSkr,
+                StoreRules.StoreRulesVersion, T(product.DisplayNameKey) + " / " + product.PriceSkr + " SKR");
+            var signature = walletSignatureGateway.RequestTransactionSignature(request);
+            if (signature == null || !signature.Approved)
+            {
+                storeStatusMessage = T("store.status.signatureRejected");
+                return;
+            }
+
+            skrBalance -= product.PriceSkr;
+            storePurchaseSerial++;
+            if (product.ProductType == StoreProductType.CharacterPack)
+            {
+                PrepareCharacterPackReveal(product, orderId);
+                storeStatusMessage = T("store.status.revealReady");
+            }
+            else
+            {
+                ownedBasePackIds.Add(product.ProductId);
+                storeStatusMessage = T("store.status.baseOwned");
+            }
+            SaveGame();
+        }
+
+        private void PrepareCharacterPackReveal(StoreProductDefinition product, string orderId)
+        {
+            var ids = StoreRules.SelectDistinctCharacterIds(characterCatalog, orderId,
+                StoreRules.DrawCountPerCharacterPack);
+            pendingStoreDefinitionIds = new string[ids.Length];
+            pendingStoreInstanceIds = new string[ids.Length];
+            pendingStoreQualities = new int[ids.Length];
+            storeEpicPitySkr += product.PriceSkr;
+            storeLegendaryPitySkr += product.PriceSkr;
+            for (var i = 0; i < ids.Length; i++)
+            {
+                var forceLegendary = storeLegendaryPitySkr >= StoreRules.LegendaryPityThresholdSkr;
+                var forceEpic = storeEpicPitySkr >= StoreRules.EpicPityThresholdSkr;
+                var quality = StoreRules.RollQuality(product.PackTier, orderId + ":slot:" + i,
+                    forceEpic, forceLegendary);
+                if (quality == CharacterQuality.Legendary)
+                {
+                    storeLegendaryPitySkr = 0;
+                    storeEpicPitySkr = 0;
+                }
+                else if (quality == CharacterQuality.Epic)
+                {
+                    storeEpicPitySkr = 0;
+                }
+                var instanceId = "character.store." + storePurchaseSerial + "." + i + "." + ids[i];
+                pendingStoreDefinitionIds[i] = ids[i];
+                pendingStoreInstanceIds[i] = instanceId;
+                pendingStoreQualities[i] = (int)quality;
+            }
+            pendingStoreOrderId = orderId;
+            storeOpeningProgress = 0f;
+            storeRevealSelectedIndex = 1;
+            storeOpeningActive = true;
+        }
+
+        private void ClaimPendingStorePack()
+        {
+            if (!storeOpeningActive || pendingStoreDefinitionIds == null ||
+                pendingStoreInstanceIds == null || pendingStoreQualities == null ||
+                pendingStoreDefinitionIds.Length != StoreRules.DrawCountPerCharacterPack ||
+                pendingStoreInstanceIds.Length != StoreRules.DrawCountPerCharacterPack ||
+                pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack)
+            {
+                storeStatusMessage = T("store.status.noPending");
+                return;
+            }
+
+            var entries = new List<OwnedCharacterState>(playerCollection.Entries);
+            for (var i = 0; i < StoreRules.DrawCountPerCharacterPack; i++)
+            {
+                entries.Add(new OwnedCharacterState(
+                    pendingStoreInstanceIds[i],
+                    pendingStoreDefinitionIds[i],
+                    1,
+                    0,
+                    (CharacterQuality)pendingStoreQualities[i]));
+            }
+
+            var selectedIds = nextRunDeckSelection == null
+                ? new string[0] : CopyIds(nextRunDeckSelection.SelectedInstanceIds);
+            playerCollection = new PlayerCollection(characterCatalog, entries);
+            nextRunDeckSelection = new RunDeckSelection(playerCollection, selectedIds,
+                MaximumDeckSize, MinimumDeckSize);
+            pendingStoreOrderId = null;
+            pendingStoreInstanceIds = new string[0];
+            pendingStoreDefinitionIds = new string[0];
+            pendingStoreQualities = new int[0];
+            storeOpeningProgress = 0f;
+            storeOpeningActive = false;
+            storeStatusMessage = T("store.status.claimed");
+            SaveGame();
+        }
+
+        private void DrawStoreOpeningOverlay()
+        {
+            GUI.color = new Color(0.01f, 0.02f, 0.03f, 0.86f);
+            GUI.DrawTexture(new Rect(0f, 135f, DesignWidth, layoutContentHeight - 135f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            uiSkin.DrawPanel(new Rect(42f, 190f, 996f, 1500f), true);
+            GUI.Label(new Rect(72f, 225f, 936f, 62f), T("store.opening.title"),
+                Style(32, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
+            GUI.Label(new Rect(72f, 292f, 936f, 40f),
+                storeOpeningProgress < 1f ? T("store.opening") : T("store.reveal.ready"),
+                Style(17, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleCenter));
+
+            var revealIndex = Mathf.Clamp(Mathf.FloorToInt(storeOpeningProgress * 3.5f), 0, 3);
+            storeRevealSelectedIndex = Mathf.Clamp(storeRevealSelectedIndex, 0,
+                StoreRules.DrawCountPerCharacterPack - 1);
+            for (var i = 0; i < StoreRules.DrawCountPerCharacterPack; i++)
+            {
+                if (i == storeRevealSelectedIndex) continue;
+                DrawStoreRevealCard(i, revealIndex, false);
+            }
+            DrawStoreRevealCard(storeRevealSelectedIndex, revealIndex, true);
+            HandleStoreRevealCardSelection(revealIndex);
+
+            GUI.enabled = storeOpeningProgress >= 1f;
+            if (GUI.Button(new Rect(300f, 1240f, 480f, 86f), T("store.claim"),
+                    ButtonStyle(UiButtonSemantic.Primary, 23)))
+            {
+                PlayUiClick(UiAudioCueIds.Confirm, "store-claim");
+                ClaimPendingStorePack();
+            }
+            GUI.enabled = true;
+            GUI.Label(new Rect(72f, 1350f, 936f, 120f),
+                T("store.reveal.hint"),
+                Style(16, new Color(0.70f, 0.78f, 0.82f), TextAnchor.MiddleCenter));
+        }
+
+        private void DrawStoreRevealCard(int index, int revealIndex, bool selected)
+        {
+            var area = StoreRevealCardRect(index, selected);
+            var previousMatrix = GUI.matrix;
+            if (!selected)
+            {
+                var angle = index == 0 ? -5f : index == 2 ? 5f : 0f;
+                GUIUtility.RotateAroundPivot(angle, area.center);
+            }
+
+            if (index < revealIndex)
+            {
+                DrawStoreRevealDetailCard(area, pendingStoreDefinitionIds[index],
+                    (CharacterQuality)pendingStoreQualities[index], pendingStoreInstanceIds[index]);
+            }
+            else
+            {
+                var shell = artCatalog.GetDetailTideWindowTexture(
+                    PrototypeArtResourceIds.DetailTideWindowShell);
+                GUI.color = new Color(0.34f, 0.42f, 0.44f, 1f);
+                if (shell != null) GUI.DrawTexture(area, shell, ScaleMode.ScaleToFit, true);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(area.x + 40f, area.center.y - 60f, area.width - 80f, 120f),
+                    index == 0 ? T("store.reveal.waiting") : "?",
+                    Style(index == 0 ? 24 : 72, new Color(0.74f, 0.84f, 0.89f),
+                        TextAnchor.MiddleCenter));
+            }
+            GUI.matrix = previousMatrix;
+        }
+
+        private Rect StoreRevealCardRect(int index, bool selected)
+        {
+            const float cardWidth = 450f;
+            var cardHeight = cardWidth * DetailTideWindowLayout.ModalHeight /
+                DetailTideWindowLayout.ModalWidth;
+            var x = 65f + index * 250f;
+            var fanY = index == 1 ? 400f : 438f;
+            return new Rect(x, selected ? 338f : fanY, cardWidth, cardHeight);
+        }
+
+        private void HandleStoreRevealCardSelection(int revealIndex)
+        {
+            if (revealIndex < StoreRules.DrawCountPerCharacterPack || Event.current == null ||
+                Event.current.type != EventType.MouseUp || Event.current.button != 0) return;
+            var pointer = Event.current.mousePosition;
+            if (StoreRevealCardRect(storeRevealSelectedIndex, true).Contains(pointer)) return;
+            for (var index = StoreRules.DrawCountPerCharacterPack - 1; index >= 0; index--)
+            {
+                if (index == storeRevealSelectedIndex ||
+                    !StoreRevealCardRect(index, false).Contains(pointer)) continue;
+                storeRevealSelectedIndex = index;
+                PlayUiClick(UiAudioCueIds.Tap, "store-reveal-card-" + index);
+                Event.current.Use();
+                return;
+            }
+        }
+
+        private void DrawStoreRevealDetailCard(
+            Rect area, string definitionId, CharacterQuality quality, string instanceId)
+        {
+            var definition = characterCatalog.Get(definitionId);
+            var qualityId = CharacterQualityResourceId(quality);
+            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(instanceId);
+            var stats = CharacterRarityInstanceRules.CalculateCombatStats(
+                definition, definition.BasePower, 1, quality, aptitudeRoll, 0);
+            var ivory = ArchiveColor("F6E8C8");
+            var previousMatrix = GUI.matrix;
+            var scale = area.width / DetailTideWindowLayout.ModalWidth;
+            GUI.matrix = previousMatrix * Matrix4x4.TRS(
+                new Vector3(area.x, area.y, 0f), Quaternion.identity,
+                new Vector3(scale, scale, 1f));
+            var panel = new Rect(0f, 0f, DetailTideWindowLayout.ModalWidth,
+                DetailTideWindowLayout.ModalHeight);
+            var shell = artCatalog.GetDetailTideWindowTexture(PrototypeArtResourceIds.DetailTideWindowShell);
+            if (shell != null) GUI.DrawTexture(panel, shell, ScaleMode.StretchToFill, true);
+
+            var instanceLabel = T("store.reveal.instance") + " · " + instanceId;
+            var instanceStyle = DetailTextStyle(18, new Color(0.72f, 0.78f, 0.78f),
+                TextAnchor.MiddleCenter, false, FontStyle.Normal);
+            while (instanceStyle.fontSize > 13 &&
+                   instanceStyle.CalcSize(new GUIContent(instanceLabel)).x > 760f)
+                instanceStyle.fontSize--;
+            GUI.Label(new Rect(60f, 24f, 760f, 32f),
+                instanceLabel, instanceStyle);
+            GUI.Label(DetailLocalRect(panel, 190f, 70f, 500f, 72f), T(definitionId),
+                DetailTextStyle(46, ivory, TextAnchor.MiddleCenter, false, FontStyle.Bold));
+            DrawDetailTags(panel, definitionId, definition, false, ivory);
+
+            var badge = artCatalog.GetUnitLevelBadgeTexture(qualityId, 1);
+            if (badge != null)
+                GUI.DrawTexture(DetailLocalRect(panel, 290f, 230f, 300f, 88f), badge,
+                    ScaleMode.ScaleToFit, true);
+
+            DrawDetailMetadataField(panel, 202f, T(QualityKey(quality)), ivory);
+            DrawDetailMetadataField(panel, 448f, T("collection.notStarred"), ivory);
+
+            CharacterArtDefinition artDefinition;
+            Sprite sprite;
+            if (artCatalog.TryGetCharacterArt(definitionId, qualityId, out artDefinition, out sprite))
+                DrawDetailCharacterSprite(DetailLocalRect(panel, 45f, 390f, 500f, 580f),
+                    artDefinition, sprite, 0.90f);
+
+            DrawDetailStat(panel, new Rect(574f, 393f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatHealth, T("stat.health"), stats.MaxHealth.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 549f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatAttack, T("stat.attack"), stats.AttackDamage.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 705f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatArmor, T("stat.armor"), stats.Armor.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 861f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatSpeed, T("detail.attackSpeed"),
+                DetailTideWindowLayout.FormatAttackSpeed(stats.AttackSpeedBasisPoints), ivory);
+
+            var quoteStyle = DetailTextStyle(29, ivory, TextAnchor.MiddleCenter, true, FontStyle.Normal);
+            GUI.Label(DetailLocalRect(panel, 90f, 1078f, 700f, 132f),
+                DetailQuote(definitionId, qualityId), quoteStyle);
+            GUI.Label(DetailLocalRect(panel, 307f, 1261f, 268f, 74f), T(QualityKey(quality)),
+                DetailTextStyle(29, QualityColor(quality), TextAnchor.MiddleCenter,
+                    false, FontStyle.Bold));
+            GUI.matrix = previousMatrix;
+        }
+
         private void DrawArenaScreen()
         {
-            DrawPlaceholderMainScreen("arena.title", "arena.subtitle");
-            var actionY = 1025f + AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 0.5f);
-            if (GUI.Button(new Rect(210f, actionY, 660f, 100f), T("arena.defense"),
-                    ButtonStyle(UiButtonSemantic.Primary, 22)))
+            RefreshArenaRuntimeState();
+            if (arenaPageState == ArenaPageState.Preparation) { DrawArenaPreparation(); return; }
+            if (arenaPageState == ArenaPageState.Result) { DrawArenaResult(); return; }
+
+            var modalOpen = selectedArenaOpponentIndex >= 0 &&
+                (arenaPageState == ArenaPageState.OpponentDetail || arenaPageState == ArenaPageState.ChallengeConfirm);
+            if (modalOpen) GUI.enabled = false;
+
+            GUI.Label(new Rect(55f, 175f, 600f, 58f), T("arena.title"),
+                Style(38, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(new Rect(55f, 230f, 970f, 42f), T("arena.subtitle"),
+                Style(18, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(55f, 275f, 480f, 38f), string.Format(T("arena.rating"), arenaRating),
+                Style(20, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(new Rect(540f, 275f, 485f, 38f),
+                string.Format(T("arena.daily"), arenaChallengesRemaining, ArenaPrototypeRules.DailyChallengeLimit),
+                Style(20, Color.white, TextAnchor.MiddleRight, FontStyle.Normal));
+            var utcNow = DateTime.UtcNow;
+            GUI.Label(new Rect(55f, 315f, 970f, 38f),
+                string.Format(T("arena.weeklyCountdown"), FormatArenaCountdown(
+                    ArenaPrototypeRules.RemainingInCycle(utcNow, ArenaPrototypeRules.PvpRewardCycleDays))),
+                Style(16, new Color(0.94f, 0.78f, 0.42f), TextAnchor.MiddleRight));
+
+            GUI.Label(new Rect(55f, 365f, 970f, 42f), T("arena.topThree"),
+                Style(25, new Color(0.95f, 0.78f, 0.36f), TextAnchor.MiddleLeft, FontStyle.Normal));
+            for (var index = 0; index < 3 && index < arenaOpponents.Length; index++)
             {
+                var opponent = arenaOpponents[index];
+                var card = new Rect(55f + index * 327f, 415f + (index == 0 ? 0f : 28f), 300f, 185f);
+                uiSkin.DrawPanel(card, selectedArenaOpponentIndex == index);
+                GUI.Label(new Rect(card.x + 12f, card.y + 10f, card.width - 24f, 38f), "#" + opponent.Rank,
+                    Style(23, index == 0 ? new Color(1f, 0.82f, 0.28f) : Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
+                GUI.Label(new Rect(card.x + 12f, card.y + 49f, card.width - 24f, 40f), opponent.DisplayName,
+                    Style(18, Color.white, TextAnchor.MiddleCenter));
+                GUI.Label(new Rect(card.x + 12f, card.y + 91f, card.width - 24f, 28f),
+                    string.Format(T("arena.level"), opponent.PlaceholderLevel) + "  ·  " +
+                    string.Format(T("arena.power"), opponent.Power), Style(14, new Color(0.76f, 0.88f, 0.91f), TextAnchor.MiddleCenter));
+                GUI.Label(new Rect(card.x + 12f, card.y + 121f, card.width - 24f, 28f),
+                    string.Format(T("arena.rating"), opponent.Rating), Style(14, new Color(0.94f, 0.78f, 0.42f), TextAnchor.MiddleCenter));
+                if (GUI.Button(new Rect(card.x + 55f, card.y + 150f, card.width - 110f, 30f), T("arena.view"), ButtonStyle(UiButtonSemantic.Secondary, 13)))
+                    SelectArenaOpponent(index);
+            }
+
+            var playerDisplayRank = ArenaPrototypeRules.CalculatePlayerDisplayRank(arenaOpponents, arenaRating);
+            GUI.Label(new Rect(55f, 625f, 970f, 42f),
+                T("arena.nearby") + "  ·  " + string.Format(T("arena.myRank"), playerDisplayRank),
+                Style(25, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
+            var nearby = ArenaPrototypeRules.SelectNearby(arenaOpponents, playerDisplayRank, 7);
+            arenaRankingScroll = GUI.BeginScrollView(new Rect(55f, 675f, 970f, 525f), arenaRankingScroll,
+                new Rect(0f, 0f, 940f, nearby.Length * 108f));
+            for (var row = 0; row < nearby.Length; row++)
+            {
+                var opponent = nearby[row];
+                var sourceIndex = Array.IndexOf(arenaOpponents, opponent);
+                var area = new Rect(0f, row * 108f, 925f, 96f);
+                uiSkin.DrawListRow(area, selectedArenaOpponentIndex == sourceIndex);
+                GUI.Label(new Rect(area.x + 12f, area.y, 80f, area.height), "#" + opponent.Rank,
+                    Style(20, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
+                GUI.Label(new Rect(area.x + 100f, area.y + 8f, 270f, 36f), opponent.DisplayName,
+                    Style(19, Color.white, TextAnchor.MiddleLeft));
+                GUI.Label(new Rect(area.x + 100f, area.y + 47f, 300f, 28f),
+                    string.Format(T("arena.power"), opponent.Power) + "  ·  " +
+                    string.Format(T("arena.level"), opponent.PlaceholderLevel),
+                    Style(14, new Color(0.72f, 0.84f, 0.88f), TextAnchor.MiddleLeft));
+                GUI.Label(new Rect(area.x + 430f, area.y, 245f, area.height),
+                    string.Format(T("arena.rating"), opponent.Rating),
+                    Style(17, new Color(0.94f, 0.78f, 0.42f), TextAnchor.MiddleCenter));
+                if (GUI.Button(new Rect(area.x + 700f, area.y + 20f, 200f, 56f), T("arena.view"), ButtonStyle(UiButtonSemantic.Secondary, 16)))
+                    SelectArenaOpponent(sourceIndex);
+            }
+            GUI.EndScrollView();
+
+            GUI.Label(new Rect(55f, 1475f, 720f, 38f), T("arena.temporary"),
+                Style(14, new Color(0.82f, 0.69f, 0.43f), TextAnchor.MiddleLeft));
+            if (GUI.Button(new Rect(805f, 1455f, 220f, 66f), T("arena.defense"), ButtonStyle(UiButtonSemantic.Secondary, 17)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "arena-defense");
+                var removed = ReconcileDefenseWithActiveDeck();
+                if (removed > 0) pendingDefenseRemovedCount += removed;
+                defenseMessageKey = pendingDefenseRemovedCount > 0
+                    ? "defense.deckChangedRemoved" : "defense.subtitle";
+                RefreshDefenseFormationBench();
+                SaveGame();
                 currentView = ScreenView.Defense;
             }
+            GUI.enabled = true;
+            if (selectedArenaOpponentIndex >= 0) DrawArenaOpponentDetail(arenaOpponents[selectedArenaOpponentIndex]);
+            if (arenaPageState == ArenaPageState.ChallengeConfirm) DrawArenaChallengeConfirmation();
+        }
+
+        private void DrawArenaOpponentDetail(ArenaOpponentProfile opponent)
+        {
+            var panel = new Rect(75f, 765f, 930f, 650f);
+            if (arenaPageState == ArenaPageState.OpponentDetail && Event.current != null &&
+                Event.current.type == EventType.MouseUp && Event.current.button == 0 &&
+                !panel.Contains(Event.current.mousePosition))
+            {
+                CloseArenaOpponentDetail("arena-opponent-detail-dismiss");
+                Event.current.Use();
+                return;
+            }
+            GUI.color = new Color(0f, 0f, 0f, 0.72f);
+            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.015f, 0.03f, 0.04f, 0.96f);
+            GUI.DrawTexture(panel, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(panel.x + 30f, panel.y + 18f, panel.width - 60f, 48f),
+                opponent.DisplayName + "  ·  #" + opponent.Rank,
+                Style(26, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.enabled = arenaPageState == ArenaPageState.OpponentDetail;
+            if (GUI.Button(new Rect(panel.x + panel.width - 155f, panel.y + 16f, 125f, 48f),
+                    T("arena.close"), ButtonStyle(UiButtonSemantic.Secondary, 15)))
+            {
+                CloseArenaOpponentDetail("arena-opponent-detail-close");
+                GUI.enabled = true;
+                return;
+            }
+            GUI.enabled = true;
+            GUI.Label(new Rect(panel.x + 30f, panel.y + 70f, panel.width - 60f, 35f),
+                string.Format(T("arena.level"), opponent.PlaceholderLevel) + "  ·  " +
+                string.Format(T("arena.power"), opponent.Power) + "  ·  " + string.Format(T("arena.rating"), opponent.Rating),
+                Style(17, new Color(0.76f, 0.88f, 0.91f), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(panel.x + 30f, panel.y + 120f, panel.width - 60f, 38f), T("arena.defensePreview"),
+                Style(19, new Color(0.95f, 0.78f, 0.36f), TextAnchor.MiddleLeft));
+            for (var slot = 0; slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
+            {
+                var area = new Rect(panel.x + 30f + slot % 3 * 290f, panel.y + 175f + slot / 3 * 155f, 260f, 130f);
+                uiSkin.DrawListRow(area, false);
+                if (slot >= ArenaPrototypeRules.PublicDefenseSlotCount)
+                {
+                    GUI.Label(area, T("arena.hidden"), Style(42, new Color(0.72f, 0.78f, 0.80f), TextAnchor.MiddleCenter, FontStyle.Normal));
+                    continue;
+                }
+                var unit = opponent.DefenseUnits[slot];
+                DrawCharacterAvatar(unit.DefinitionId, unit.Quality, new Rect(area.x + 8f, area.y + 10f, 100f, 105f));
+                GUI.Label(new Rect(area.x + 115f, area.y + 16f, 135f, 38f), T(unit.DefinitionId),
+                    Style(16, Color.white, TextAnchor.MiddleLeft));
+                GUI.Label(new Rect(area.x + 115f, area.y + 56f, 135f, 30f), T(QualityKey(unit.Quality)),
+                    Style(14, QualityColor(unit.Quality), TextAnchor.MiddleLeft));
+            }
+            GUI.enabled = arenaChallengesRemaining > 0 && arenaPageState == ArenaPageState.OpponentDetail;
+            if (GUI.Button(new Rect(panel.x + 220f, panel.y + 525f, 490f, 80f),
+                    T("arena.challenge") + "  " + arenaChallengesRemaining + "/" + ArenaPrototypeRules.DailyChallengeLimit,
+                    ButtonStyle(UiButtonSemantic.Primary, 21)))
+            {
+                PlayUiClick(UiAudioCueIds.Confirm, "arena-challenge-prompt");
+                arenaPageState = ArenaPageState.ChallengeConfirm;
+            }
+            GUI.enabled = true;
+        }
+
+        private void CloseArenaOpponentDetail(string audioSource)
+        {
+            PlayUiClick(UiAudioCueIds.Cancel, audioSource);
+            selectedArenaOpponentIndex = -1;
+            arenaPageState = ArenaPageState.Ranking;
+        }
+
+        private void DrawArenaChallengeConfirmation()
+        {
+            GUI.color = new Color(0f, 0f, 0f, 0.72f);
+            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            var panel = new Rect(130f, 610f, 820f, 470f);
+            uiSkin.DrawPanel(panel, true);
+            GUI.Label(new Rect(panel.x + 45f, panel.y + 38f, panel.width - 90f, 60f), T("arena.confirmTitle"),
+                Style(30, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
+            GUI.Label(new Rect(panel.x + 70f, panel.y + 120f, panel.width - 140f, 145f),
+                string.Format(T("arena.confirmBody"), arenaChallengesRemaining, Mathf.Max(0, arenaChallengesRemaining - 1)),
+                Style(21, new Color(0.86f, 0.90f, 0.91f), TextAnchor.MiddleCenter));
+            if (GUI.Button(new Rect(panel.x + 55f, panel.y + 330f, 325f, 76f), T("arena.cancel"), ButtonStyle(UiButtonSemantic.Danger, 20)))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "arena-challenge-cancel");
+                arenaPageState = ArenaPageState.OpponentDetail;
+            }
+            if (GUI.Button(new Rect(panel.x + 440f, panel.y + 330f, 325f, 76f), T("arena.confirm"), ButtonStyle(UiButtonSemantic.Primary, 20)))
+            {
+                ConfirmArenaChallenge();
+            }
+        }
+
+        private void DrawArenaPreparation()
+        {
+            DrawSharedFormationPage(arenaAttackSlots, arenaAttackBenchSlots, true);
+        }
+
+        private void DrawArenaFormation(Rect panel)
+        {
+            DrawSharedFormationPage(arenaAttackSlots, arenaAttackBenchSlots, true);
+        }
+
+        private void DrawSharedFormationPage(UnitData[] boardSlots, UnitData[] benchSlots, bool arenaChallenge)
+        {
+            var responsiveLayout = PreparationBattlefieldLayoutMath.Calculate(layoutContentHeight);
+            var startArea = ToRectAtY(FormationBattleV94Layout.StartControl, responsiveLayout.StartButtonY);
+            HandleSharedFormationPointer(boardSlots, benchSlots);
+
+            UnitData[] opponentSlots = null;
+            if (arenaChallenge && selectedArenaOpponentIndex >= 0 && selectedArenaOpponentIndex < arenaOpponents.Length)
+            {
+                var opponent = arenaOpponents[selectedArenaOpponentIndex];
+                opponentSlots = new UnitData[Mathf.Min(ArenaPrototypeRules.DefenseSlotCount, opponent.DefenseUnits.Length)];
+                for (var slot = 0; slot < opponentSlots.Length; slot++) opponentSlots[slot] = CreateArenaProfileUnit(opponent.DefenseUnits[slot]);
+            }
+
+            for (var slot = 0; slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
+            {
+                var opponent = opponentSlots != null && slot < opponentSlots.Length ? opponentSlots[slot] : null;
+                DrawFormationPlacementRing(BattlePresentationLayout.GetUnitFootPosition(false, slot, layoutContentHeight), opponent != null, 1f, 1f);
+                if (opponent != null)
+                {
+                    DrawSharedFormationUnit(opponent, slot, false, 0.94f);
+                    if (arenaFormationDetailUnit == null && GUI.Button(
+                            PreparationEnemySlotRect(slot), GUIContent.none, GUIStyle.none))
+                    {
+                        arenaFormationDetailUnit = opponent;
+                        PlayUiClick(UiAudioCueIds.Tap, "arena-opponent-formation-unit-detail");
+                    }
+                }
+            }
+            for (var slot = 0; slot < boardSlots.Length; slot++)
+            {
+                DrawFormationPlacementRing(BattlePresentationLayout.GetUnitFootPosition(true, slot, layoutContentHeight), boardSlots[slot] != null, 1f, 1f);
+                if (boardSlots[slot] != null)
+                    DrawSharedFormationUnit(boardSlots[slot], slot, true,
+                        preparationPointerHeld && preparationPointerSlot == slot && preparationPointerDragging ? 0.32f : 1f);
+            }
+
+            DrawFormationBottomControl(startArea, arenaChallenge ? T("arena.start") : T("defense.save"), true, 1f, null);
+            DrawSharedFormationBench(benchSlots);
+            DrawSharedFormationDragGhost(boardSlots, benchSlots);
+
+            if (arenaFormationDetailUnit != null) return;
+            GUI.enabled = CountUnits(boardSlots) > 0;
+            if (GUI.Button(startArea, GUIContent.none, GUIStyle.none))
+            {
+                if (arenaChallenge)
+                {
+                    PlayUiClick(UiAudioCueIds.BattleStart, "arena-battle-start");
+                    StartArenaBattle();
+                }
+                else
+                {
+                    PlayUiClick(UiAudioCueIds.Confirm, "defense-save");
+                    pendingDefenseRemovedCount = 0;
+                    defenseMessageKey = "defense.saved";
+                    SaveGame();
+                    currentView = ScreenView.Arena;
+                }
+                ResetSharedFormationPointer();
+            }
+            GUI.enabled = true;
+        }
+
+        private void DrawSharedFormationUnit(UnitData unit, int slot, bool isPlayer, float opacity)
+        {
+            DrawPreparationBattlefieldUnit(isPlayer ? PreparationBoardSlotRect(slot) : PreparationEnemySlotRect(slot),
+                unit.NameKey, slot, isPlayer, T(unit.NameKey), unit.RunLevel, opacity,
+                CharacterQualityResourceId(unit.Quality));
+        }
+
+        private void DrawSharedFormationBench(UnitData[] benchSlots)
+        {
+            for (var index = 0; index < benchSlots.Length; index++)
+            {
+                var area = PreparationBenchSlotRect(index);
+                var unit = benchSlots[index];
+                if (unit == null)
+                {
+                    var empty = artCatalog.GetExpeditionUiV67Texture("ART-UI-PREPARATION-SLOT-FRAME-104-V6.7.0");
+                    if (empty != null) GUI.DrawTexture(area, empty, ScaleMode.StretchToFill, true);
+                    continue;
+                }
+                var surface = artCatalog.GetExpeditionUiSharedTexture(AvatarArtContract.OccupiedSlotSurfaceResourceId);
+                var rim = artCatalog.GetExpeditionUiSharedTexture(AvatarArtContract.SlotForegroundRimResourceId);
+                if (surface != null) GUI.DrawTexture(area, surface, ScaleMode.StretchToFill, true);
+                GUI.BeginGroup(area);
+                DrawCharacterSlotAvatar(unit.NameKey, unit.Quality, new Rect(0f, 0f, area.width, area.height));
+                GUI.EndGroup();
+                if (rim != null) GUI.DrawTexture(area, rim, ScaleMode.StretchToFill, true);
+            }
+        }
+
+        private void DrawArenaResult()
+        {
+            var panel = new Rect(110f, 350f, 860f, 850f);
+            uiSkin.DrawPanel(panel, true);
+            GUI.Label(new Rect(panel.x + 40f, panel.y + 70f, panel.width - 80f, 90f),
+                T(arenaLastBattleWon ? "arena.resultWin" : "arena.resultLoss"),
+                Style(42, arenaLastBattleWon ? new Color(0.48f, 0.90f, 0.72f) : new Color(0.94f, 0.43f, 0.39f), TextAnchor.MiddleCenter, FontStyle.Normal));
+            GUI.Label(new Rect(panel.x + 60f, panel.y + 260f, panel.width - 120f, 90f),
+                string.Format(T("arena.ratingChange"), arenaPreviousRating, arenaRatingDelta, arenaRating),
+                Style(25, Color.white, TextAnchor.MiddleCenter));
+            GUI.Label(new Rect(panel.x + 60f, panel.y + 380f, panel.width - 120f, 70f),
+                string.Format(T("arena.power"), ArenaAttackPower()), Style(21, new Color(0.76f, 0.88f, 0.91f), TextAnchor.MiddleCenter));
+            GUI.Label(new Rect(panel.x + 60f, panel.y + 500f, panel.width - 120f, 70f), T("arena.temporary"),
+                Style(16, new Color(0.82f, 0.69f, 0.43f), TextAnchor.MiddleCenter));
+            if (GUI.Button(new Rect(panel.x + 150f, panel.y + 680f, panel.width - 300f, 90f), T("arena.return"), ButtonStyle(UiButtonSemantic.Primary, 21)))
+            {
+                PlayUiClick(UiAudioCueIds.Confirm, "arena-result-return");
+                arenaPageState = ArenaPageState.Ranking;
+                selectedArenaOpponentIndex = -1;
+            }
+        }
+
+        private void RefreshArenaRuntimeState()
+        {
+            var today = ArenaPrototypeRules.DayKey(DateTime.Now);
+            if (!string.Equals(arenaChallengeDayKey, today, StringComparison.Ordinal))
+            {
+                arenaChallengesRemaining = ArenaPrototypeRules.DailyChallengeLimit;
+                arenaChallengeDayKey = today;
+            }
+            if (arenaOpponents == null || arenaOpponents.Length == 0)
+                arenaOpponents = ArenaPrototypeRules.CreateDeterministicBots(arenaRating);
+        }
+
+        private string FormatArenaCountdown(TimeSpan remaining)
+        {
+            return string.Format(T("arena.countdownFormat"),
+                Mathf.Max(0, remaining.Days), remaining.Hours, remaining.Minutes, remaining.Seconds);
+        }
+
+        private void SelectArenaOpponent(int index)
+        {
+            if (index < 0 || index >= arenaOpponents.Length) return;
+            PlayUiClick(UiAudioCueIds.Tap, "arena-opponent-" + index);
+            selectedArenaOpponentIndex = index;
+            arenaPageState = ArenaPageState.OpponentDetail;
+        }
+
+        private void ConfirmArenaChallenge()
+        {
+            if (selectedArenaOpponentIndex < 0 || selectedArenaOpponentIndex >= arenaOpponents.Length ||
+                !ArenaPrototypeRules.TryConsumeChallenge(ref arenaChallengesRemaining))
+            {
+                PlayUiClick(UiAudioCueIds.Disabled, "arena-challenge-unavailable");
+                return;
+            }
+            PlayUiClick(UiAudioCueIds.Confirm, "arena-challenge-confirm");
+            FillArenaAttackSlotsFromActiveDeck();
+            selectedArenaAttackSlot = -1;
+            arenaChallengeDayKey = ArenaPrototypeRules.DayKey(DateTime.Now);
+            arenaPageState = ArenaPageState.Preparation;
+            SaveGame();
+        }
+
+        private void FillArenaAttackSlotsFromActiveDeck()
+        {
+            Array.Clear(arenaAttackSlots, 0, arenaAttackSlots.Length);
+            Array.Clear(arenaAttackBenchSlots, 0, arenaAttackBenchSlots.Length);
+            for (var index = 0; index < nextRunDeckSelection.SelectedInstanceIds.Count; index++)
+            {
+                var unit = CreateOwnedArenaUnit(playerCollection.GetByInstanceId(nextRunDeckSelection.SelectedInstanceIds[index]));
+                if (index < arenaAttackSlots.Length) arenaAttackSlots[index] = unit;
+                else if (index - arenaAttackSlots.Length < arenaAttackBenchSlots.Length)
+                    arenaAttackBenchSlots[index - arenaAttackSlots.Length] = unit;
+            }
+        }
+
+        private void RefreshDefenseFormationBench()
+        {
+            Array.Clear(defenseBenchSlots, 0, defenseBenchSlots.Length);
+            var benchIndex = 0;
+            for (var index = 0; index < nextRunDeckSelection.SelectedInstanceIds.Count && benchIndex < defenseBenchSlots.Length; index++)
+            {
+                var owned = playerCollection.GetByInstanceId(nextRunDeckSelection.SelectedInstanceIds[index]);
+                if (FindDefenseInstance(owned.CharacterInstanceId) >= 0) continue;
+                defenseBenchSlots[benchIndex++] = CreateOwnedArenaUnit(owned);
+            }
+        }
+
+        private int ReconcileDefenseWithActiveDeck()
+        {
+            if (nextRunDeckSelection == null) return 0;
+            var activeInstanceIds = new HashSet<string>(
+                nextRunDeckSelection.SelectedInstanceIds, StringComparer.Ordinal);
+            var removed = 0;
+            for (var slot = 0; slot < defenseSlots.Length; slot++)
+            {
+                var unit = defenseSlots[slot];
+                if (unit == null || activeInstanceIds.Contains(unit.CharacterInstanceId)) continue;
+                defenseSlots[slot] = null;
+                removed++;
+            }
+            return removed;
+        }
+
+        private void HandleSharedFormationPointer(UnitData[] boardSlots, UnitData[] benchSlots)
+        {
+            if (arenaFormationDetailUnit != null)
+            {
+                ResetSharedFormationPointer();
+                return;
+            }
+            var currentEvent = Event.current;
+            if (currentEvent == null) return;
+            if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
+            {
+                var slot = SharedFormationSlotAt(currentEvent.mousePosition, boardSlots.Length, benchSlots.Length);
+                if (slot < 0 || SharedFormationUnitAt(boardSlots, benchSlots, slot) == null) return;
+                preparationPointerSlot = slot;
+                preparationPointerDown = currentEvent.mousePosition;
+                preparationPointerPosition = currentEvent.mousePosition;
+                preparationPointerHeld = true;
+                preparationPointerDragging = false;
+                currentEvent.Use();
+                return;
+            }
+            if (currentEvent.type == EventType.MouseDrag && preparationPointerHeld)
+            {
+                preparationPointerPosition = currentEvent.mousePosition;
+                if (!preparationPointerDragging && (preparationPointerPosition - preparationPointerDown).sqrMagnitude >= 100f)
+                {
+                    preparationPointerDragging = true;
+                    PlayUiClick(UiAudioCueIds.DragPick, "arena-formation-drag-pick");
+                }
+                currentEvent.Use();
+                return;
+            }
+            if (currentEvent.type != EventType.MouseUp || !preparationPointerHeld) return;
+            preparationPointerPosition = currentEvent.mousePosition;
+            var destination = SharedFormationSlotAt(preparationPointerPosition, boardSlots.Length, benchSlots.Length);
+            if (!preparationPointerDragging)
+            {
+                arenaFormationDetailUnit = SharedFormationUnitAt(
+                    boardSlots, benchSlots, preparationPointerSlot);
+                PlayUiClick(UiAudioCueIds.Tap, "arena-formation-unit-detail");
+            }
+            else if (destination >= 0 && destination != preparationPointerSlot)
+            {
+                SwapSharedFormationUnits(boardSlots, benchSlots, preparationPointerSlot, destination);
+                PlayUiClick(UiAudioCueIds.DragDrop, "arena-formation-drag-drop");
+            }
+            ResetSharedFormationPointer();
+            currentEvent.Use();
+        }
+
+        private int SharedFormationSlotAt(Vector2 position, int boardCount, int benchCount)
+        {
+            for (var index = 0; index < boardCount; index++)
+                if (PreparationBoardSlotRect(index).Contains(position)) return index;
+            for (var index = 0; index < benchCount; index++)
+                if (PreparationBenchSlotRect(index).Contains(position)) return boardCount + index;
+            return -1;
+        }
+
+        private static UnitData SharedFormationUnitAt(UnitData[] boardSlots, UnitData[] benchSlots, int slot)
+        {
+            return slot < boardSlots.Length ? boardSlots[slot] : benchSlots[slot - boardSlots.Length];
+        }
+
+        private static void SwapSharedFormationUnits(UnitData[] boardSlots, UnitData[] benchSlots, int source, int destination)
+        {
+            var sourceUnit = SharedFormationUnitAt(boardSlots, benchSlots, source);
+            var destinationUnit = SharedFormationUnitAt(boardSlots, benchSlots, destination);
+            if (source < boardSlots.Length) boardSlots[source] = destinationUnit;
+            else benchSlots[source - boardSlots.Length] = destinationUnit;
+            if (destination < boardSlots.Length) boardSlots[destination] = sourceUnit;
+            else benchSlots[destination - boardSlots.Length] = sourceUnit;
+        }
+
+        private static int CountUnits(UnitData[] slots)
+        {
+            var count = 0;
+            for (var index = 0; index < slots.Length; index++) if (slots[index] != null) count++;
+            return count;
+        }
+
+        private void DrawSharedFormationDragGhost(UnitData[] boardSlots, UnitData[] benchSlots)
+        {
+            if (!preparationPointerHeld || !preparationPointerDragging || preparationPointerSlot < 0) return;
+            var unit = SharedFormationUnitAt(boardSlots, benchSlots, preparationPointerSlot);
+            if (unit == null) return;
+            var area = new Rect(preparationPointerPosition.x - 78f, preparationPointerPosition.y - 105f, 156f, 210f);
+            DrawCharacterAvatar(unit.NameKey, unit.Quality, area);
+        }
+
+        private void DrawArenaFormationUnitDetail()
+        {
+            var unit = arenaFormationDetailUnit;
+            if (unit == null) return;
+            var fullCanvas = new Rect(0f, 0f, DesignWidth, layoutCanvasHeight);
+            GUI.color = ArchiveColor("041623D8");
+            GUI.DrawTexture(fullCanvas, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+
+            var modalData = DetailTideWindowLayout.CalculateModal(
+                DesignWidth, layoutCanvasHeight, layoutSafeTop, layoutSafeBottom);
+            var panel = new Rect(modalData.X, modalData.Y, modalData.Width, modalData.Height);
+            ClosePreparationOverlayWhenTappedOutside(panel, CloseArenaFormationUnitDetail);
+            var shell = artCatalog.GetDetailTideWindowTexture(PrototypeArtResourceIds.DetailTideWindowShell);
+            if (shell != null) GUI.DrawTexture(panel, shell, ScaleMode.StretchToFill, true);
+
+            var ivory = ArchiveColor("F6E8C8");
+            GUI.Label(DetailLocalRect(panel, 190f, 70f, 500f, 72f), T(unit.NameKey),
+                DetailTextStyle(46, ivory, TextAnchor.MiddleCenter, false, FontStyle.Bold));
+            CharacterDefinition definition = null;
+            try { definition = characterCatalog.Get(unit.NameKey); }
+            catch (KeyNotFoundException) { }
+            DrawDetailTags(panel, unit.NameKey, definition, false, ivory);
+
+            var qualityId = CharacterQualityResourceId(unit.Quality);
+            var badge = artCatalog.GetUnitLevelBadgeTexture(qualityId, unit.RunLevel);
+            if (badge != null)
+                GUI.DrawTexture(DetailLocalRect(panel, 290f, 230f, 300f, 88f), badge,
+                    ScaleMode.ScaleToFit, true);
+            DrawDetailMetadataField(panel, 202f, T(QualityKey(unit.Quality)), ivory);
+            DrawDetailMetadataField(panel, 448f,
+                unit.ExternalStar == 0 ? T("collection.notStarred") :
+                string.Format(T("collection.star"), unit.ExternalStar), ivory);
+
+            CharacterArtDefinition artDefinition;
+            Sprite sprite;
+            if (artCatalog.TryGetCharacterArt(unit.NameKey, qualityId, out artDefinition, out sprite))
+                DrawDetailCharacterSprite(DetailLocalRect(panel, 45f, 390f, 500f, 580f),
+                    artDefinition, sprite, 0.90f);
+            DrawDetailStat(panel, new Rect(574f, 393f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatHealth, T("stat.health"), unit.MaxHealth.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 549f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatAttack, T("stat.attack"), unit.AttackDamage.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 705f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatArmor, T("stat.armor"), unit.Armor.ToString(), ivory);
+            DrawDetailStat(panel, new Rect(574f, 861f, 250f, 137f),
+                PrototypeArtResourceIds.DetailStatSpeed, T("detail.attackSpeed"),
+                DetailTideWindowLayout.FormatAttackSpeed(unit.AttackSpeedBasisPoints), ivory);
+            GUI.Label(DetailLocalRect(panel, 90f, 1078f, 700f, 132f),
+                DetailQuote(unit.NameKey, qualityId),
+                DetailTextStyle(29, ivory, TextAnchor.MiddleCenter, true, FontStyle.Normal));
+
+            var closeTop = DetailLocalRect(panel, 788f, 55f, 48f, 48f);
+            var closeTexture = artCatalog.GetDetailTideWindowTexture(PrototypeArtResourceIds.DetailCloseOrnament);
+            if (closeTexture != null) GUI.DrawTexture(closeTop, closeTexture, ScaleMode.ScaleToFit, true);
+            var closeBottom = DetailLocalRect(panel, 307f, 1261f, 268f, 74f);
+            GUI.Label(closeBottom, T("close"), DetailTextStyle(29, ivory,
+                TextAnchor.MiddleCenter, false, FontStyle.Normal));
+            if (GUI.Button(closeTop, GUIContent.none, GUIStyle.none) ||
+                GUI.Button(closeBottom, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "arena-formation-unit-detail-close");
+                CloseArenaFormationUnitDetail();
+            }
+        }
+
+        private void CloseArenaFormationUnitDetail()
+        {
+            arenaFormationDetailUnit = null;
+        }
+
+        private void ResetSharedFormationPointer()
+        {
+            ResetPreparationPointer();
+        }
+
+        private UnitData CreateOwnedArenaUnit(OwnedCharacterState owned)
+        {
+            var definition = characterCatalog.Get(owned.DefinitionId);
+            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(owned.CharacterInstanceId);
+            var stats = CharacterRarityInstanceRules.CalculateCombatStats(definition, definition.BasePower, 1,
+                owned.Quality, aptitudeRoll, owned.ExternalStar);
+            var unit = UnitData.Create(definition, definition.BasePower, PlayerColor(owned.DefinitionId), 1, stats);
+            unit.CharacterInstanceId = owned.CharacterInstanceId;
+            unit.Quality = owned.Quality;
+            unit.AptitudeRoll = aptitudeRoll;
+            unit.ExternalStar = owned.ExternalStar;
+            return unit;
+        }
+
+        private UnitData CreateArenaProfileUnit(ArenaUnitProfile profile)
+        {
+            var definition = characterCatalog.Get(profile.DefinitionId);
+            var stats = CharacterRarityInstanceRules.CalculateCombatStats(definition, profile.BasePower, 1,
+                profile.Quality, profile.AptitudeRoll, profile.ExternalStar);
+            var unit = UnitData.Create(definition, profile.BasePower, EnemyColor(profile.DefinitionId), 1, stats);
+            unit.CharacterInstanceId = profile.CharacterInstanceId;
+            unit.Quality = profile.Quality;
+            unit.AptitudeRoll = profile.AptitudeRoll;
+            unit.ExternalStar = profile.ExternalStar;
+            return unit;
+        }
+
+        private void DrawArenaRosterButton(Rect area, OwnedCharacterState owned, bool defense)
+        {
+            var deployed = defense ? FindDefenseInstance(owned.CharacterInstanceId) >= 0 : FindArenaAttackInstance(owned.CharacterInstanceId) >= 0;
+            uiSkin.DrawListRow(area, deployed);
+            DrawCharacterAvatar(owned.DefinitionId, owned.Quality, new Rect(area.x + 8f, area.y + 10f, 105f, 120f));
+            GUI.Label(new Rect(area.x + 120f, area.y + 16f, 165f, 34f), T(owned.DefinitionId), Style(17, Color.white, TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(area.x + 120f, area.y + 52f, 165f, 30f), T(QualityKey(owned.Quality)), Style(14, QualityColor(owned.Quality), TextAnchor.MiddleLeft));
+            GUI.Label(new Rect(area.x + 120f, area.y + 86f, 165f, 28f), deployed ? T("deck.inActive") : T("defense.deploy"), Style(13, Color.white, TextAnchor.MiddleLeft));
+            if (GUI.Button(area, GUIContent.none, GUIStyle.none) && !deployed)
+            {
+                if (defense) AddDefenseOwnedUnit(owned);
+                else AddArenaAttackOwnedUnit(owned);
+            }
+        }
+
+        private int FindArenaAttackInstance(string instanceId)
+        {
+            for (var index = 0; index < arenaAttackSlots.Length; index++)
+                if (arenaAttackSlots[index] != null && arenaAttackSlots[index].CharacterInstanceId == instanceId) return index;
+            return -1;
+        }
+
+        private int FindDefenseInstance(string instanceId)
+        {
+            for (var index = 0; index < defenseSlots.Length; index++)
+                if (defenseSlots[index] != null && defenseSlots[index].CharacterInstanceId == instanceId) return index;
+            return -1;
+        }
+
+        private void AddArenaAttackOwnedUnit(OwnedCharacterState owned)
+        {
+            for (var slot = 0; slot < arenaAttackSlots.Length; slot++)
+            {
+                if (arenaAttackSlots[slot] != null) continue;
+                arenaAttackSlots[slot] = CreateOwnedArenaUnit(owned);
+                return;
+            }
+        }
+
+        private void SelectOrMoveArenaAttackUnit(int destination)
+        {
+            if (selectedArenaAttackSlot < 0)
+            {
+                if (arenaAttackSlots[destination] != null) selectedArenaAttackSlot = destination;
+                return;
+            }
+            if (selectedArenaAttackSlot == destination) { selectedArenaAttackSlot = -1; return; }
+            var unit = arenaAttackSlots[selectedArenaAttackSlot];
+            arenaAttackSlots[selectedArenaAttackSlot] = arenaAttackSlots[destination];
+            arenaAttackSlots[destination] = unit;
+            selectedArenaAttackSlot = -1;
+        }
+
+        private int ArenaAttackUnitCount()
+        {
+            var count = 0;
+            for (var index = 0; index < arenaAttackSlots.Length; index++) if (arenaAttackSlots[index] != null) count++;
+            return count;
+        }
+
+        private int ArenaAttackPower()
+        {
+            var power = 0;
+            for (var index = 0; index < arenaAttackSlots.Length; index++) if (arenaAttackSlots[index] != null) power += Mathf.Max(0, arenaAttackSlots[index].Power);
+            return power * ArenaPrototypeRules.ExistingPowerMultiplier;
         }
 
         private void DrawWarehouseScreen()
@@ -2539,6 +3759,7 @@ namespace SeekerAutoChess.Prototype
                 if (!GUI.Button(new Rect(55f + i * 335f, 330f, 300f, 70f), T(tabKeys[i]),
                         TabStyle(selected, 19)))
                     continue;
+                PlayUiClick(UiAudioCueIds.TabSwitch, "warehouse-tab-" + tabs[i]);
                 warehouseTab = tabs[i];
                 warehouseEquipmentScroll = Vector2.zero;
             }
@@ -2765,6 +3986,7 @@ namespace SeekerAutoChess.Prototype
             var viewport = new Rect(55f, 710f, 970f, 965f + pageExtra * 0.8f);
             var rows = Mathf.CeilToInt(playerCollection.Entries.Count / 2f);
             var contentHeight = Mathf.Max(viewport.height - 4f, rows * 215f + 10f);
+            HandleDeckCollectionPointer(viewport, contentHeight);
             deckCollectionScroll = GUI.BeginScrollView(viewport, deckCollectionScroll,
                 new Rect(0f, 0f, 940f, contentHeight));
             for (var i = 0; i < playerCollection.Entries.Count; i++)
@@ -2783,8 +4005,9 @@ namespace SeekerAutoChess.Prototype
         private void BeginDeckEditing()
         {
             deckDraftSelection = new RunDeckSelection(playerCollection,
-                nextRunDeckSelection.SelectedInstanceIds, MaximumDeckSize, MinimumDeckSize);
+                nextRunDeckSelection.SelectedInstanceIds, MaximumDeckSize, 0);
             deckEditorMessageKey = "deck.editorHint";
+            deckSaveConfirmationOpen = false;
             deckEditing = true;
             deckCollectionScroll = Vector2.zero;
         }
@@ -2792,6 +4015,11 @@ namespace SeekerAutoChess.Prototype
         private void DrawDeckEditorScreen()
         {
             if (deckDraftSelection == null) BeginDeckEditing();
+            if (deckSaveConfirmationOpen)
+            {
+                DrawDeckSaveConfirmation();
+                return;
+            }
             var pageExtra = AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 1f);
             GUI.Label(new Rect(55f, 175f, 970f, 58f), T("deck.editorTitle"),
                 Style(34, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
@@ -2822,6 +4050,7 @@ namespace SeekerAutoChess.Prototype
             var viewport = new Rect(55f, 765f, 970f, 650f + pageExtra);
             var rows = Mathf.CeilToInt(playerCollection.Entries.Count / 2f);
             var contentHeight = Mathf.Max(viewport.height - 4f, rows * 215f + 10f);
+            HandleDeckCollectionPointer(viewport, contentHeight);
             deckCollectionScroll = GUI.BeginScrollView(viewport, deckCollectionScroll,
                 new Rect(0f, 0f, 940f, contentHeight));
             for (var i = 0; i < playerCollection.Entries.Count; i++)
@@ -2837,27 +4066,119 @@ namespace SeekerAutoChess.Prototype
             if (GUI.Button(new Rect(55f, 1460f + pageExtra, 460f, 88f), T("deck.cancel"),
                     ButtonStyle(UiButtonSemantic.Danger, 20)))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "deck-edit-cancel");
+                deckSaveConfirmationOpen = false;
                 deckEditing = false;
                 deckDraftSelection = null;
             }
             if (GUI.Button(new Rect(565f, 1460f + pageExtra, 460f, 88f), T("deck.save"),
                     ButtonStyle(UiButtonSemantic.Primary, 21)))
             {
-                nextRunDeckSelection = new RunDeckSelection(playerCollection,
-                    deckDraftSelection.SelectedInstanceIds, MaximumDeckSize, MinimumDeckSize);
-                deckEditing = false;
-                deckDraftSelection = null;
-                SaveGame();
+                if (deckDraftSelection.Count < MinimumDeckSize)
+                {
+                    PlayUiClick(UiAudioCueIds.Disabled, "deck-save-below-minimum");
+                    deckEditorMessageKey = "deck.minimumRequired";
+                }
+                else
+                {
+                    PlayUiClick(UiAudioCueIds.Warning, "deck-save-impact-warning");
+                    deckSaveConfirmationOpen = true;
+                }
             }
             GUI.Label(new Rect(55f, 1575f + pageExtra, 970f, 105f), T("deck.signatureHint"),
                 Style(16, new Color(0.80f, 0.72f, 0.46f), TextAnchor.MiddleLeft));
+        }
+
+        private void DrawDeckSaveConfirmation()
+        {
+            GUI.color = new Color(0f, 0f, 0f, 0.78f);
+            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            var panel = new Rect(110f, 560f, 860f, 560f);
+            uiSkin.DrawPanel(panel, true);
+            GUI.Label(new Rect(panel.x + 50f, panel.y + 45f, panel.width - 100f, 65f),
+                T("deck.confirmTitle"), Style(30, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
+            GUI.Label(new Rect(panel.x + 70f, panel.y + 135f, panel.width - 140f, 220f),
+                string.Format(T("deck.confirmBody"), deckDraftSelection.Count),
+                Style(20, new Color(0.86f, 0.90f, 0.91f), TextAnchor.MiddleCenter));
+            if (GUI.Button(new Rect(panel.x + 60f, panel.y + 420f, 330f, 78f),
+                    T("deck.continueEditing"), ButtonStyle(UiButtonSemantic.Secondary, 19)))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "deck-save-confirm-cancel");
+                deckSaveConfirmationOpen = false;
+            }
+            if (GUI.Button(new Rect(panel.x + 470f, panel.y + 420f, 330f, 78f),
+                    T("deck.confirmSave"), ButtonStyle(UiButtonSemantic.Primary, 19)))
+            {
+                CommitDeckChanges();
+            }
+        }
+
+        private void CommitDeckChanges()
+        {
+            if (deckDraftSelection == null || deckDraftSelection.Count < MinimumDeckSize)
+            {
+                deckSaveConfirmationOpen = false;
+                deckEditorMessageKey = "deck.minimumRequired";
+                PlayUiClick(UiAudioCueIds.Disabled, "deck-save-confirm-invalid");
+                return;
+            }
+            PlayUiClick(UiAudioCueIds.Confirm, "deck-save-confirm");
+            nextRunDeckSelection = new RunDeckSelection(playerCollection,
+                deckDraftSelection.SelectedInstanceIds, MaximumDeckSize, MinimumDeckSize);
+            var removed = ReconcileDefenseWithActiveDeck();
+            if (removed > 0) pendingDefenseRemovedCount += removed;
+            deckSaveConfirmationOpen = false;
+            deckEditing = false;
+            deckDraftSelection = null;
+            SaveGame();
+        }
+
+        private void HandleDeckCollectionPointer(Rect viewport, float contentHeight)
+        {
+            var pointerEvent = Event.current;
+            if (pointerEvent == null) return;
+
+            var pointerPosition = pointerEvent.mousePosition;
+            if (pointerEvent.type == EventType.MouseDown && pointerEvent.button == 0 &&
+                viewport.Contains(pointerPosition))
+            {
+                deckCollectionPointerHeld = true;
+                deckCollectionPointerDragging = false;
+                deckCollectionPointerDown = pointerPosition;
+                deckCollectionPointerLast = pointerPosition;
+                return;
+            }
+
+            if (pointerEvent.type == EventType.MouseDrag && deckCollectionPointerHeld)
+            {
+                if (!deckCollectionPointerDragging &&
+                    (pointerPosition - deckCollectionPointerDown).sqrMagnitude >= 64f)
+                    deckCollectionPointerDragging = true;
+
+                if (deckCollectionPointerDragging)
+                {
+                    var maximumScroll = Mathf.Max(0f, contentHeight - viewport.height);
+                    var dragDelta = pointerPosition - deckCollectionPointerLast;
+                    deckCollectionScroll.y = Mathf.Clamp(
+                        deckCollectionScroll.y - dragDelta.y, 0f, maximumScroll);
+                    pointerEvent.Use();
+                }
+                deckCollectionPointerLast = pointerPosition;
+                return;
+            }
+
+            if (pointerEvent.type != EventType.MouseUp || !deckCollectionPointerHeld) return;
+            if (deckCollectionPointerDragging) pointerEvent.Use();
+            deckCollectionPointerHeld = false;
+            deckCollectionPointerDragging = false;
         }
 
         private void DrawOwnedInstanceCard(Rect area, OwnedCharacterState owned, bool selected, bool editable)
         {
             var definition = characterCatalog.Get(owned.DefinitionId);
             uiSkin.DrawListRow(area, selected);
-            DrawCharacterAvatar(owned.DefinitionId,
+            DrawCharacterAvatar(owned.DefinitionId, owned.Quality,
                 new Rect(area.x + 12f, area.y + 13f, 140f, area.height - 26f));
             GUI.Label(new Rect(area.x + 170f, area.y + 14f, area.width - 188f, 38f), T(owned.DefinitionId),
                 Style(21, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
@@ -2910,6 +4231,19 @@ namespace SeekerAutoChess.Prototype
             GUI.color = PlayerColor(definitionId);
             GUI.DrawTexture(area, Texture2D.whiteTexture);
             GUI.color = Color.white;
+        }
+
+        private void DrawCharacterAvatar(string definitionId, CharacterQuality quality, Rect area)
+        {
+            Sprite avatar;
+            if (artCatalog.TryGetCharacterAvatar(definitionId,
+                    CharacterQualityResourceId(quality), out avatar))
+            {
+                GUI.color = Color.white;
+                GUI.DrawTexture(area, avatar.texture, ScaleMode.ScaleToFit, true);
+                return;
+            }
+            DrawCharacterAvatar(definitionId, area);
         }
 
         private string CharacterInstanceLabel(OwnedCharacterState owned)
@@ -2985,8 +4319,7 @@ namespace SeekerAutoChess.Prototype
             DrawEquipmentSlot(selected, EquipmentSlot.Hands, new Rect(795f, 420f, 220f, 110f));
             DrawEquipmentSlot(selected, EquipmentSlot.Weapon, new Rect(795f, 585f, 220f, 110f));
 
-            var currentStats = EquipmentDerivedStatCalculator.Calculate(definition, definition.BasePower, 1,
-                equipmentInventory.CreateSnapshot(selected.CharacterInstanceId));
+            var currentStats = CalculateCharacterInstanceStats(selected, definition);
             GUI.Label(new Rect(315f, 815f, 450f, 58f), StatsText(currentStats),
                 Style(15, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
             GUI.Label(new Rect(315f, 865f, 450f, 34f), T("character.detailHint"),
@@ -3173,8 +4506,23 @@ namespace SeekerAutoChess.Prototype
             }
             if (!removing)
                 modifier = EquipmentStatModifier.Add(modifier, equipmentCatalog.Get(target.TemplateId).Modifier);
-            return EquipmentDerivedStatCalculator.Calculate(definition, definition.BasePower, 1,
+            var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
+                definition, definition.BasePower, 1, selected.Quality,
+                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                selected.ExternalStar);
+            return EquipmentDerivedStatCalculator.Calculate(rarityStats,
                 new EquipmentLoadoutSnapshot(null, modifier));
+        }
+
+        private CombatStatBlock CalculateCharacterInstanceStats(
+            OwnedCharacterState selected, CharacterDefinition definition)
+        {
+            var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
+                definition, definition.BasePower, 1, selected.Quality,
+                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                selected.ExternalStar);
+            return EquipmentDerivedStatCalculator.Calculate(rarityStats,
+                equipmentInventory.CreateSnapshot(selected.CharacterInstanceId));
         }
 
         private string StatsText(CombatStatBlock stats)
@@ -3183,7 +4531,7 @@ namespace SeekerAutoChess.Prototype
                    T("attackShort") + " " + stats.AttackDamage + " · " +
                    T("armorShort") + " " + stats.Armor + " · " +
                    T("healShort") + " " + stats.HealAmount + " · " +
-                   T("speed." + stats.SpeedTier.ToString().ToLowerInvariant());
+                   DetailTideWindowLayout.FormatAttackSpeed(stats.AttackSpeedBasisPoints);
         }
 
         private static string EquipmentSlotKey(EquipmentSlot slot)
@@ -3210,8 +4558,7 @@ namespace SeekerAutoChess.Prototype
         private void DrawCollectionCard(Rect area, OwnedCharacterState owned)
         {
             var definition = characterCatalog.Get(owned.DefinitionId);
-            var stats = EquipmentDerivedStatCalculator.Calculate(definition, definition.BasePower, 1,
-                equipmentInventory.CreateSnapshot(owned.CharacterInstanceId));
+            var stats = CalculateCharacterInstanceStats(owned, definition);
             GUI.color = PlayerColor(owned.DefinitionId);
             GUI.DrawTexture(area, Texture2D.whiteTexture);
             GUI.color = Color.white;
@@ -3243,6 +4590,8 @@ namespace SeekerAutoChess.Prototype
             {
                 if (isSelected) nextRunDeckSelection.TryRemove(owned.DefinitionId);
                 else nextRunDeckSelection.TryAdd(owned.DefinitionId);
+                var removed = ReconcileDefenseWithActiveDeck();
+                if (removed > 0) pendingDefenseRemovedCount += removed;
                 SaveGame();
             }
             GUI.enabled = true;
@@ -3268,7 +4617,11 @@ namespace SeekerAutoChess.Prototype
 
             var snapshot = equipmentInventory.CreateSnapshot(selected.CharacterInstanceId);
             var definition = characterCatalog.Get(selected.DefinitionId);
-            var derived = EquipmentDerivedStatCalculator.Calculate(definition, definition.BasePower, 1, snapshot);
+            var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
+                definition, definition.BasePower, 1, selected.Quality,
+                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                selected.ExternalStar);
+            var derived = EquipmentDerivedStatCalculator.Calculate(rarityStats, snapshot);
             GUI.Label(new Rect(55f, 1430f, 970f, 40f),
                 T("equipment.testTitle") + " · " + T(selected.DefinitionId),
                 Style(24, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
@@ -3276,7 +4629,7 @@ namespace SeekerAutoChess.Prototype
                               T("attackShort") + " " + derived.AttackDamage + "  ·  " +
                               T("armorShort") + " " + derived.Armor + "  ·  " +
                               T("healShort") + " " + derived.HealAmount + "  ·  " +
-                              T("speed." + derived.SpeedTier.ToString().ToLowerInvariant());
+                              DetailTideWindowLayout.FormatAttackSpeed(derived.AttackSpeedBasisPoints);
             GUI.Label(new Rect(55f, 1470f, 970f, 34f), derivedText,
                 Style(16, Color.white, TextAnchor.MiddleLeft));
             GUI.Label(new Rect(55f, 1502f, 970f, 38f), T("equipment.testHint"),
@@ -3393,6 +4746,18 @@ namespace SeekerAutoChess.Prototype
             }
         }
 
+        private static Color QualityColor(CharacterQuality quality)
+        {
+            switch (quality)
+            {
+                case CharacterQuality.Uncommon: return new Color(0.34f, 0.78f, 0.92f);
+                case CharacterQuality.Rare: return new Color(0.55f, 0.42f, 1f);
+                case CharacterQuality.Epic: return new Color(1f, 0.45f, 0.78f);
+                case CharacterQuality.Legendary: return new Color(1f, 0.72f, 0.22f);
+                default: return new Color(0.82f, 0.86f, 0.88f);
+            }
+        }
+
         private void DrawStat(Rect area, string value)
         {
             if (IsExpeditionUiTrialPage) ActiveUiSkin.DrawListRow(area, false);
@@ -3459,7 +4824,11 @@ namespace SeekerAutoChess.Prototype
             DrawFormationBattleSynergyPopupLayer(overlayAlpha);
 
             GUI.enabled = controlsEnabled && expeditionFlow.CanPrepare;
-            if (GUI.Button(startArea, GUIContent.none, GUIStyle.none)) StartBattle();
+            if (GUI.Button(startArea, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.BattleStart, "preparation-start-battle");
+                StartBattle();
+            }
             if (GUI.Button(shopArea, GUIContent.none, GUIStyle.none))
             {
                 preparationBackpackExpanded = false;
@@ -3748,9 +5117,8 @@ namespace SeekerAutoChess.Prototype
             GUI.color = WithOpacity(selected || mergeMaterial ? new Color(1f, 0.84f, 0.46f) : Color.white, opacity);
             if (surface != null) GUI.DrawTexture(area, surface, ScaleMode.StretchToFill, true);
             GUI.BeginGroup(area);
-            Sprite avatar;
-            if (artCatalog.TryGetCharacterSlotAvatar(runUnit.DefinitionId, out avatar))
-                GUI.DrawTexture(new Rect(0f, 0f, area.width, area.height), avatar.texture, ScaleMode.ScaleToFit, true);
+            DrawCharacterSlotAvatar(runUnit.DefinitionId, runUnit.Quality,
+                new Rect(0f, 0f, area.width, area.height));
             GUI.EndGroup();
             if (rim != null) GUI.DrawTexture(area, rim, ScaleMode.StretchToFill, true);
             GUI.color = Color.white;
@@ -4026,7 +5394,8 @@ namespace SeekerAutoChess.Prototype
             bool isPlayer,
             string caption,
             int runLevel,
-            float opacity)
+            float opacity,
+            string qualityIdOverride = null)
         {
             var battleRect = BattlePresentationLayout.GetUnitSlotRect(isPlayer, slot, layoutContentHeight);
             var stableFootY = battleRect.yMax - 5f;
@@ -4035,7 +5404,9 @@ namespace SeekerAutoChess.Prototype
             var visibleCenterX = battleRect.center.x;
             CharacterArtDefinition artDefinition;
             Sprite sprite;
-            var qualityId = ResolveUnitLevelBadgeQualityId(definitionId, isPlayer);
+            var qualityId = string.IsNullOrEmpty(qualityIdOverride)
+                ? ResolveUnitLevelBadgeQualityId(definitionId, isPlayer)
+                : qualityIdOverride;
             var visibleCharacterWidth = 120f;
             var hasArt = artCatalog.TryGetCharacterArt(definitionId, qualityId,
                 out artDefinition, out sprite);
@@ -4208,17 +5579,17 @@ namespace SeekerAutoChess.Prototype
                 case StaticBattleArtTier.Elite:
                     minimumWidth = 184f;
                     maximumWidth = 300f;
-                    height = 38f;
+                    height = 30f;
                     break;
                 case StaticBattleArtTier.Boss:
                     minimumWidth = 280f;
                     maximumWidth = 420f;
-                    height = 46f;
+                    height = 34f;
                     break;
                 default:
                     minimumWidth = 152f;
                     maximumWidth = 280f;
-                    height = 34f;
+                    height = 26f;
                     break;
             }
             var width = Mathf.Clamp(Mathf.Round(meaningfulVisibleWidth * 1.12f + 20f),
@@ -4227,68 +5598,137 @@ namespace SeekerAutoChess.Prototype
             return new Vector2(width, height);
         }
 
-        private static int FormationStatusCompartmentCount(string definitionId, int maximumValue)
+        private static int FormationStatusCompartmentCount(int maximumValue)
         {
-            StaticBattleArtEntry entry;
-            var maximumCompartments = 5;
-            if (StaticBattleArtContract.TryGet(definitionId, out entry))
-            {
-                if (entry.Tier == StaticBattleArtTier.Elite) maximumCompartments = 7;
-                else if (entry.Tier == StaticBattleArtTier.Boss) maximumCompartments = 10;
-            }
-            return Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(0, maximumValue) / 5f), 1,
-                maximumCompartments);
+            return BattleStatusBarRules.SegmentCount(maximumValue);
         }
 
-        private void DrawFormationStatusBar(
-            Rect area, float fill, int compartmentCount, string fillResourceId, float opacity)
+        private void DrawBattleStatusBarV102(
+            Rect area,
+            float healthFill,
+            float lagHealthFill,
+            int currentHealth,
+            int maximumHealth,
+            float shieldFill,
+            int shieldValue,
+            int compartmentCount,
+            float opacity)
         {
             area = PixelAligned(area);
             var track = artCatalog.GetFormationBattleV95Texture(
-                PrototypeArtResourceIds.FormationBattleV951StatusTrack);
-            var fillTexture = artCatalog.GetFormationBattleV95Texture(fillResourceId);
+                PrototypeArtResourceIds.BattleStatusBarV102Track);
+            var healthTexture = artCatalog.GetFormationBattleV95Texture(
+                PrototypeArtResourceIds.BattleStatusBarV102HealthFill);
+            var damageLagTexture = artCatalog.GetFormationBattleV95Texture(
+                PrototypeArtResourceIds.BattleStatusBarV102DamageLagFill);
+            var shieldRailTexture = artCatalog.GetFormationBattleV95Texture(
+                PrototypeArtResourceIds.BattleStatusBarV102ShieldRail);
             var notchTexture = artCatalog.GetFormationBattleV95Texture(
-                PrototypeArtResourceIds.FormationBattleV951CapacityNotch);
+                PrototypeArtResourceIds.BattleStatusBarV102CapacityNotch);
+            var shieldIconTexture = artCatalog.GetFormationBattleV95Texture(
+                PrototypeArtResourceIds.BattleStatusBarV102ShieldIcon);
             var oldColor = GUI.color;
-            GUI.color = WithOpacity(Color.white, opacity);
-            DrawStandaloneNineSlice(track, area, new Vector4(36f, 12f, 36f, 12f));
 
-            fill = Mathf.Clamp01(fill);
-            if (fillTexture != null && fill > 0f)
-            {
-                var heightScale = area.height / 46f;
-                var safeLeft = 28f * heightScale;
-                var safeWidth = Mathf.Max(0f, area.width - safeLeft * 2f);
-                var clipRight = area.x + safeLeft + safeWidth * fill;
-                GUI.BeginGroup(new Rect(area.x, area.y, Mathf.Max(0f, clipRight - area.x), area.height));
-                GUI.color = WithOpacity(Color.white, opacity);
-                GUI.DrawTexture(new Rect(0f, 0f, area.width, area.height), fillTexture,
-                    ScaleMode.StretchToFill, true);
-                GUI.EndGroup();
-            }
+            GUI.color = WithOpacity(Color.white, opacity);
+            DrawBattleStatusTrack(track, area);
+
+            var safeLeft = area.height * 0.78f;
+            var safeArea = new Rect(
+                area.x + safeLeft,
+                area.y + area.height * 0.28f,
+                Mathf.Max(0f, area.width - safeLeft * 2f),
+                area.height * 0.47f);
+            healthFill = Mathf.Clamp01(healthFill);
+            lagHealthFill = Mathf.Clamp01(Mathf.Max(healthFill, lagHealthFill));
+            if (lagHealthFill > healthFill + 0.001f)
+                DrawClippedStatusFill(damageLagTexture, safeArea, lagHealthFill, opacity);
+            DrawClippedStatusFill(healthTexture, safeArea, healthFill, opacity);
 
             if (notchTexture != null && compartmentCount > 1)
             {
-                var notchSize = FormationStatusNotchSizeForHeight(area.height);
-                var heightScale = area.height / 46f;
-                var safeLeft = 28f * heightScale;
-                var safeWidth = Mathf.Max(0f, area.width - safeLeft * 2f);
+                var notchHeight = safeArea.height * 0.72f;
+                var notchWidth = Mathf.Max(1f, notchHeight * notchTexture.width /
+                    Mathf.Max(1f, notchTexture.height));
                 GUI.color = WithOpacity(Color.white, opacity);
                 for (var index = 1; index < compartmentCount; index++)
                 {
-                    var x = area.x + safeLeft + safeWidth * index / compartmentCount;
-                    var notchArea = new Rect(x - notchSize.x * 0.5f,
-                        area.center.y - notchSize.y * 0.5f, notchSize.x, notchSize.y);
-                    GUI.DrawTexture(notchArea, notchTexture, ScaleMode.ScaleToFit, true);
+                    var x = safeArea.x + safeArea.width * index / compartmentCount;
+                    GUI.DrawTexture(new Rect(x - notchWidth * 0.5f,
+                            safeArea.center.y - notchHeight * 0.5f, notchWidth, notchHeight),
+                        notchTexture, ScaleMode.StretchToFill, true);
                 }
+            }
+
+            var healthFontSize = Mathf.Max(10, Mathf.RoundToInt(area.height * 0.38f));
+            var healthTextArea = new Rect(safeArea.x, area.y, safeArea.width, area.height);
+            var healthLabel = Mathf.Max(0, currentHealth) + "/" + Mathf.Max(0, maximumHealth);
+            GUI.Label(new Rect(healthTextArea.x + 1f, healthTextArea.y + 1f,
+                    healthTextArea.width, healthTextArea.height), healthLabel,
+                Style(healthFontSize, WithOpacity(new Color(0.02f, 0.05f, 0.07f, 0.84f), opacity),
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+            GUI.Label(healthTextArea, healthLabel,
+                Style(healthFontSize, WithOpacity(new Color(0.95f, 0.91f, 0.78f), opacity),
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+
+            if (shieldValue > 0 && shieldFill > 0f)
+            {
+                var railHeight = Mathf.Max(3f, area.height * 0.16f);
+                var railArea = new Rect(safeArea.x, area.y - railHeight - 1f,
+                    safeArea.width * Mathf.Clamp01(shieldFill), railHeight);
+                GUI.color = WithOpacity(Color.white, opacity);
+                if (shieldRailTexture != null)
+                    GUI.DrawTexture(railArea, shieldRailTexture, ScaleMode.StretchToFill, true);
+
+                var iconSize = Mathf.Max(9f, area.height * 0.32f);
+                var shieldFontSize = Mathf.Max(9, Mathf.RoundToInt(area.height * 0.38f));
+                var shieldStyle = Style(shieldFontSize,
+                    WithOpacity(new Color(0.36f, 0.91f, 0.96f), opacity),
+                    TextAnchor.MiddleCenter, FontStyle.Bold);
+                var shieldLabel = shieldValue.ToString();
+                var shieldTextWidth = Mathf.Max(10f,
+                    shieldStyle.CalcSize(new GUIContent(shieldLabel)).x);
+                var groupWidth = iconSize + 2f + shieldTextWidth;
+                var groupX = area.center.x - groupWidth * 0.5f;
+                var centerY = railArea.center.y;
+                if (shieldIconTexture != null)
+                    GUI.DrawTexture(new Rect(groupX, centerY - iconSize * 0.5f,
+                            iconSize, iconSize), shieldIconTexture, ScaleMode.ScaleToFit, true);
+                GUI.Label(new Rect(groupX + iconSize + 2f, centerY - iconSize * 0.6f,
+                    shieldTextWidth, iconSize * 1.2f), shieldLabel, shieldStyle);
             }
             GUI.color = oldColor;
         }
 
-        private static Vector2 FormationStatusNotchSizeForHeight(float barHeight)
+        private static void DrawBattleStatusTrack(Texture2D texture, Rect destination)
         {
-            if (barHeight >= 45f) return new Vector2(18f, 16f);
-            return barHeight >= 37f ? new Vector2(15f, 14f) : new Vector2(13f, 12f);
+            if (texture == null || destination.width <= 0f || destination.height <= 0f) return;
+            const float sourceCap = 48f;
+            var destinationCap = Mathf.Min(destination.width * 0.5f, destination.height * 1.08f);
+            var sourceCenterWidth = Mathf.Max(1f, texture.width - sourceCap * 2f);
+            var destinationCenterWidth = Mathf.Max(0f, destination.width - destinationCap * 2f);
+            DrawAtlasSlice(texture,
+                new Rect(destination.x, destination.y, destinationCap, destination.height),
+                new Rect(0f, 0f, sourceCap, texture.height));
+            DrawAtlasSlice(texture,
+                new Rect(destination.x + destinationCap, destination.y,
+                    destinationCenterWidth, destination.height),
+                new Rect(sourceCap, 0f, sourceCenterWidth, texture.height));
+            DrawAtlasSlice(texture,
+                new Rect(destination.xMax - destinationCap, destination.y,
+                    destinationCap, destination.height),
+                new Rect(texture.width - sourceCap, 0f, sourceCap, texture.height));
+        }
+
+        private static void DrawClippedStatusFill(
+            Texture2D texture, Rect area, float fill, float opacity)
+        {
+            if (texture == null || fill <= 0f || area.width <= 0f || area.height <= 0f) return;
+            var clippedWidth = area.width * Mathf.Clamp01(fill);
+            GUI.BeginGroup(new Rect(area.x, area.y, clippedWidth, area.height));
+            GUI.color = WithOpacity(Color.white, opacity);
+            GUI.DrawTexture(new Rect(0f, 0f, area.width, area.height), texture,
+                ScaleMode.StretchToFill, true);
+            GUI.EndGroup();
         }
 
         private static float FormationBattleVisualScale(string definitionId)
@@ -4501,8 +5941,12 @@ namespace SeekerAutoChess.Prototype
             if (currentEvent.type == EventType.MouseDrag && preparationPointerHeld)
             {
                 preparationPointerPosition = currentEvent.mousePosition;
-                if ((preparationPointerPosition - preparationPointerDown).sqrMagnitude >= 100f)
+                if (!preparationPointerDragging &&
+                    (preparationPointerPosition - preparationPointerDown).sqrMagnitude >= 100f)
+                {
                     preparationPointerDragging = true;
+                    PlayUiClick(UiAudioCueIds.DragPick, "formation-drag-pick");
+                }
                 currentEvent.Use();
                 return;
             }
@@ -4510,6 +5954,7 @@ namespace SeekerAutoChess.Prototype
 
             preparationPointerPosition = currentEvent.mousePosition;
             var source = preparationPointerSlot;
+            var acceptedDrop = false;
             if (!preparationPointerDragging)
             {
                 preparationUnitDetailOpen = true;
@@ -4529,7 +5974,10 @@ namespace SeekerAutoChess.Prototype
                     return RunEconomyResultCode.Success;
                 });
                 if (receipt.ResultCode == RunEconomyResultCode.Success)
+                {
                     statusKey = refund > 0 ? "status.sold" : "status.soldFree";
+                    acceptedDrop = true;
+                }
                 else ApplyRunEconomyStatus(receipt.ResultCode, "status.sold");
                 SaveGame();
             }
@@ -4555,6 +6003,7 @@ namespace SeekerAutoChess.Prototype
                                 : RunEconomyResultCode.MergeRequirementsNotMet;
                         });
                         ApplyRunEconomyStatus(receipt.ResultCode, "status.merged");
+                        acceptedDrop = receipt.ResultCode == RunEconomyResultCode.Success;
                     }
                     else
                     {
@@ -4567,10 +6016,12 @@ namespace SeekerAutoChess.Prototype
                                 : RunEconomyResultCode.InvalidTarget;
                         });
                         ApplyRunEconomyStatus(receipt.ResultCode, "status.recruit");
+                        acceptedDrop = receipt.ResultCode == RunEconomyResultCode.Success;
                     }
                     SaveGame();
                 }
             }
+            if (acceptedDrop) PlayUiClick(UiAudioCueIds.DragDrop, "formation-drag-drop");
             ResetPreparationPointer();
             currentEvent.Use();
         }
@@ -4652,7 +6103,10 @@ namespace SeekerAutoChess.Prototype
                 20, ArchiveColor("F3E7C8"), 26f, 7f, true, 16);
             GUI.enabled = coins >= rerollCost;
             if (GUI.Button(ExpeditionUiV67Layout.Refresh, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "recruit-shop-refresh");
                 RefreshShopOffers(true);
+            }
             GUI.enabled = true;
 
             DrawV67NineSlice(ExpeditionUiV67Layout.CurrentPanel,
@@ -4693,6 +6147,7 @@ namespace SeekerAutoChess.Prototype
                 ArchiveStyle(26, ArchiveColor("F4EBD1"), TextAnchor.MiddleCenter, true));
             if (GUI.Button(ExpeditionUiV67Layout.Close, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "recruit-shop-close");
                 preparationBackpackExpanded = false;
                 preparationShopOpen = false;
             }
@@ -4706,21 +6161,30 @@ namespace SeekerAutoChess.Prototype
             if (GUI.Button(toggle,
                     language == GameLanguage.ChineseSimplified ? "经营测试" : "ECON TEST",
                     ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-diagnostics-toggle");
                 runEconomyDiagnosticsOpen = !runEconomyDiagnosticsOpen;
+            }
+            var audioToggle = new Rect(624f, 286f, 168f, 34f);
+            if (GUI.Button(audioToggle,
+                    language == GameLanguage.ChineseSimplified ? "音效测试" : "AUDIO TEST",
+                    ButtonStyle(UiButtonSemantic.Secondary, 13)))
+                audioDiagnosticsOpen = !audioDiagnosticsOpen;
+            if (audioDiagnosticsOpen) DrawAudioDiagnostics();
             if (!runEconomyDiagnosticsOpen) return;
 
-            var panel = new Rect(112f, 438f, 617f, 760f);
+            var panel = new Rect(112f, 438f, 617f, 1320f);
             GUI.color = new Color(0.015f, 0.045f, 0.055f, 0.97f);
             GUI.DrawTexture(panel, Texture2D.whiteTexture);
             GUI.color = Color.white;
             GUI.Label(new Rect(panel.x + 24f, panel.y + 20f, panel.width - 48f, 48f),
-                "C batch / run economy v" + RunEconomyRulesVersion,
+                "经营测试 / 远征诊断 v" + RunEconomyRulesVersion,
                 Style(19, new Color(0.91f, 0.83f, 0.57f), TextAnchor.MiddleCenter));
             var labels = new[]
             {
-                "C01 BASIC", "C02 TRIPLE", "C03 CHAIN", "C04 FULL NO MERGE",
-                "C05 FULL CAN MERGE", "C06 DISCOUNT", "C07 BACKPACK", "C08 STALE REPLAY",
-                "C09 SIX EPIC/LEGENDARY"
+                "C01 基础流程", "C02 三目标", "C03 连锁标记", "C04 不补位",
+                "C05 可合并", "C06 招募折扣", "C07 背包", "C08 重复/过期事件",
+                "C09 六名史诗/传说"
             };
             for (var index = 0; index < labels.Length; index++)
             {
@@ -4735,24 +6199,317 @@ namespace SeekerAutoChess.Prototype
                     return;
                 }
             }
-            var summary = "stateVersion=" + runEconomyActions.StateVersion +
-                          "  actions=" + runEconomyActions.Count +
-                          "\nlast=" + runEconomyActions.LastActionId + " / " + runEconomyActions.LastResultCode;
-            GUI.Label(new Rect(panel.x + 28f, panel.y + 580f, panel.width - 56f, 82f), summary,
+            var c01Epic = new Rect(panel.x + 28f, panel.y + 550f, 268f, 64f);
+            var c01Legendary = new Rect(panel.x + 321f, panel.y + 550f, 268f, 64f);
+            if (GUI.Button(c01Epic, "C01 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c01-epic");
+                ApplyRunEconomyDiagnosticState(9);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c01Legendary, "C01 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c01-legendary");
+                ApplyRunEconomyDiagnosticState(10);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var c02Epic = new Rect(panel.x + 28f, panel.y + 626f, 268f, 64f);
+            var c02Legendary = new Rect(panel.x + 321f, panel.y + 626f, 268f, 64f);
+            if (GUI.Button(c02Epic, "C02 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c02-epic");
+                ApplyRunEconomyDiagnosticState(11);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c02Legendary, "C02 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c02-legendary");
+                ApplyRunEconomyDiagnosticState(12);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var c03Epic = new Rect(panel.x + 28f, panel.y + 702f, 268f, 64f);
+            var c03Legendary = new Rect(panel.x + 321f, panel.y + 702f, 268f, 64f);
+            if (GUI.Button(c03Epic, "C03 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c03-epic");
+                ApplyRunEconomyDiagnosticState(13);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c03Legendary, "C03 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c03-legendary");
+                ApplyRunEconomyDiagnosticState(14);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var c04Epic = new Rect(panel.x + 28f, panel.y + 778f, 268f, 64f);
+            var c04Legendary = new Rect(panel.x + 321f, panel.y + 778f, 268f, 64f);
+            if (GUI.Button(c04Epic, "C04 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c04-epic");
+                ApplyRunEconomyDiagnosticState(15);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c04Legendary, "C04 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c04-legendary");
+                ApplyRunEconomyDiagnosticState(16);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var c05Epic = new Rect(panel.x + 28f, panel.y + 850f, 268f, 48f);
+            var c05Legendary = new Rect(panel.x + 321f, panel.y + 850f, 268f, 48f);
+            if (GUI.Button(c05Epic, "C05 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c05-epic");
+                ApplyRunEconomyDiagnosticState(17);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var c06Epic = new Rect(panel.x + 28f, panel.y + 906f, 268f, 48f);
+            var c06Legendary = new Rect(panel.x + 321f, panel.y + 906f, 268f, 48f);
+            if (GUI.Button(c06Epic, "C06 史诗技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c06-epic");
+                ApplyRunEconomyDiagnosticState(19);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c06Legendary, "C06 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c06-legendary");
+                ApplyRunEconomyDiagnosticState(20);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(c05Legendary, "C05 传说技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-c05-legendary");
+                ApplyRunEconomyDiagnosticState(18);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var b1Boss = new Rect(panel.x + 28f, panel.y + 970f, 268f, 52f);
+            var b2Boss = new Rect(panel.x + 321f, panel.y + 970f, 268f, 52f);
+            if (GUI.Button(b1Boss, "B1 Boss 技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-b1-boss");
+                ApplyRunEconomyDiagnosticState(21);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            if (GUI.Button(b2Boss, "B2 Boss 技能测试", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "run-economy-b2-boss");
+                ApplyRunEconomyDiagnosticState(22);
+                runEconomyDiagnosticsOpen = false;
+                return;
+            }
+            var summary = "状态版本=" + runEconomyActions.StateVersion +
+                          "  已执行=" + runEconomyActions.Count +
+                          "\n最近操作=" + runEconomyActions.LastActionId + " / " + runEconomyActions.LastResultCode;
+            if (c01SkillDiagnosticActive)
+                summary += "\n当前预设=C01 " + (c01SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (c02SkillDiagnosticActive)
+                summary += "\n当前预设=C02 " + (c02SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (c03SkillDiagnosticActive)
+                summary += "\n当前预设=C03 " + (c03SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (c04SkillDiagnosticActive)
+                summary += "\n当前预设=C04 " + (c04SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (c05SkillDiagnosticActive)
+                summary += "\n当前预设=C05 " + (c05SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (c06SkillDiagnosticActive)
+                summary += "\n当前预设=C06 " + (c06SkillDiagnosticQuality == "legendary" ? "传说" : "史诗") +
+                           "（无奖励，不写入正式卡组）";
+            if (b1SkillDiagnosticActive) summary += "\n当前预设=B1 Boss（固定 Boss，无奖励）";
+            if (b2SkillDiagnosticActive) summary += "\n当前预设=B2 Boss（固定 Boss，无奖励）";
+            GUI.Label(new Rect(panel.x + 28f, panel.y + 1036f, panel.width - 56f, 80f), summary,
                 Style(14, new Color(0.76f, 0.87f, 0.86f), TextAnchor.UpperLeft));
-            if (GUI.Button(new Rect(panel.x + 174f, panel.y + 674f, 268f, 58f),
-                    language == GameLanguage.ChineseSimplified ? "复制经营摘要" : "COPY ECON SUMMARY",
+            if (GUI.Button(new Rect(panel.x + 28f, panel.y + 1140f, 268f, 58f),
+                    "复制经营摘要",
                     ButtonStyle(UiButtonSemantic.Reward, 13)))
                 GUIUtility.systemCopyBuffer = CreateRunEconomyDiagnosticSummary();
+            if (GUI.Button(new Rect(panel.x + 321f, panel.y + 1140f, 268f, 58f),
+                    "恢复正常模式",
+                    ButtonStyle(UiButtonSemantic.Secondary, 13)))
+                RestoreNormalModeAfterC01Diagnostic();
+        }
+
+        private void DrawAudioDiagnostics()
+        {
+            var panel = new Rect(112f, 438f, 617f, 1050f);
+            GUI.color = new Color(0.015f, 0.045f, 0.055f, 0.98f);
+            GUI.DrawTexture(panel, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(panel.x + 24f, panel.y + 20f, panel.width - 48f, 48f),
+                 "音效占位测试 " + ClientVersionLabel,
+                Style(19, new Color(0.91f, 0.83f, 0.57f), TextAnchor.MiddleCenter));
+            var uiIds = new[] { UiAudioCueIds.Tap, UiAudioCueIds.Confirm, UiAudioCueIds.Cancel,
+                UiAudioCueIds.Disabled, UiAudioCueIds.Error, UiAudioCueIds.Pause, UiAudioCueIds.Skip,
+                UiAudioCueIds.SpeedUp, UiAudioCueIds.AutoToggle, UiAudioCueIds.Purchase };
+            for (var index = 0; index < uiIds.Length; index++)
+            {
+                var column = index % 2;
+                var row = index / 2;
+                var area = new Rect(panel.x + 28f + column * 292f, panel.y + 86f + row * 62f,
+                    268f, 48f);
+                if (GUI.Button(area, uiIds[index], ButtonStyle(UiButtonSemantic.Secondary, 12)))
+                    PlayUiClick(uiIds[index], "diagnostic-ui-" + index);
+            }
+            var eventIds = new[] { "C01", "C02", "C03", "C04", "C05" };
+            for (var index = 0; index < eventIds.Length; index++)
+            {
+                var area = new Rect(panel.x + 28f + (index % 2) * 292f,
+                    panel.y + 420f + (index / 2) * 62f, 268f, 48f);
+                if (GUI.Button(area, eventIds[index] + " 事件占位", ButtonStyle(UiButtonSemantic.Reward, 12)))
+                    battleAudioRouter.Consume(CreateAudioDiagnosticEvent(eventIds[index]));
+            }
+            if (GUI.Button(new Rect(panel.x + 28f, panel.y + 610f, 268f, 48f),
+                    "静音切换", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+                uiAudioRouter.SetMuted(!uiAudioRouter.Mixer.Muted);
+            if (GUI.Button(new Rect(panel.x + 321f, panel.y + 610f, 268f, 48f),
+                    "跳过并收束", ButtonStyle(UiButtonSemantic.Secondary, 12)))
+                battleAudioRouter.SkipAndFlush("audio-diagnostic");
+            var summary = "战斗音效=" + (battleAudioRouter.Enabled ? "启用" : "关闭") +
+                          "  UI音效=" + (uiAudioRouter.Enabled ? "启用" : "关闭") +
+                          "  Fallback=是\n" +
+                          "重复抑制=" + battleAudioRouter.DuplicateCount +
+                          "  并发抑制=" + battleAudioRouter.SuppressedCount +
+                          "  UI拒绝=" + uiAudioRouter.RejectedCount + "\n" +
+                          "主音量=" + uiAudioRouter.Mixer.Master.ToString("0.00") +
+                          "  音乐=" + uiAudioRouter.Mixer.Music.ToString("0.00") +
+                          "  战斗=" + uiAudioRouter.Mixer.Battle.ToString("0.00") +
+                          "  界面=" + uiAudioRouter.Mixer.Ui.ToString("0.00") + "\n" +
+                          "主点击播放=" + (uiMainClickAudioPlayer == null ? 0 :
+                              uiMainClickAudioPlayer.SuccessfulPlayCount) +
+                          "  缺资源回退=" + (uiMainClickAudioPlayer == null ? 0 :
+                              uiMainClickAudioPlayer.FallbackCount);
+            GUI.Label(new Rect(panel.x + 28f, panel.y + 700f, panel.width - 56f, 150f), summary,
+                Style(14, new Color(0.76f, 0.87f, 0.86f), TextAnchor.UpperLeft));
+            if (GUI.Button(new Rect(panel.x + 28f, panel.y + 996f, 268f, 58f),
+                    "关闭音效测试", ButtonStyle(UiButtonSemantic.Secondary, 13)))
+                audioDiagnosticsOpen = false;
+        }
+
+        private CardBattleEvent CreateAudioDiagnosticEvent(string family)
+        {
+            audioDiagnosticSequence++;
+            var abilityId = family == "C01" ? "S_OLIN_OPEN_DAWN" :
+                family == "C02" ? "S_YIWEN_RETURN_BEACON" :
+                family == "C03" ? "S_LEIF_WHITE_TRAIL" :
+                family == "C04" ? "S_MILA_HIDDEN_SPRING" : "S_C05_BARRIER";
+            return new CardBattleEvent
+            {
+                Kind = CardBattleEventKind.ActionStarted,
+                BattleId = "audio-diagnostic",
+                EventSequence = audioDiagnosticSequence,
+                ActionId = "audio-diagnostic",
+                AbilityId = abilityId,
+                SourceId = "diagnostic-source",
+                AuthorityTick = audioDiagnosticSequence,
+                Outcome = CardBattleActionOutcome.Completed
+            };
+        }
+
+        private bool PlayUiClick(string cueId, string interactionId)
+        {
+            audioDiagnosticSequence++;
+            if (uiMainClickAudioPlayer == null)
+                uiMainClickAudioPlayer = UiMainClickAudioPlayer.CreateOrGet(uiAudioRouter);
+            return uiMainClickAudioPlayer.TryPlay(cueId, interactionId, Time.frameCount);
+        }
+
+        private void RestoreNormalModeAfterC01Diagnostic()
+        {
+            c01SkillDiagnosticActive = false;
+            c01SkillDiagnosticQuality = null;
+            c02SkillDiagnosticActive = false;
+            c02SkillDiagnosticQuality = null;
+            c03SkillDiagnosticActive = false;
+            c03SkillDiagnosticQuality = null;
+            c04SkillDiagnosticActive = false;
+            c04SkillDiagnosticQuality = null;
+            c05SkillDiagnosticActive = false;
+            c05SkillDiagnosticQuality = null;
+            c06SkillDiagnosticActive = false;
+            c06SkillDiagnosticQuality = null;
+            b1SkillDiagnosticActive = false;
+            b2SkillDiagnosticActive = false;
+            diagnosticQualityOverrides.Clear();
+            runEconomyDiagnosticsOpen = false;
+            roguelikeBuildDiagnosticsOpen = false;
+            roguelikeDiagnosticStateIndex = 0;
+            roguelikeDiagnosticSuppressChoiceSet = false;
+            if (!LoadGame())
+            {
+                statusKey = "status.recruit";
+                return;
+            }
+            if (!string.IsNullOrEmpty(runId) && runId.StartsWith("diag-C", StringComparison.OrdinalIgnoreCase))
+            {
+                NormalizeDiagnosticRosterToCommonQuality();
+                runId = StableRunEconomyId("run", expeditionMapSeed.ToString(), "restored-normal");
+                SaveGame();
+            }
+            statusKey = "status.recruit";
+        }
+
+        private void NormalizeDiagnosticRosterToCommonQuality()
+        {
+            for (var index = 0; index < runRoster.TotalCapacity; index++)
+            {
+                var current = runRoster.Get(index);
+                if (current == null) continue;
+                var sourceBusinessId = string.IsNullOrEmpty(current.SourceBusinessId)
+                    ? current.RunUnitId : current.SourceBusinessId;
+                var normalized = new RunUnitState(current.DefinitionId, current.BasePower,
+                    current.RunLevel, current.AcquisitionBasis, current.RunUnitId,
+                    CharacterQuality.Common,
+                    CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceBusinessId),
+                    sourceBusinessId, current.ExternalStar);
+                runRoster.ReplaceAt(index, normalized);
+            }
         }
 
         private void ApplyRunEconomyDiagnosticState(int stateIndex)
         {
             runRoster.Clear();
             diagnosticQualityOverrides.Clear();
+            c01SkillDiagnosticActive = false;
+            c01SkillDiagnosticQuality = null;
+            c02SkillDiagnosticActive = false;
+            c02SkillDiagnosticQuality = null;
+            c03SkillDiagnosticActive = false;
+            c03SkillDiagnosticQuality = null;
+            c04SkillDiagnosticActive = false;
+            c04SkillDiagnosticQuality = null;
+            c05SkillDiagnosticActive = false;
+            c05SkillDiagnosticQuality = null;
+            c06SkillDiagnosticActive = false;
+            c06SkillDiagnosticQuality = null;
+            b1SkillDiagnosticActive = false;
+            b2SkillDiagnosticActive = false;
+            roguelikeBuildDiagnosticsOpen = false;
+            roguelikeDiagnosticStateIndex = 0;
+            roguelikeDiagnosticSuppressChoiceSet = false;
             coins = 10;
             expeditionEconomy.Reset();
             runEconomyActions.Reset();
+            roguelikeBuild.Reset();
+            runAttackBonus = 0;
+            runHealthBonus = 0;
+            currentExpeditionRewardsEnabled = false;
             runId = "diag-C" + (stateIndex + 1).ToString("00");
             shopRefreshSerial = 0;
             shopOffers = new string[ShopOfferCount];
@@ -4844,9 +6601,72 @@ namespace SeekerAutoChess.Prototype
                 var qualityIds = new[] { "epic", "legendary", "epic", "legendary", "epic", "legendary" };
                 for (var index = 0; index < ids.Length; index++)
                 {
-                    AddDiagnosticUnit(index, ids[index], 1, 0);
                     diagnosticQualityOverrides[ids[index]] = qualityIds[index];
+                    AddDiagnosticUnit(index, ids[index], 1, 0);
                 }
+            }
+            else if (stateIndex == 9 || stateIndex == 10)
+            {
+                c01SkillDiagnosticActive = true;
+                c01SkillDiagnosticQuality = stateIndex == 10 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.guardian"] = c01SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(1, "unit.healer", 1, 0);
+                AddDiagnosticUnit(2, "unit.thornGuard", 1, 0);
+            }
+            else if (stateIndex == 11 || stateIndex == 12)
+            {
+                c02SkillDiagnosticActive = true;
+                c02SkillDiagnosticQuality = stateIndex == 12 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.healer"] = c02SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.healer", 1, 0);
+                AddDiagnosticUnit(1, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(2, "unit.thornGuard", 1, 0);
+            }
+            else if (stateIndex == 13 || stateIndex == 14)
+            {
+                c03SkillDiagnosticActive = true;
+                c03SkillDiagnosticQuality = stateIndex == 14 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.thornGuard"] = c03SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.thornGuard", 1, 0);
+                AddDiagnosticUnit(1, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(2, "unit.healer", 1, 0);
+            }
+            else if (stateIndex == 15 || stateIndex == 16)
+            {
+                c04SkillDiagnosticActive = true;
+                c04SkillDiagnosticQuality = stateIndex == 16 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.archer"] = c04SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.archer", 1, 0);
+                AddDiagnosticUnit(1, "unit.healer", 1, 0);
+                AddDiagnosticUnit(2, "unit.guardian", 1, 0);
+            }
+            else if (stateIndex == 17 || stateIndex == 18)
+            {
+                c05SkillDiagnosticActive = true;
+                c05SkillDiagnosticQuality = stateIndex == 18 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.starblade"] = c05SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.starblade", 1, 0);
+                AddDiagnosticUnit(1, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(2, "unit.healer", 1, 0);
+            }
+            else if (stateIndex == 19 || stateIndex == 20)
+            {
+                c06SkillDiagnosticActive = true;
+                c06SkillDiagnosticQuality = stateIndex == 20 ? "legendary" : "epic";
+                diagnosticQualityOverrides["unit.starpriest"] = c06SkillDiagnosticQuality;
+                AddDiagnosticUnit(0, "unit.starpriest", 1, 0);
+                AddDiagnosticUnit(1, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(2, "unit.thornGuard", 1, 0);
+            }
+            else if (stateIndex == 21 || stateIndex == 22)
+            {
+                coins = 999;
+                b1SkillDiagnosticActive = stateIndex == 21;
+                b2SkillDiagnosticActive = stateIndex == 22;
+                AddDiagnosticUnit(0, "unit.guardian", 1, 0);
+                AddDiagnosticUnit(1, "unit.healer", 1, 0);
+                AddDiagnosticUnit(2, "unit.thornGuard", 1, 0);
             }
             else
             {
@@ -4860,16 +6680,43 @@ namespace SeekerAutoChess.Prototype
                 SetDiagnosticOffer(2, "unit.archer", 1);
             }
             EnsureRunEconomyIdentity();
+            if (b1SkillDiagnosticActive || b2SkillDiagnosticActive)
+                CreateEnemies();
             statusKey = "status.recruit";
-            SaveGame();
+            if (!SkillDiagnosticActive) SaveGame();
         }
 
         private void AddDiagnosticUnit(int slot, string definitionId, int runLevel, int acquisitionBasis)
         {
             var id = StableRunEconomyId("unit", runId, slot.ToString(), definitionId,
                 runLevel.ToString());
+            var quality = ResolveDiagnosticQuality(definitionId);
+            var sourceBusinessId = id;
+            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceBusinessId);
+            OwnedCharacterState lockedCharacter;
+            if (SkillDiagnosticActive && TryGetLockedRunCharacter(definitionId, out lockedCharacter))
+            {
+                sourceBusinessId = lockedCharacter.CharacterInstanceId;
+                aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceBusinessId);
+            }
             runRoster.TryRestoreAt(slot, new RunUnitState(definitionId,
-                characterCatalog.Get(definitionId).BasePower, runLevel, acquisitionBasis, id));
+                characterCatalog.Get(definitionId).BasePower, runLevel, acquisitionBasis, id,
+                quality, aptitudeRoll, sourceBusinessId));
+        }
+
+        private CharacterQuality ResolveDiagnosticQuality(string definitionId)
+        {
+            string qualityId;
+            if (!diagnosticQualityOverrides.TryGetValue(definitionId, out qualityId))
+                return CharacterQuality.Common;
+            switch ((qualityId ?? string.Empty).ToLowerInvariant())
+            {
+                case "uncommon": return CharacterQuality.Uncommon;
+                case "rare": return CharacterQuality.Rare;
+                case "epic": return CharacterQuality.Epic;
+                case "legendary": return CharacterQuality.Legendary;
+                default: return CharacterQuality.Common;
+            }
         }
 
         private void SetDiagnosticOffer(int offerIndex, string definitionId, int runLevel)
@@ -4973,7 +6820,10 @@ namespace SeekerAutoChess.Prototype
             GUI.Label(ExpeditionUiV67Layout.Close, T("preparation.backToRecruit"),
                 ArchiveStyle(26, ArchiveColor("F4EBD1"), TextAnchor.MiddleCenter, true));
             if (GUI.Button(ExpeditionUiV67Layout.Close, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "backpack-back-to-recruit");
                 preparationBackpackExpanded = false;
+            }
         }
 
         private void DrawPreparationShopOfferV67(Rect area, int offerIndex)
@@ -4992,14 +6842,16 @@ namespace SeekerAutoChess.Prototype
             var cost = UnitCost(nameKey, level);
             var power = UnitBasePower(nameKey);
             var definition = characterCatalog.Get(nameKey);
-            var stats = definition.CalculateCombatStats(power, level);
+            CharacterQuality quality;
+            var stats = CalculateShopOfferStats(nameKey, power, level, out quality);
             var payableCost = expeditionEconomy.QuoteRecruitmentPrice(cost);
             var canBuy = coins >= payableCost && runRoster.CanPurchase(
                 new RunUnitState(nameKey, power, level, payableCost));
 
             CharacterArtDefinition artDefinition;
             Sprite sprite;
-            if (artCatalog.TryGetCharacterArt(nameKey, out artDefinition, out sprite))
+            if (artCatalog.TryGetCharacterArt(nameKey, CharacterQualityResourceId(quality),
+                    out artDefinition, out sprite))
             {
                 var characterArea = new Rect(area.x + 18f, area.y + 16f, 174f, 180f);
                 characterArea.y += Mathf.Sin(Time.unscaledTime * 1.8f + offerIndex * 1.7f) * 2f;
@@ -5026,7 +6878,10 @@ namespace SeekerAutoChess.Prototype
                     TextAnchor.MiddleCenter, true));
             GUI.enabled = canBuy;
             if (GUI.Button(recruitArea, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Purchase, "recruit-shop-buy");
                 Recruit(offerIndex, nameKey, cost, power, level);
+            }
             GUI.enabled = true;
         }
 
@@ -5064,6 +6919,7 @@ namespace SeekerAutoChess.Prototype
                 "ART-UI-PREPARATION-ICON-BACKARROW-V6.7.0", ScaleMode.ScaleToFit);
             if (GUI.Button(ExpeditionUiV67Layout.Back, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "preparation-v67-back");
                 preparationBackpackExpanded = false;
                 preparationShopOpen = false;
                 currentView = ScreenView.Home;
@@ -5080,6 +6936,7 @@ namespace SeekerAutoChess.Prototype
                 26, ArchiveColor("F6DAD0"), 30f, 7f, true, 16);
             if (GUI.Button(ExpeditionUiV67Layout.Abandon, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-v67");
                 if (confirmAbandon) AbandonRun();
                 else
                 {
@@ -5128,7 +6985,7 @@ namespace SeekerAutoChess.Prototype
         {
             if (runUnit == null) return;
             GUI.BeginGroup(area);
-            DrawCharacterSlotAvatar(runUnit.DefinitionId,
+            DrawCharacterSlotAvatar(runUnit.DefinitionId, runUnit.Quality,
                 new Rect(0f, 0f, area.width, area.height));
             GUI.EndGroup();
         }
@@ -5144,6 +7001,19 @@ namespace SeekerAutoChess.Prototype
             // Do not fall back to the uncropped portrait. The circular slot asset is the
             // reusable mask contract; drawing a generic portrait here can leak outside
             // the circle even though the foreground rim is rendered afterwards.
+        }
+
+        private void DrawCharacterSlotAvatar(string definitionId, CharacterQuality quality, Rect area)
+        {
+            Sprite avatar;
+            if (artCatalog.TryGetCharacterSlotAvatar(definitionId,
+                    CharacterQualityResourceId(quality), out avatar))
+            {
+                GUI.color = Color.white;
+                GUI.DrawTexture(area, avatar.texture, ScaleMode.ScaleToFit, true);
+                return;
+            }
+            DrawCharacterSlotAvatar(definitionId, area);
         }
 
         private void DrawV67FactionIcon(Rect area, string factionId)
@@ -5323,6 +7193,7 @@ namespace SeekerAutoChess.Prototype
                 new Rect(8f, 8f, 128f, 128f));
             if (GUI.Button(ExpeditionUiV53Layout.Back, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "preparation-v53-back");
                 preparationShopOpen = false;
                 currentView = ScreenView.Home;
                 confirmAbandon = false;
@@ -5347,6 +7218,7 @@ namespace SeekerAutoChess.Prototype
                 ArchiveStyle(33, ArchiveColor("F6DAD0"), TextAnchor.MiddleLeft, true),
                 new Vector2(32f, 32f), 8f, 14);
             if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) return;
+            PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-map-style");
             if (confirmAbandon) AbandonRun();
             else
             {
@@ -5607,10 +7479,12 @@ namespace SeekerAutoChess.Prototype
             var cost = UnitCost(nameKey, level);
             var power = UnitBasePower(nameKey);
             var definition = characterCatalog.Get(nameKey);
-            var stats = definition.CalculateCombatStats(power, level);
+            CharacterQuality quality;
+            var stats = CalculateShopOfferStats(nameKey, power, level, out quality);
             CharacterArtDefinition artDefinition;
             Sprite sprite;
-            if (artCatalog.TryGetCharacterArt(nameKey, out artDefinition, out sprite))
+            if (artCatalog.TryGetCharacterArt(nameKey, CharacterQualityResourceId(quality),
+                    out artDefinition, out sprite))
             {
                 var sway = Mathf.Sin(Time.unscaledTime * 1.8f + offerIndex * 1.7f) * 3f;
                 var characterArea = OffsetRect(area, ExpeditionUiV46Layout.PreparationOfferCharacterArt);
@@ -5685,6 +7559,7 @@ namespace SeekerAutoChess.Prototype
                 "utility-back-v4.6", ScaleMode.ScaleToFit);
             if (GUI.Button(ExpeditionUiV46Layout.PreparationBack, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "preparation-v46-back");
                 preparationShopOpen = false;
                 currentView = ScreenView.Home;
                 confirmAbandon = false;
@@ -5705,6 +7580,7 @@ namespace SeekerAutoChess.Prototype
                 "utility-back-v4.6", T("home.back"), 19, ArchiveColor("F3E7C8"));
             if (GUI.Button(ExpeditionUiV46Layout.UpgradeBack, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "upgrade-v46-back");
                 currentView = ScreenView.Home;
                 confirmAbandon = false;
             }
@@ -5733,6 +7609,7 @@ namespace SeekerAutoChess.Prototype
                     ArchiveStyle(fontSize, ArchiveColor("F6DAD0"), TextAnchor.MiddleCenter, true));
             }
             if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) return;
+            PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-v46");
             if (confirmAbandon) AbandonRun();
             else
             {
@@ -5957,7 +7834,7 @@ namespace SeekerAutoChess.Prototype
                 PrototypeArtResourceIds.DetailStatArmor, T("stat.armor"), unit.Armor.ToString(), ivory);
             DrawDetailStat(panel, new Rect(574f, 861f, 250f, 137f),
                 PrototypeArtResourceIds.DetailStatSpeed, T("detail.attackSpeed"),
-                DetailTideWindowLayout.FormatAttackSpeed(unit.SpeedTier), ivory);
+                DetailTideWindowLayout.FormatAttackSpeed(unit.AttackSpeedBasisPoints), ivory);
 
             var quoteStyle = DetailTextStyle(29, ivory, TextAnchor.MiddleCenter, true, FontStyle.Normal);
             GUI.Label(DetailLocalRect(panel, 90f, 1078f, 700f, 132f),
@@ -5971,7 +7848,10 @@ namespace SeekerAutoChess.Prototype
                 TextAnchor.MiddleCenter, false, FontStyle.Normal));
             if (GUI.Button(closeTop, GUIContent.none, GUIStyle.none) ||
                 GUI.Button(closeBottom, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "unit-detail-close");
                 ClosePreparationUnitDetail();
+            }
         }
 
         private void DrawDetailMetadataField(Rect panel, float localX, string text, Color textColor)
@@ -6316,6 +8196,12 @@ namespace SeekerAutoChess.Prototype
             direction /= distance;
             var perpendicular = new Vector2(-direction.y, direction.x);
             if (effect.Progress < releaseProgress) return;
+            if (string.Equals(effect.ProjectileProfileId,
+                    BattleProjectileProfileIds.BossLampBeam, StringComparison.Ordinal))
+            {
+                DrawBattleLampBeam(effect);
+                return;
+            }
             if (effect.Progress <= impactProgress)
             {
                 var travel = Mathf.InverseLerp(releaseProgress, impactProgress, effect.Progress);
@@ -6383,28 +8269,45 @@ namespace SeekerAutoChess.Prototype
 
             var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             var textureRect = sprite.textureRect;
-            var sourceWidth = Mathf.Max(1f, sprite.rect.width);
-            var sourceHeight = Mathf.Max(1f, sprite.rect.height);
+            var useApprovedAlphaBounds = string.Equals(profileId, BattleProjectileProfileIds.FireShare,
+                    StringComparison.Ordinal) ||
+                string.Equals(profileId, BattleProjectileProfileIds.FireCauldron,
+                    StringComparison.Ordinal);
+            var approvedUv = useApprovedAlphaBounds
+                ? BattleProjectileProfiles.FeedbackVisibleUvFor(profileId)
+                : new Rect(textureRect.x / sprite.texture.width, textureRect.y / sprite.texture.height,
+                    textureRect.width / sprite.texture.width, textureRect.height / sprite.texture.height);
+            var sourceWidth = useApprovedAlphaBounds
+                ? Mathf.Max(1f, approvedUv.width * sprite.texture.width)
+                : Mathf.Max(1f, sprite.rect.width);
+            var sourceHeight = useApprovedAlphaBounds
+                ? Mathf.Max(1f, approvedUv.height * sprite.texture.height)
+                : Mathf.Max(1f, sprite.rect.height);
             var width = BattleProjectileProfiles.DisplayWidthFor(profileId);
             var height = width * sourceHeight / sourceWidth;
-            var contentScaleX = Mathf.Clamp01(textureRect.width / sourceWidth);
-            var contentScaleY = Mathf.Clamp01(textureRect.height / sourceHeight);
+            var contentScaleX = useApprovedAlphaBounds ? 1f : Mathf.Clamp01(textureRect.width / sourceWidth);
+            var contentScaleY = useApprovedAlphaBounds ? 1f : Mathf.Clamp01(textureRect.height / sourceHeight);
             var displayWidth = width * contentScaleX;
             var displayHeight = height * contentScaleY;
             var trimmedPivotX = textureRect.width <= 0f ? 0.5f :
                 Mathf.Clamp01((sprite.pivot.x - (textureRect.x - sprite.rect.x)) / textureRect.width);
             var visualCenter = point - direction * (displayWidth * (trimmedPivotX - 0.50f));
-            var rect = new Rect(visualCenter.x - displayWidth * 0.5f,
-                visualCenter.y - displayHeight * 0.5f, displayWidth, displayHeight);
-            var uv = new Rect(
-                textureRect.x / sprite.texture.width,
-                textureRect.y / sprite.texture.height,
-                textureRect.width / sprite.texture.width,
-                textureRect.height / sprite.texture.height);
+            var uv = approvedUv;
             var oldMatrix = GUI.matrix;
+            var screenCenter3 = oldMatrix.MultiplyPoint3x4(
+                new Vector3(visualCenter.x, visualCenter.y, 0f));
+            var screenScaleX = oldMatrix.MultiplyVector(Vector3.right).magnitude;
+            var screenScaleY = oldMatrix.MultiplyVector(Vector3.up).magnitude;
+            var screenCenter = new Vector2(screenCenter3.x, screenCenter3.y);
+            var screenRect = new Rect(
+                screenCenter.x - displayWidth * screenScaleX * 0.5f,
+                screenCenter.y - displayHeight * screenScaleY * 0.5f,
+                displayWidth * screenScaleX,
+                displayHeight * screenScaleY);
+            GUI.matrix = Matrix4x4.identity;
             GUI.color = WithOpacity(Color.white, battleSceneOpacity);
-            GUIUtility.RotateAroundPivot(angle, visualCenter);
-            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            GUIUtility.RotateAroundPivot(angle, screenCenter);
+            GUI.DrawTextureWithTexCoords(screenRect, sprite.texture, uv, true);
             GUI.matrix = oldMatrix;
             GUI.color = Color.white;
             return true;
@@ -6414,10 +8317,51 @@ namespace SeekerAutoChess.Prototype
         {
             foreach (var feedback in battleFeedbackVisuals)
             {
-                var isHealFeedback = IsHealFeedbackProfile(feedback.ProfileId);
-                if (isHealFeedback != healBehindUnits) continue;
+                if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C03WhiteMark,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E2TrackJudgment,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.B2DeviantLight,
+                        StringComparison.Ordinal)) continue;
+                var isBetweenBaseAndUnit = IsBetweenBaseAndUnitFeedbackProfile(feedback.ProfileId);
+                if (isBetweenBaseAndUnit != healBehindUnits) continue;
                 DrawBattleFeedbackVisual(feedback);
             }
+            GUI.color = Color.white;
+        }
+
+        private void DrawBattleLampBeam(BattleEffectInstance effect)
+        {
+            if (effect.Progress >= 1f) return;
+            var sprite = LoadBattleVfxSprite(BattleProjectileProfiles.ResourcePathFor(
+                BattleProjectileProfileIds.BossLampBeam));
+            if (sprite == null || sprite.texture == null) return;
+            var oldMatrix = GUI.matrix;
+            var screenStart3 = oldMatrix.MultiplyPoint3x4(
+                new Vector3(effect.OriginPosition.x, effect.OriginPosition.y, 0f));
+            var screenEnd3 = oldMatrix.MultiplyPoint3x4(
+                new Vector3(effect.TargetPosition.x, effect.TargetPosition.y, 0f));
+            var screenStart = new Vector2(screenStart3.x, screenStart3.y);
+            var screenEnd = new Vector2(screenEnd3.x, screenEnd3.y);
+            var delta = screenEnd - screenStart;
+            var distance = delta.magnitude;
+            if (distance <= 0.01f) return;
+            var uv = BattleProjectileProfiles.FeedbackVisibleUvFor(
+                BattleProjectileProfileIds.BossLampBeam);
+            const float beamThickness = 32f;
+            var height = beamThickness;
+            var center = (screenStart + screenEnd) * 0.5f;
+            var rect = new Rect(center.x - distance * 0.5f, center.y - height * 0.5f,
+                distance, height);
+            var alpha = Mathf.Lerp(0.82f, 1f,
+                (Mathf.Sin(effect.Progress * Mathf.PI) + 1f) * 0.5f);
+            GUI.matrix = Matrix4x4.identity;
+            GUI.color = WithOpacity(Color.white, battleSceneOpacity * alpha);
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, center);
+            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            GUI.matrix = oldMatrix;
             GUI.color = Color.white;
         }
 
@@ -6426,7 +8370,7 @@ namespace SeekerAutoChess.Prototype
             foreach (var feedback in battleFeedbackVisuals)
             {
                 if (!string.Equals(feedback.TargetId, unitId, StringComparison.Ordinal) ||
-                    !IsHealFeedbackProfile(feedback.ProfileId) ||
+                    !IsBetweenBaseAndUnitFeedbackProfile(feedback.ProfileId) ||
                     string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.HealFeedbackRise,
                         StringComparison.Ordinal)) continue;
                 DrawBattleFeedbackVisual(feedback);
@@ -6438,9 +8382,20 @@ namespace SeekerAutoChess.Prototype
         {
             foreach (var feedback in battleFeedbackVisuals)
             {
-                if (!string.Equals(feedback.TargetId, unitId, StringComparison.Ordinal) ||
-                    !string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.HealFeedbackRise,
-                        StringComparison.Ordinal)) continue;
+                if (!string.Equals(feedback.TargetId, unitId, StringComparison.Ordinal)) continue;
+                var isForegroundUnitFeedback = string.Equals(feedback.ProfileId,
+                    BattleFeedbackProfileIds.HealFeedbackRise, StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C03WhiteMark,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E2TrackJudgment,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.B2DeviantLight,
+                        StringComparison.Ordinal);
+                if (!isForegroundUnitFeedback) continue;
                 DrawBattleFeedbackVisual(feedback);
             }
             GUI.color = Color.white;
@@ -6456,14 +8411,18 @@ namespace SeekerAutoChess.Prototype
             overlayOpacity = Mathf.MoveTowards(overlayOpacity, targetOpacity,
                 Time.unscaledDeltaTime / 0.14f);
             battleShieldOverlayOpacities[combatUnit.Id] = overlayOpacity;
+            if (HasExclusiveSkillShieldFeedback(combatUnit.Id)) return;
             if (overlayOpacity <= 0.001f) return;
             var sprite = LoadBattleVfxSprite(
                 BattleProjectileProfiles.ShieldOverlayGenericResourcePath);
             if (sprite == null || sprite.texture == null) return;
             var visibleUv = BattleProjectileProfiles.FeedbackVisibleUvFor(
                 BattleFeedbackProfileIds.ShieldOverlayGeneric);
-            var contentAspect = visibleUv.width / Mathf.Max(0.01f, visibleUv.height);
-            var width = visibleRect.width;
+            var contentAspect = (visibleUv.width * sprite.texture.width) /
+                Mathf.Max(0.01f, visibleUv.height * sprite.texture.height);
+            var shieldDisplayScale = string.Equals(combatUnit.DefinitionId, "enemy.n1.guard",
+                StringComparison.Ordinal) ? 0.8f : 1f;
+            var width = visibleRect.width * shieldDisplayScale;
             var height = width / Mathf.Max(0.01f, contentAspect);
             var center = visibleRect.center;
             var rect = new Rect(center.x - width * 0.5f, center.y - height * 0.5f,
@@ -6473,6 +8432,21 @@ namespace SeekerAutoChess.Prototype
             GUI.color = WithOpacity(Color.white, shieldOpacity);
             GUI.DrawTextureWithTexCoords(rect, sprite.texture, visibleUv, true);
             GUI.color = Color.white;
+        }
+
+        private bool HasExclusiveSkillShieldFeedback(string targetId)
+        {
+            if (string.IsNullOrEmpty(targetId)) return false;
+            foreach (var feedback in battleFeedbackVisuals)
+            {
+                if (!string.Equals(feedback.TargetId, targetId, StringComparison.Ordinal) ||
+                    feedback.FadingOut) continue;
+                if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                        StringComparison.Ordinal) ||
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                        StringComparison.Ordinal)) return true;
+            }
+            return false;
         }
 
         private static bool IsHealFeedbackProfile(string profileId)
@@ -6485,8 +8459,138 @@ namespace SeekerAutoChess.Prototype
                        StringComparison.Ordinal);
         }
 
+        private static bool IsBetweenBaseAndUnitFeedbackProfile(string profileId)
+        {
+            return IsHealFeedbackProfile(profileId) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.OpenDawn,
+                        StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.OlinTide,
+                        StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.ReturnBeaconRing,
+                         StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.C04AfterSpringRelease,
+                          StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                           StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.C06ReturnFireBuff,
+                            StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.E3BellReturn,
+                            StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.B1BlockadeQuake,
+                            StringComparison.Ordinal) ||
+                   string.Equals(profileId, BattleFeedbackProfileIds.B2RecallLost,
+                            StringComparison.Ordinal);
+        }
+
         private void DrawBattleFeedbackVisual(BattleFeedbackVisual feedback)
         {
+            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.OlinTide,
+                    StringComparison.Ordinal))
+            {
+                var tideTarget = battlePresentation.FindView(feedback.TargetId);
+                if (tideTarget != null && tideTarget.State != null)
+                {
+                    feedback.Position = BattleBaseCenterFor(tideTarget);
+                    feedback.Width = BattleBaseWidthFor(tideTarget.State) * 1.1f;
+                }
+            }
+            else if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C03WhiteMark,
+                          StringComparison.Ordinal))
+            {
+                var markTarget = battlePresentation.FindView(feedback.TargetId);
+                if (markTarget != null && markTarget.State != null)
+                {
+                    feedback.Position = markTarget.GetAnchor(BattlePresentationIds.BodyAnchor);
+                    feedback.Width = C03WhiteMarkWidthFor(markTarget.State);
+                }
+            }
+            else if (string.Equals(feedback.ProfileId,
+                         BattleFeedbackProfileIds.B2DeviantLight,
+                         StringComparison.Ordinal))
+            {
+                var markTarget = battlePresentation.FindView(feedback.TargetId);
+                if (markTarget != null && markTarget.State != null)
+                {
+                    feedback.Position = markTarget.GetAnchor(BattlePresentationIds.BodyAnchor) +
+                        new Vector2(46f, -48f);
+                    feedback.Width = BattleBaseWidthFor(markTarget.State) * 0.21f;
+                }
+            }
+            else if (string.Equals(feedback.ProfileId,
+                         BattleFeedbackProfileIds.C04AfterSpringRelease,
+                         StringComparison.Ordinal))
+            {
+                var releaseTarget = battlePresentation.FindView(feedback.TargetId);
+                if (releaseTarget != null && releaseTarget.State != null)
+                {
+                    feedback.Position = BattleBaseCenterFor(releaseTarget);
+                    feedback.Width = BattleBaseWidthFor(releaseTarget.State) * 1.1f;
+                }
+            }
+            else if (string.Equals(feedback.ProfileId,
+                         BattleFeedbackProfileIds.N1HoldGateStamp,
+                         StringComparison.Ordinal))
+            {
+                var n1Target = battlePresentation.FindView(feedback.TargetId);
+                if (n1Target != null && n1Target.State != null)
+                {
+                    feedback.Position = n1Target.GetAnchor(BattlePresentationIds.BodyAnchor);
+                    feedback.Width = BattleBaseWidthFor(n1Target.State) *
+                        BattleProjectileProfiles.N1HoldGateStampDisplayScale * 0.78f;
+                }
+            }
+            else if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                         StringComparison.Ordinal) ||
+                     string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E3BellReturn,
+                         StringComparison.Ordinal))
+            {
+                var auraTarget = battlePresentation.FindView(feedback.TargetId);
+                if (auraTarget != null && auraTarget.State != null)
+                {
+                    var isGroundAura = string.Equals(feedback.ProfileId,
+                        BattleFeedbackProfileIds.E3BellReturn, StringComparison.Ordinal);
+                    feedback.Position = isGroundAura
+                        ? BattleBaseCenterFor(auraTarget)
+                        : auraTarget.GetAnchor(BattlePresentationIds.BodyAnchor);
+                    feedback.Width = BattleBaseWidthFor(auraTarget.State) *
+                        (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E3BellReturn,
+                            StringComparison.Ordinal) ? 1.55f : 1.15f);
+                }
+            }
+            else if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05Barrier,
+                         StringComparison.Ordinal) ||
+                     string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05BarrierBreak,
+                         StringComparison.Ordinal) ||
+                     string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                         StringComparison.Ordinal))
+            {
+                var c05Target = battlePresentation.FindView(feedback.TargetId);
+                if (c05Target != null && c05Target.State != null)
+                {
+                    feedback.Position = BattleBaseCenterFor(c05Target);
+                    feedback.Width = BattleBaseWidthFor(c05Target.State) *
+                        (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                            StringComparison.Ordinal) ? 1f : 1.15f);
+                }
+            }
+            else if (string.Equals(feedback.ProfileId,
+                         BattleFeedbackProfileIds.B1BlockadeQuake, StringComparison.Ordinal))
+            {
+                var b1Target = battlePresentation.FindView(feedback.TargetId);
+                if (b1Target != null && b1Target.State != null)
+                {
+                    var baseWidth = BattleBaseWidthFor(b1Target.State);
+                    feedback.Width = baseWidth * 2f;
+                    var b1VisibleUv = BattleProjectileProfiles.FeedbackVisibleUvFor(
+                        BattleFeedbackProfileIds.B1BlockadeQuake);
+                    var effectHeight = feedback.Width * b1VisibleUv.height /
+                                       Mathf.Max(0.01f, b1VisibleUv.width);
+                    var baseHeight = baseWidth * PieceBasePresentationContract.CanvasHeight /
+                                     (float)PieceBasePresentationContract.CanvasWidth;
+                    feedback.Position = BattleBaseCenterFor(b1Target) +
+                        Vector2.down * Mathf.Max(0f, (effectHeight - baseHeight) * 0.5f);
+                }
+            }
             var sprite = LoadBattleVfxSprite(BattleFeedbackResourcePath(feedback.ProfileId));
             if (sprite == null || sprite.texture == null) return;
             if (feedback.ElapsedSeconds < feedback.StartDelaySeconds) return;
@@ -6494,8 +8598,36 @@ namespace SeekerAutoChess.Prototype
                 feedback.DurationSeconds - feedback.StartDelaySeconds);
             var localElapsed = feedback.ElapsedSeconds - feedback.StartDelaySeconds;
             var progress = Mathf.Clamp01(localElapsed / playDuration);
-            var alpha = Mathf.Sin(progress * Mathf.PI);
-            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.HealFeedbackRing,
+            var alpha = feedback.Persistent
+                ? Mathf.Clamp01(feedback.ElapsedSeconds / 0.18f) *
+                  Mathf.Lerp(0.72f, 0.92f, (Mathf.Sin(feedback.ElapsedSeconds * 3.5f) + 1f) * 0.5f)
+                : feedback.FadingOut
+                    ? 1f - progress
+                    : Mathf.Sin(progress * Mathf.PI);
+            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.N2CrossCutSlash,
+                    StringComparison.Ordinal))
+            {
+                DrawN2CrossCutVisual(feedback, sprite, alpha);
+                return;
+            }
+            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.RescueBeam,
+                    StringComparison.Ordinal))
+            {
+                DrawRescueBeamVisual(feedback, sprite, alpha);
+                return;
+            }
+            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C03MarkTransfer,
+                    StringComparison.Ordinal))
+            {
+                DrawC03MarkTransferVisual(feedback, sprite, alpha);
+                return;
+            }
+            if (feedback.Persistent && string.Equals(feedback.ProfileId,
+                    BattleFeedbackProfileIds.OlinTide, StringComparison.Ordinal))
+            {
+                feedback.RenderScale = 1f + Mathf.Sin(feedback.ElapsedSeconds * 3.5f) * 0.025f;
+            }
+            else if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.HealFeedbackRing,
                     StringComparison.Ordinal))
             {
                 var ringPulse = Mathf.Sin(progress * Mathf.PI);
@@ -6507,22 +8639,156 @@ namespace SeekerAutoChess.Prototype
             {
                 alpha *= Mathf.Lerp(1f, 0.72f, progress);
             }
+            else if (feedback.Persistent &&
+                     (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05Barrier,
+                         StringComparison.Ordinal) ||
+                      string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                         StringComparison.Ordinal)))
+            {
+                feedback.RenderScale = 1f + Mathf.Sin(feedback.ElapsedSeconds * 3.5f) * 0.02f;
+            }
+            else if (feedback.Persistent &&
+                     (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                         StringComparison.Ordinal) ||
+                      string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.E3BellReturn,
+                         StringComparison.Ordinal)))
+            {
+                feedback.RenderScale = 1f + Mathf.Sin(feedback.ElapsedSeconds * 3.2f) * 0.025f;
+            }
+            else if (string.Equals(feedback.ProfileId,
+                         BattleFeedbackProfileIds.B1BlockadeQuake, StringComparison.Ordinal))
+            {
+                var press = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress / 0.34f));
+                feedback.RenderScale = Mathf.Lerp(0.88f, 1f, press);
+                alpha *= Mathf.Sin(Mathf.Clamp01(progress) * Mathf.PI);
+            }
+            else if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05BarrierBreak,
+                         StringComparison.Ordinal))
+            {
+                feedback.RenderScale = 1f + Mathf.Clamp01(progress) * 0.08f;
+            }
             var visibleUv = BattleProjectileProfiles.FeedbackVisibleUvFor(feedback.ProfileId);
+            if (feedback.MirrorX)
+            {
+                visibleUv.x += visibleUv.width;
+                visibleUv.width = -visibleUv.width;
+            }
             var visiblePivot = BattleProjectileProfiles.FeedbackVisiblePivotFor(feedback.ProfileId);
+            var visibleUvWidth = Mathf.Max(0.01f, Mathf.Abs(visibleUv.width));
+            if (string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                    StringComparison.Ordinal))
+            {
+                var riseProgress = feedback.Persistent
+                    ? Mathf.Clamp01(feedback.ElapsedSeconds / 0.28f)
+                    : Mathf.Clamp01(progress / 0.42f);
+                var rise = Mathf.SmoothStep(0.20f, 1f, riseProgress);
+                feedback.HeightOverride = feedback.Width * 1022f / 418f * rise;
+            }
             var width = feedback.Width > 0f
                 ? feedback.Width
-                : feedback.HeightOverride * visibleUv.width /
+                : feedback.HeightOverride * visibleUvWidth /
                   Mathf.Max(0.01f, visibleUv.height);
             var height = feedback.HeightOverride > 0f
                 ? feedback.HeightOverride
-                : width * visibleUv.height / Mathf.Max(0.01f, visibleUv.width);
+                : width * visibleUv.height / visibleUvWidth;
             width *= feedback.RenderScale;
             height *= feedback.RenderScale;
             var position = feedback.Position + feedback.Motion * progress;
+            if (feedback.UseArcMotion)
+            {
+                var start = feedback.Position;
+                var end = feedback.Position + feedback.Motion;
+                var control = end + feedback.ArcControlOffset;
+                var remaining = 1f - progress;
+                position = remaining * remaining * start +
+                    2f * remaining * progress * control +
+                    progress * progress * end;
+            }
             var rect = new Rect(position.x - width * visiblePivot.x,
                 position.y - height * visiblePivot.y, width, height);
             GUI.color = WithOpacity(Color.white, battleSceneOpacity * alpha);
             GUI.DrawTextureWithTexCoords(rect, sprite.texture, visibleUv, true);
+        }
+
+        private void DrawRescueBeamVisual(BattleFeedbackVisual feedback, Sprite sprite, float alpha)
+        {
+            var source = battlePresentation.FindView(feedback.SourceId);
+            var target = battlePresentation.FindView(feedback.TargetId);
+            if (source == null || target == null || source.State == null || target.State == null) return;
+            var start = source.GetAnchor(BattlePresentationIds.SkillOriginAnchor);
+            var end = target.GetAnchor(BattlePresentationIds.BodyAnchor);
+            var oldMatrix = GUI.matrix;
+            var screenStart3 = oldMatrix.MultiplyPoint3x4(new Vector3(start.x, start.y, 0f));
+            var screenEnd3 = oldMatrix.MultiplyPoint3x4(new Vector3(end.x, end.y, 0f));
+            var screenStart = new Vector2(screenStart3.x, screenStart3.y);
+            var screenEnd = new Vector2(screenEnd3.x, screenEnd3.y);
+            var delta = screenEnd - screenStart;
+            if (delta.sqrMagnitude <= 0.001f) return;
+            var uv = BattleProjectileProfiles.FeedbackVisibleUvFor(feedback.ProfileId);
+            var center = (screenStart + screenEnd) * 0.5f;
+            var height = Mathf.Max(12f, delta.magnitude * uv.height / Mathf.Max(0.01f, uv.width));
+            var rect = new Rect(center.x - delta.magnitude * 0.5f, center.y - height * 0.5f,
+                delta.magnitude, height);
+            GUI.matrix = Matrix4x4.identity;
+            GUI.color = WithOpacity(Color.white, battleSceneOpacity * alpha);
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, center);
+            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            GUI.matrix = oldMatrix;
+            GUI.color = Color.white;
+        }
+
+        private void DrawN2CrossCutVisual(BattleFeedbackVisual feedback, Sprite sprite, float alpha)
+        {
+            if (sprite == null || sprite.texture == null) return;
+            var texture = sprite.texture;
+            var width = Mathf.Clamp(feedback.Width * 1.56f, 86.4f, 280.8f);
+            var aspect = texture.width / Mathf.Max(1f, texture.height);
+            var height = width / Mathf.Max(0.01f, aspect);
+            var uv = new Rect(0f, 0f, 1f, 1f);
+            if (feedback.MirrorX)
+            {
+                uv.x = 1f;
+                uv.width = -1f;
+            }
+            var playDuration = Mathf.Max(0.001f,
+                feedback.DurationSeconds - feedback.StartDelaySeconds);
+            var progress = Mathf.Clamp01((feedback.ElapsedSeconds - feedback.StartDelaySeconds) /
+                playDuration);
+            var movementProgress = Mathf.SmoothStep(0f, 1f, progress);
+            var position = feedback.Position + feedback.Motion * movementProgress;
+            var rect = new Rect(position.x - width * 0.5f, position.y - height * 0.5f,
+                width, height);
+            GUI.color = WithOpacity(Color.white, battleSceneOpacity * alpha);
+            GUI.DrawTextureWithTexCoords(rect, texture, uv, true);
+            GUI.color = Color.white;
+        }
+
+        private void DrawC03MarkTransferVisual(BattleFeedbackVisual feedback, Sprite sprite, float alpha)
+        {
+            var source = battlePresentation.FindView(feedback.SourceId);
+            var target = battlePresentation.FindView(feedback.TargetId);
+            if (source == null || target == null || source.State == null || target.State == null) return;
+            var start = source.GetAnchor(BattlePresentationIds.BodyAnchor);
+            var end = target.GetAnchor(BattlePresentationIds.BodyAnchor);
+            var oldMatrix = GUI.matrix;
+            var screenStart3 = oldMatrix.MultiplyPoint3x4(new Vector3(start.x, start.y, 0f));
+            var screenEnd3 = oldMatrix.MultiplyPoint3x4(new Vector3(end.x, end.y, 0f));
+            var screenStart = new Vector2(screenStart3.x, screenStart3.y);
+            var screenEnd = new Vector2(screenEnd3.x, screenEnd3.y);
+            var delta = screenEnd - screenStart;
+            if (delta.sqrMagnitude <= 0.001f) return;
+            var uv = BattleProjectileProfiles.FeedbackVisibleUvFor(feedback.ProfileId);
+            var width = Mathf.Min(delta.magnitude, 240f);
+            var height = Mathf.Max(18f, width * uv.height / Mathf.Max(0.01f, uv.width));
+            var center = Vector2.Lerp(screenStart, screenEnd,
+                Mathf.Clamp01(feedback.ElapsedSeconds / Mathf.Max(0.001f, feedback.DurationSeconds)));
+            var rect = new Rect(center.x - width * 0.5f, center.y - height * 0.5f, width, height);
+            GUI.matrix = Matrix4x4.identity;
+            GUI.color = WithOpacity(Color.white, battleSceneOpacity * alpha);
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, center);
+            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            GUI.matrix = oldMatrix;
+            GUI.color = Color.white;
         }
 
         private static string BattleFeedbackResourcePath(string profileId)
@@ -6543,6 +8809,8 @@ namespace SeekerAutoChess.Prototype
                     StringComparison.Ordinal)) return BattleProjectileProfiles.OlinTideResourcePath;
             if (string.Equals(profileId, BattleFeedbackProfileIds.RescueBeam,
                     StringComparison.Ordinal)) return BattleProjectileProfiles.RescueBeamResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.ReturnBeaconRing,
+                    StringComparison.Ordinal)) return BattleProjectileProfiles.HealFeedbackRingResourcePath;
             if (string.Equals(profileId, BattleFeedbackProfileIds.HitReaction,
                     StringComparison.Ordinal)) return BattleProjectileProfiles.HitReactionResourcePath;
             if (string.Equals(profileId, BattleFeedbackProfileIds.HostileHitFeedbackV2,
@@ -6553,6 +8821,36 @@ namespace SeekerAutoChess.Prototype
                     StringComparison.Ordinal)) return BattleProjectileProfiles.C03MarkTransferResourcePath;
             if (string.Equals(profileId, BattleFeedbackProfileIds.C04AfterSpringRelease,
                     StringComparison.Ordinal)) return BattleProjectileProfiles.C04AfterSpringReleaseResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05Barrier,
+                    StringComparison.Ordinal)) return BattleProjectileProfiles.C05BarrierResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05BarrierBreak,
+                    StringComparison.Ordinal)) return BattleProjectileProfiles.C05BarrierBreakResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                    StringComparison.Ordinal)) return BattleProjectileProfiles.C05ColumnActionBuffResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C06FireCharge,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.C06FireChargeResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.C06ReturnFireBuff,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.C06ReturnFireBuffResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.N1HoldGateStampResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N2CrossCutSlash,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.N2CrossCutSlashResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N4MistHuntCrescent,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.N4MistHuntCrescentResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E1SteadyLine,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.E1SteadyLineResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E2TrackJudgment,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.E2TrackJudgmentResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.E3BellReturn,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.E3BellReturnResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B1BlockadeQuake,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.B1BlockadeQuakeResourcePath;
+            if (string.Equals(profileId, BattleProjectileProfileIds.BossLampBeam,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.B2LampBeamResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2RecallLost,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.B2RecallLostResourcePath;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.B2DeviantLight,
+                     StringComparison.Ordinal)) return BattleProjectileProfiles.B2DeviantLightResourcePath;
             return string.Empty;
         }
 
@@ -6563,6 +8861,13 @@ namespace SeekerAutoChess.Prototype
             {
                 var feedback = battleFeedbackVisuals[index];
                 feedback.ElapsedSeconds += deltaTime;
+                if (feedback.Persistent)
+                {
+                    var target = battlePresentation.FindView(feedback.TargetId);
+                    if (target == null || target.State == null || !target.State.IsAlive)
+                        battleFeedbackVisuals.RemoveAt(index);
+                    continue;
+                }
                 if (feedback.ElapsedSeconds >= feedback.DurationSeconds)
                     battleFeedbackVisuals.RemoveAt(index);
             }
@@ -6573,9 +8878,18 @@ namespace SeekerAutoChess.Prototype
             var delta = end - start;
             if (delta.sqrMagnitude <= 0.001f) return;
             var oldMatrix = GUI.matrix;
+            var screenStart3 = oldMatrix.MultiplyPoint3x4(new Vector3(start.x, start.y, 0f));
+            var screenEnd3 = oldMatrix.MultiplyPoint3x4(new Vector3(end.x, end.y, 0f));
+            var screenStart = new Vector2(screenStart3.x, screenStart3.y);
+            var screenEnd = new Vector2(screenEnd3.x, screenEnd3.y);
+            var screenDelta = screenEnd - screenStart;
+            var screenWidth = width * oldMatrix.MultiplyVector(Vector3.up).magnitude;
+            GUI.matrix = Matrix4x4.identity;
             GUI.color = color;
-            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, start);
-            GUI.DrawTexture(new Rect(start.x, start.y - width * 0.5f, delta.magnitude, width),
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(screenDelta.y, screenDelta.x) * Mathf.Rad2Deg,
+                screenStart);
+            GUI.DrawTexture(new Rect(screenStart.x, screenStart.y - screenWidth * 0.5f,
+                    screenDelta.magnitude, screenWidth),
                 Texture2D.whiteTexture);
             GUI.matrix = oldMatrix;
             GUI.color = Color.white;
@@ -6921,30 +9235,7 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawDefenseScreen()
         {
-            var pageOffset = AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 0.5f);
-            GUI.Label(new Rect(55f, 180f, 970f, 60f), T("defense.title"), Style(34, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
-            GUI.Label(new Rect(55f, 250f, 970f, 72f), T(defenseMessageKey), Style(19, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleLeft));
-            DrawDefenseFormation(340f + pageOffset);
-
-            GUI.Label(new Rect(55f, 850f + pageOffset, 500f, 44f), T("defense.roster"), Style(26, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
-            DrawDefenseDeployButton(new Rect(55f, 920f + pageOffset, 300f, 170f), "unit.guardian", UnitBasePower("unit.guardian"), PlayerColor("unit.guardian"));
-            DrawDefenseDeployButton(new Rect(390f, 920f + pageOffset, 300f, 170f), "unit.archer", UnitBasePower("unit.archer"), PlayerColor("unit.archer"));
-            DrawDefenseDeployButton(new Rect(725f, 920f + pageOffset, 300f, 170f), "unit.healer", UnitBasePower("unit.healer"), PlayerColor("unit.healer"));
-
-            GUI.enabled = selectedDefenseSlot >= 0;
-            if (GUI.Button(new Rect(55f, 1150f + pageOffset, 470f, 88f), T("defense.remove"), ButtonStyle(UiButtonSemantic.Danger, 20)))
-            {
-                defenseSlots[selectedDefenseSlot] = null;
-                selectedDefenseSlot = -1;
-                defenseMessageKey = "defense.saved";
-                SaveGame();
-            }
-            GUI.enabled = true;
-            if (GUI.Button(new Rect(555f, 1150f + pageOffset, 470f, 88f), T("defense.save"), ButtonStyle(UiButtonSemantic.Primary, 21)))
-            {
-                defenseMessageKey = "defense.saved";
-                SaveGame();
-            }
+            DrawSharedFormationPage(defenseSlots, defenseBenchSlots, false);
         }
 
         private void DrawDefenseFormation(float y)
@@ -7034,11 +9325,23 @@ namespace SeekerAutoChess.Prototype
             defenseMessageKey = "defense.full";
         }
 
+        private void AddDefenseOwnedUnit(OwnedCharacterState owned)
+        {
+            for (var index = 0; index < defenseSlots.Length; index++)
+            {
+                if (defenseSlots[index] != null) continue;
+                defenseSlots[index] = CreateOwnedArenaUnit(owned);
+                defenseMessageKey = "defense.saved";
+                SaveGame();
+                return;
+            }
+            defenseMessageKey = "defense.full";
+        }
+
         private void CreateStarterDefense()
         {
-            defenseSlots[0] = CreateUnit("unit.guardian", UnitBasePower("unit.guardian"), PlayerColor("unit.guardian"));
-            defenseSlots[1] = CreateUnit("unit.archer", UnitBasePower("unit.archer"), PlayerColor("unit.archer"));
-            defenseSlots[2] = CreateUnit("unit.healer", UnitBasePower("unit.healer"), PlayerColor("unit.healer"));
+            for (var index = 0; index < nextRunDeckSelection.SelectedInstanceIds.Count && index < defenseSlots.Length; index++)
+                defenseSlots[index] = CreateOwnedArenaUnit(playerCollection.GetByInstanceId(nextRunDeckSelection.SelectedInstanceIds[index]));
         }
 
         private void SelectOrMoveRunUnit(int destination)
@@ -7107,6 +9410,7 @@ namespace SeekerAutoChess.Prototype
             var key = confirmAbandon ? "run.abandonConfirm" : "run.abandon";
             var y = AdaptivePortraitLayout.BottomAnchoredY(layoutContentHeight, 70f, 45f);
             if (!GUI.Button(new Rect(55f, y, 970f, 70f), T(key), ButtonStyle(UiButtonSemantic.Danger, 18))) return;
+            PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-generic");
             if (!confirmAbandon)
             {
                 confirmAbandon = true;
@@ -7257,7 +9561,11 @@ namespace SeekerAutoChess.Prototype
 
             // One transparent hit target owns the whole card, including the visual button.
             // This preserves whole-card selection without overlapping controls firing twice.
-            if (GUI.Button(area, GUIContent.none, GUIStyle.none)) ApplyUpgrade(option.optionId);
+            if (GUI.Button(area, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Upgrade, "upgrade-choice");
+                ApplyUpgrade(option.optionId);
+            }
         }
 
         private void DrawUpgradeV551Description(Rect area, string description)
@@ -7988,12 +10296,14 @@ namespace SeekerAutoChess.Prototype
 
             if (GUI.Button(ExpeditionMapUiV62Layout.BackFrame, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "expedition-map-v62-back");
                 currentView = ScreenView.Home;
                 confirmAbandon = false;
             }
             if (GUI.Button(ExpeditionMapUiV62Layout.AbandonFrame,
                     GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-map-v62");
                 if (confirmAbandon) AbandonRun();
                 else
                 {
@@ -8150,11 +10460,13 @@ namespace SeekerAutoChess.Prototype
 
             if (GUI.Button(ExpeditionMapUiV62Layout.BackFrame, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "event-page-v62-back");
                 currentView = ScreenView.Home;
                 confirmAbandon = false;
             }
             if (GUI.Button(ExpeditionMapUiV62Layout.AbandonFrame, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Cancel, "run-abandon-event-v62");
                 if (confirmAbandon) AbandonRun();
                 else
                 {
@@ -8856,6 +11168,7 @@ namespace SeekerAutoChess.Prototype
             if (isAvailable && !expeditionMapPointerDragging &&
                 GUI.Button(area, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Confirm, "map-node-" + node.Id);
                 SelectMapNode(node.Id);
             }
         }
@@ -8891,6 +11204,7 @@ namespace SeekerAutoChess.Prototype
             if (isAvailable && !expeditionMapPointerDragging &&
                 GUI.Button(touchArea, GUIContent.none, GUIStyle.none))
             {
+                PlayUiClick(UiAudioCueIds.Confirm, "map-node-" + node.Id);
                 SelectMapNode(node.Id);
             }
         }
@@ -9112,9 +11426,10 @@ namespace SeekerAutoChess.Prototype
             var level = ShopOfferLevel(offerIndex);
             var cost = UnitCost(nameKey, level);
             var power = UnitBasePower(nameKey);
-            var stats = characterCatalog.Get(nameKey).CalculateCombatStats(power, level);
+            CharacterQuality quality;
+            var stats = CalculateShopOfferStats(nameKey, power, level, out quality);
             ActiveUiSkin.DrawListRow(area, false);
-            DrawCharacterAvatar(nameKey, new Rect(area.x + 9f, area.y + 9f, 92f, 86f));
+            DrawCharacterAvatar(nameKey, quality, new Rect(area.x + 9f, area.y + 9f, 92f, 86f));
             GUI.Label(new Rect(area.x + 110f, area.y + 7f, area.width - 120f, 32f),
                 T(nameKey) + "  Lv." + level,
                 Style(18, PreparationTextPrimary, TextAnchor.MiddleCenter, FontStyle.Normal));
@@ -9151,7 +11466,21 @@ namespace SeekerAutoChess.Prototype
                 var payableCost = expeditionEconomy.QuoteRecruitmentPrice(lockedListedPrice);
                 if (coins < payableCost) return RunEconomyResultCode.InsufficientCoins;
                 var runUnitId = StableRunEconomyId("unit", runId, actionId, nameKey, level.ToString());
-                var candidate = new RunUnitState(nameKey, power, level, payableCost, runUnitId);
+                var quality = CharacterQuality.Common;
+                var sourceBusinessId = runUnitId;
+                var externalStar = 0;
+                OwnedCharacterState lockedCharacter;
+                if (TryGetLockedRunCharacter(nameKey, out lockedCharacter))
+                {
+                    quality = lockedCharacter.Quality;
+                    sourceBusinessId = lockedCharacter.CharacterInstanceId;
+                    externalStar = lockedCharacter.ExternalStar;
+                }
+                if (SkillDiagnosticActive)
+                    quality = ResolveDiagnosticQuality(nameKey);
+                var candidate = new RunUnitState(nameKey, power, level, payableCost, runUnitId,
+                    quality, CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceBusinessId),
+                    sourceBusinessId, externalStar);
                 if (!runRoster.CanPurchase(candidate)) return RunEconomyResultCode.RosterFull;
 
                 // No operation below this line can fail: the complete roster result was
@@ -9173,6 +11502,45 @@ namespace SeekerAutoChess.Prototype
             return expeditionFlow.CanPrepare;
         }
 
+        private bool TryGetLockedRunCharacter(string definitionId, out OwnedCharacterState character)
+        {
+            character = null;
+            if (string.IsNullOrEmpty(definitionId) || playerCollection == null) return false;
+
+            var lockedInstanceId = runDeck == null ? null : runDeck.GetCharacterInstanceId(definitionId);
+            if (!string.IsNullOrEmpty(lockedInstanceId) &&
+                playerCollection.TryGetByInstanceId(lockedInstanceId, out character) &&
+                character.DefinitionId == definitionId)
+                return true;
+
+            try
+            {
+                character = playerCollection.Get(definitionId);
+                return character != null;
+            }
+            catch (KeyNotFoundException)
+            {
+                character = null;
+                return false;
+            }
+        }
+
+        private CombatStatBlock CalculateShopOfferStats(string definitionId, int basePower, int level,
+            out CharacterQuality quality)
+        {
+            quality = CharacterQuality.Common;
+            OwnedCharacterState lockedCharacter;
+            if (!TryGetLockedRunCharacter(definitionId, out lockedCharacter))
+                return characterCatalog.Get(definitionId).CalculateCombatStats(basePower, level);
+
+            quality = SkillDiagnosticActive ? ResolveDiagnosticQuality(definitionId) : lockedCharacter.Quality;
+            var sourceBusinessId = lockedCharacter.CharacterInstanceId;
+            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceBusinessId);
+            return CharacterRarityInstanceRules.CalculateCombatStats(
+                characterCatalog.Get(definitionId), basePower, level, quality, aptitudeRoll,
+                lockedCharacter.ExternalStar);
+        }
+
         private void ApplyRunBonuses(UnitData unit)
         {
             // v26: legacy +1 attack/+5 health placeholder fields are intentionally inert.
@@ -9185,8 +11553,10 @@ namespace SeekerAutoChess.Prototype
             EquipmentLoadoutSnapshot loadout;
             if (!runEquipmentSnapshots.TryGetValue(runUnit.DefinitionId, out loadout))
                 loadout = new EquipmentLoadoutSnapshot(null, null);
-            var stats = EquipmentDerivedStatCalculator.Calculate(
-                definition, runUnit.BasePower, runUnit.RunLevel, loadout);
+            var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
+                definition, runUnit.BasePower, runUnit.RunLevel, runUnit.Quality,
+                runUnit.AptitudeRoll, runUnit.ExternalStar);
+            var stats = EquipmentDerivedStatCalculator.Calculate(rarityStats, loadout);
             var unit = UnitData.Create(
                 definition,
                 runUnit.BasePower,
@@ -9215,6 +11585,8 @@ namespace SeekerAutoChess.Prototype
             unit.MaxHealth = RoguelikeEnhancementRules.EffectiveMaximumHealth(unit.MaxHealth, effects);
             unit.Armor = RoguelikeEnhancementRules.EffectiveArmor(
                 unit.Armor, definition.FactionId, definition.ProfessionId, effects);
+            unit.AttackSpeedBasisPoints = RoguelikeEnhancementRules.EffectiveAttackSpeedBasisPoints(
+                unit.AttackSpeedBasisPoints, effects);
         }
 
         private void ApplyNextBattlePreparation(UnitData unit)
@@ -9507,13 +11879,13 @@ namespace SeekerAutoChess.Prototype
         private string SecondaryStatsText(CombatStatBlock stats)
         {
             return T("armorShort") + " " + stats.Armor + "  ·  " +
-                   T("speed." + stats.SpeedTier.ToString().ToLowerInvariant());
+                   DetailTideWindowLayout.FormatAttackSpeed(stats.AttackSpeedBasisPoints);
         }
 
         private string SecondaryStatsText(UnitData unit)
         {
             return T("armorShort") + " " + unit.Armor + "  ·  " +
-                   T("speed." + unit.SpeedTier.ToString().ToLowerInvariant());
+                   DetailTideWindowLayout.FormatAttackSpeed(unit.AttackSpeedBasisPoints);
         }
 
         private UnitData CreateUnit(string nameKey, int power, Color color, int runLevel = 1)
@@ -9534,6 +11906,140 @@ namespace SeekerAutoChess.Prototype
             battleControlsEnabled = false;
             ResetPreparationPointer();
             StartCoroutine(BeginFormationToBattle());
+        }
+
+        private void StartArenaBattle()
+        {
+            if (arenaBattleActive || ArenaAttackUnitCount() == 0 || selectedArenaOpponentIndex < 0 ||
+                selectedArenaOpponentIndex >= arenaOpponents.Length) return;
+            arenaBattleActive = true;
+            battlePaused = false;
+            battleControlsEnabled = true;
+            battleSceneOpacity = 1f;
+            battlePresentationActive = true;
+            StartCoroutine(ResolveArenaBattle());
+        }
+
+        private IEnumerator ResolveArenaBattle()
+        {
+            battleFloatingNumbers.Clear();
+            battleFeedbackVisuals.Clear();
+            c05BarrierOwnerByColumn.Clear();
+            persistentMilaHiddenSpringSeeds.Clear();
+            battleHealthLagPercents.Clear();
+            consumedBattleFeedbackKeys.Clear();
+            consumedBattleAudioActionKeys.Clear();
+            battleAudioEventSequence = 0;
+            CreateArenaCombatTeams();
+            yield return WaitForBattleSeconds(0.24f);
+
+            var result = DeterministicBattle.Run(CreateArenaBattleInput());
+            lastBattleEventCount = result.Events.Count;
+            lastBattleHash = ComputeBattleHash(result.Events);
+            for (var eventIndex = 0; eventIndex < result.Events.Count;)
+            {
+                var firstEvent = result.Events[eventIndex];
+                var group = new List<BattleEvent> { firstEvent };
+                eventIndex++;
+                while (eventIndex < result.Events.Count && CanResolveBattleEventsTogether(firstEvent, result.Events[eventIndex]))
+                {
+                    group.Add(result.Events[eventIndex]);
+                    eventIndex++;
+                }
+                yield return group.Count == 1 ? PlayBattleEvent(firstEvent) : PlayBattleEventGroup(group);
+            }
+            battlePresentation.EndCue();
+            arenaLastBattleWon = result.PlayerWon;
+            arenaPreviousRating = arenaRating;
+            arenaRatingDelta = ArenaPrototypeRules.TemporaryRatingDelta(arenaLastBattleWon);
+            arenaRating = Mathf.Max(0, arenaRating + arenaRatingDelta);
+            yield return WaitForBattleSeconds(0.42f);
+            battleControlsEnabled = false;
+            battlePaused = false;
+            yield return AnimateBattleScene(1f, 0f, 0.38f);
+            battlePresentationActive = false;
+            arenaBattleActive = false;
+            arenaPageState = ArenaPageState.Result;
+            battlePresentation.Reset();
+            battleFloatingNumbers.Clear();
+            battleFeedbackVisuals.Clear();
+            c05BarrierOwnerByColumn.Clear();
+            persistentMilaHiddenSpringSeeds.Clear();
+            battleHealthLagPercents.Clear();
+            consumedBattleFeedbackKeys.Clear();
+            arenaOpponents = ArenaPrototypeRules.CreateDeterministicBots(arenaRating);
+            SaveGame();
+        }
+
+        private void CreateArenaCombatTeams()
+        {
+            var players = new List<BattleUnitPresentationState>();
+            var enemies = new List<BattleUnitPresentationState>();
+            for (var slot = 0; slot < arenaAttackSlots.Length; slot++)
+            {
+                var unit = arenaAttackSlots[slot];
+                if (unit != null) players.Add(CreateBattleUnitPresentation(unit, true, slot, "arena-player-" + slot));
+            }
+            var opponent = arenaOpponents[selectedArenaOpponentIndex];
+            for (var slot = 0; slot < opponent.DefenseUnits.Length && slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
+            {
+                var unit = CreateArenaProfileUnit(opponent.DefenseUnits[slot]);
+                enemies.Add(CreateBattleUnitPresentation(unit, false, slot, "arena-enemy-" + slot));
+            }
+            battlePresentation.BeginBattle(players, enemies);
+        }
+
+        private BattleInput CreateArenaBattleInput()
+        {
+            var input = new BattleInput { Seed = unchecked((uint)(arenaRating * 1009 + selectedArenaOpponentIndex * 53 + arenaChallengesRemaining)) };
+            var playerDefinitionIds = new List<string>();
+            for (var slot = 0; slot < arenaAttackSlots.Length; slot++)
+                if (arenaAttackSlots[slot] != null) playerDefinitionIds.Add(arenaAttackSlots[slot].NameKey);
+            var synergy = FormationSynergy.Calculate(characterCatalog, playerDefinitionIds);
+            for (var slot = 0; slot < arenaAttackSlots.Length; slot++)
+            {
+                var unit = arenaAttackSlots[slot];
+                if (unit != null) input.PlayerUnits.Add(ToArenaBattleUnitState(unit, "arena-player-" + slot, slot, true, synergy));
+            }
+            var opponent = arenaOpponents[selectedArenaOpponentIndex];
+            var enemyDefinitionIds = new List<string>();
+            for (var slot = 0; slot < opponent.DefenseUnits.Length && slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
+                enemyDefinitionIds.Add(opponent.DefenseUnits[slot].DefinitionId);
+            var enemySynergy = FormationSynergy.Calculate(characterCatalog, enemyDefinitionIds);
+            for (var slot = 0; slot < opponent.DefenseUnits.Length && slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
+            {
+                var unit = CreateArenaProfileUnit(opponent.DefenseUnits[slot]);
+                input.EnemyUnits.Add(ToArenaBattleUnitState(unit, "arena-enemy-" + slot, slot, false, enemySynergy));
+            }
+            return input;
+        }
+
+        private BattleUnitState ToArenaBattleUnitState(UnitData unit, string id, int slot, bool isPlayer,
+            FormationSynergySnapshot synergy)
+        {
+            var definition = characterCatalog.Get(unit.NameKey);
+            return new BattleUnitState
+            {
+                Id = id,
+                DefinitionId = unit.NameKey,
+                IsPlayer = isPlayer,
+                Slot = slot,
+                Health = unit.MaxHealth,
+                MaxHealth = unit.MaxHealth,
+                AttackDamage = unit.AttackDamage,
+                HealAmount = unit.HealAmount,
+                Armor = unit.Armor,
+                Shield = unit.OpeningShield,
+                SpeedTier = unit.SpeedTier,
+                BaseAttackSpeedBasisPoints = unit.AttackSpeedBasisPoints,
+                IsHealer = unit.IsHealer,
+                LowHealthActionPercent = isPlayer && synergy != null && synergy.IsFactionActive("faction.wild") && definition.FactionId == "faction.wild" ? 15 : 0,
+                FirstActionPercent = isPlayer && synergy != null && synergy.IsFactionActive("faction.starlight") && definition.FactionId == "faction.starlight" ? 25 : 0,
+                ExecuteDamagePercent = isPlayer && synergy != null && synergy.IsProfessionActive("profession.output") && definition.ProfessionId == "profession.output" ? 12 : 0,
+                FactionId = definition.FactionId,
+                ProfessionId = definition.ProfessionId,
+                Quality = unit.Quality
+            };
         }
 
         private IEnumerator BeginFormationToBattle()
@@ -9576,23 +12082,40 @@ namespace SeekerAutoChess.Prototype
             statusKey = "status.battle";
             battleFloatingNumbers.Clear();
             battleFeedbackVisuals.Clear();
+            c05BarrierOwnerByColumn.Clear();
+            persistentMilaHiddenSpringSeeds.Clear();
+            battleHealthLagPercents.Clear();
             consumedBattleFeedbackKeys.Clear();
+            consumedBattleAudioActionKeys.Clear();
+            battleAudioEventSequence = 0;
             CreateCombatTeams();
             yield return WaitForBattleSeconds(0.24f);
 
             var result = DeterministicBattle.Run(CreateBattleInput());
             lastBattleEventCount = result.Events.Count;
             lastBattleHash = ComputeBattleHash(result.Events);
-            foreach (var battleEvent in result.Events)
+            for (var eventIndex = 0; eventIndex < result.Events.Count;)
             {
-                yield return PlayBattleEvent(battleEvent);
+                var firstEvent = result.Events[eventIndex];
+                var group = new List<BattleEvent> { firstEvent };
+                eventIndex++;
+                while (eventIndex < result.Events.Count &&
+                       CanResolveBattleEventsTogether(firstEvent, result.Events[eventIndex]))
+                {
+                    group.Add(result.Events[eventIndex]);
+                    eventIndex++;
+                }
+                yield return group.Count == 1
+                    ? PlayBattleEvent(firstEvent)
+                    : PlayBattleEventGroup(group);
             }
             battlePresentation.EndCue();
 
             var playerWon = result.PlayerWon;
             if (playerWon)
             {
-                if (AwardCompletedBattleNode()) coins += encounterReward;
+                var completedBattleNode = AwardCompletedBattleNode();
+                if (!SkillDiagnosticActive && completedBattleNode) coins += encounterReward;
                 expeditionEconomy.ConsumeNextBattlePreparation();
                 expeditionEconomy.ClearActiveBattleItem();
                 if (round >= FinalRound)
@@ -9643,8 +12166,11 @@ namespace SeekerAutoChess.Prototype
             battlePresentation.Reset();
             battleFloatingNumbers.Clear();
             battleFeedbackVisuals.Clear();
+            c05BarrierOwnerByColumn.Clear();
+            persistentMilaHiddenSpringSeeds.Clear();
+            battleHealthLagPercents.Clear();
             consumedBattleFeedbackKeys.Clear();
-            SaveGame();
+            if (!SkillDiagnosticActive) SaveGame();
         }
 
         private IEnumerator AnimateBattleScene(float from, float to, float duration)
@@ -9693,6 +12219,38 @@ namespace SeekerAutoChess.Prototype
             battlePresentation.EndCue();
         }
 
+        private static bool CanResolveBattleEventsTogether(BattleEvent first, BattleEvent next)
+        {
+            return first != null && next != null && first.ActionTime == next.ActionTime &&
+                   string.Equals(first.ActorId, next.ActorId, StringComparison.Ordinal);
+        }
+
+        private IEnumerator PlayBattleEventGroup(IList<BattleEvent> events)
+        {
+            var cue = battlePresentation.BeginCueGroup(events);
+            var duration = cue.DurationSeconds;
+            var elapsed = 0f;
+            var applied = false;
+            while (elapsed < duration)
+            {
+                battlePresentation.SetCueProgress(elapsed / duration);
+                if (!applied && cue.Progress >= cue.ImpactProgress)
+                {
+                    for (var index = 0; index < events.Count; index++)
+                        ApplyBattleEvent(events[index]);
+                    applied = true;
+                }
+                if (!battlePaused) elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            if (!applied)
+                for (var index = 0; index < events.Count; index++)
+                    ApplyBattleEvent(events[index]);
+            battlePresentation.SetCueProgress(1f);
+            yield return WaitForBattleSeconds(0.04f);
+            battlePresentation.EndCue();
+        }
+
         private BattleInput CreateBattleInput()
         {
             var input = new BattleInput
@@ -9708,7 +12266,8 @@ namespace SeekerAutoChess.Prototype
                 if (runUnit == null) continue;
                 var unit = CreateRunUnitView(runUnit);
                 ApplyActiveBattleItemToPresentationUnit(unit, true, slot);
-                input.PlayerUnits.Add(ToBattleUnitState(unit, "player-" + slot, slot, true, synergy));
+                input.PlayerUnits.Add(ToBattleUnitState(unit, "player-" + slot, slot, true, synergy,
+                    runUnit.Quality));
             }
             for (var index = 0; index < enemyUnits.Count; index++)
             {
@@ -9726,12 +12285,14 @@ namespace SeekerAutoChess.Prototype
             string id,
             int slot,
             bool isPlayer,
-            FormationSynergySnapshot synergy)
+            FormationSynergySnapshot synergy,
+            CharacterQuality quality = CharacterQuality.Common)
         {
             var definition = characterCatalog.Get(unit.NameKey);
             return new BattleUnitState
             {
                 Id = id,
+                DefinitionId = unit.NameKey,
                 IsPlayer = isPlayer,
                 Slot = slot,
                 Health = unit.MaxHealth,
@@ -9741,6 +12302,12 @@ namespace SeekerAutoChess.Prototype
                 Armor = unit.Armor,
                 Shield = unit.OpeningShield,
                 SpeedTier = unit.SpeedTier,
+                BaseAttackSpeedBasisPoints = unit.AttackSpeedBasisPoints > 0
+                    ? unit.AttackSpeedBasisPoints
+                    : DeterministicBattle.AttackSpeedBasisPoints(unit.SpeedTier),
+                AttackSpeedBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I02" &&
+                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 1500 : 0,
                 IsHealer = unit.IsHealer,
                 LowHealthActionPercent = isPlayer && synergy.IsFactionActive("faction.wild") &&
                                          definition.FactionId == "faction.wild" ? 15 : 0,
@@ -9759,23 +12326,447 @@ namespace SeekerAutoChess.Prototype
                 TemporarySpeedActions = isPlayer && expeditionEconomy.ActiveBattleItemId == "I02" &&
                     expeditionEconomy.ActiveBattleTargetSlot == slot ? 2 : 0,
                 FactionId = definition.FactionId,
-                ProfessionId = definition.ProfessionId
+                ProfessionId = definition.ProfessionId,
+                Quality = quality
             };
         }
 
         private void ApplyBattleEvent(BattleEvent battleEvent)
         {
+            PlayBattleAudioForEvent(battleEvent);
             QueueBattleFloatingNumber(battleEvent);
             battlePresentation.Apply(battleEvent);
             SpawnBattleFeedback(battleEvent);
         }
 
+        private void PlayBattleAudioForEvent(BattleEvent battleEvent)
+        {
+            if (battleEvent == null || battleAudioPlayer == null) return;
+            var sourceEffectId = battleEvent.SourceEffectId ?? string.Empty;
+            var actionKey = string.Concat(battleEvent.ActorId, "|", battleEvent.ActionTime,
+                "|", sourceEffectId);
+            if (!battleEvent.IsSecondary && sourceEffectId.StartsWith("S_", StringComparison.Ordinal) &&
+                consumedBattleAudioActionKeys.Add(actionKey))
+            {
+                var started = new CardBattleEvent
+                {
+                    Kind = CardBattleEventKind.ActionStarted,
+                    BattleId = runId,
+                    EventSequence = ++battleAudioEventSequence,
+                    ActionId = actionKey,
+                    AbilityId = sourceEffectId,
+                    SourceId = battleEvent.ActorId,
+                    TargetId = battleEvent.TargetId,
+                    AuthorityTick = battleEvent.ActionTime,
+                    Outcome = CardBattleActionOutcome.Completed
+                };
+                PlayBattleAudioCues(battleAudioRouter.Consume(started));
+            }
+
+            var kind = battleEvent.Type == BattleEventType.Attack ||
+                       battleEvent.Type == BattleEventType.Heal
+                ? CardBattleEventKind.ImpactResolved
+                : battleEvent.Type == BattleEventType.Status
+                    ? CardBattleEventKind.StatusFeedback
+                    : (CardBattleEventKind?)null;
+            if (!kind.HasValue) return;
+            var abilityId = sourceEffectId;
+            if (string.IsNullOrEmpty(abilityId))
+            {
+                if (battleEvent.Type == BattleEventType.Heal) abilityId = "A_BASIC_SUPPORT";
+                else if (battleEvent.Type == BattleEventType.Attack)
+                {
+                    var actor = battlePresentation.FindView(battleEvent.ActorId);
+                    var isRanged = actor != null && actor.State != null &&
+                        IsRangedBasicAttacker(actor.State.DefinitionId);
+                    abilityId = isRanged ? "A_BASIC_RANGED" : "A_BASIC_MELEE";
+                }
+                else abilityId = "STATUS_GENERIC";
+            }
+            var eventData = new CardBattleEvent
+            {
+                Kind = kind.Value,
+                BattleId = runId,
+                EventSequence = ++battleAudioEventSequence,
+                ActionId = actionKey,
+                AbilityId = abilityId,
+                SourceId = battleEvent.ActorId,
+                TargetId = battleEvent.TargetId,
+                AuthorityTick = battleEvent.ActionTime,
+                Outcome = CardBattleActionOutcome.Completed,
+                StatusKey = sourceEffectId
+            };
+            if (kind.Value == CardBattleEventKind.ImpactResolved)
+            {
+                eventData.Results.Add(new CardBattleTargetResult
+                {
+                    ChildIndex = battleEvent.ChildIndex,
+                    TargetId = battleEvent.TargetId,
+                    Damage = battleEvent.Type == BattleEventType.Attack ? battleEvent.Amount : 0,
+                    Healing = battleEvent.Type == BattleEventType.Heal ? battleEvent.Amount : 0,
+                    ShieldDelta = battleEvent.TargetShieldAfter,
+                    TargetHealthAfter = battleEvent.TargetHealthAfter,
+                    TargetShieldAfter = battleEvent.TargetShieldAfter,
+                    IsDefeated = battleEvent.TargetHealthAfter <= 0
+                });
+            }
+            PlayBattleAudioCues(battleAudioRouter.Consume(eventData));
+        }
+
+        private static bool IsRangedBasicAttacker(string definitionId)
+        {
+            return string.Equals(definitionId, "unit.healer", StringComparison.Ordinal) ||
+                   string.Equals(definitionId, "unit.starpriest", StringComparison.Ordinal) ||
+                   string.Equals(definitionId, "unit.archer", StringComparison.Ordinal) ||
+                   string.Equals(definitionId, "unit.thornGuard", StringComparison.Ordinal) ||
+                   string.Equals(definitionId, "enemy.n3.ranged", StringComparison.Ordinal);
+        }
+
+        private void PlayBattleAudioCues(IReadOnlyList<BattleAudioCue> cues)
+        {
+            if (cues == null || battleAudioPlayer == null) return;
+            for (var index = 0; index < cues.Count; index++)
+            {
+                battleAudioPlayer.TryPlay(cues[index]);
+                battleAudioRouter.CompleteCue(cues[index]);
+            }
+        }
+
         private void SpawnBattleFeedback(BattleEvent battleEvent)
         {
+            if (battleEvent == null) return;
+            if (battleEvent.TargetShieldAfter <= 0)
+            {
+                StopPersistentN1HoldGateStamp(battleEvent.TargetId);
+                StopPersistentE1SteadyLineFeedback(battleEvent.TargetId);
+            }
+            var isOpenDawnCast = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C01ActiveSkillIntegration.OpenDawnAbilityId, StringComparison.Ordinal);
+            var isOlinTideStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C01ActiveSkillIntegration.TideAbilityId, StringComparison.Ordinal);
+            if (isOlinTideStatus)
+            {
+                if (battleEvent.Amount < 0)
+                    StopPersistentOlinTideFeedback(battleEvent.TargetId);
+                else
+                    StartOrRefreshPersistentOlinTideFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isReturnBeaconStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C02ActiveSkillIntegration.ReturnBeaconAbilityId, StringComparison.Ordinal);
+            if (isReturnBeaconStatus)
+            {
+                if (battleEvent.Amount < 0)
+                    StopPersistentReturnBeaconFeedback(battleEvent.TargetId);
+                else
+                    SetPersistentReturnBeaconFeedback(battleEvent.TargetId, battleEvent.Amount);
+                return;
+            }
+            var isC06FireCharge = battleEvent.Type == BattleEventType.Status &&
+                (string.Equals(battleEvent.SourceEffectId,
+                    C06ActiveSkillIntegration.ShareFireAbilityId, StringComparison.Ordinal) ||
+                 string.Equals(battleEvent.SourceEffectId,
+                    C06ActiveSkillIntegration.FireChargeStatusId, StringComparison.Ordinal));
+            if (isC06FireCharge)
+            {
+                if (battleEvent.Amount > 0)
+                    SetPersistentC06FireCharges(battleEvent.TargetId, battleEvent.Amount);
+                else
+                    StopPersistentC06FireCharges(battleEvent.TargetId);
+                return;
+            }
+            var isC06ReturnFireBuff = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C06ActiveSkillIntegration.ReturnFireBuffStatusId, StringComparison.Ordinal);
+            if (isC06ReturnFireBuff)
+            {
+                if (battleEvent.Amount > 0)
+                    StartPersistentC06ReturnFireBuff(battleEvent.TargetId);
+                else
+                    StopPersistentC06ReturnFireBuff(battleEvent.TargetId);
+                return;
+            }
+            var isN1HoldGateStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    N1ActiveSkillIntegration.HoldGateAbilityId, StringComparison.Ordinal);
+            if (isN1HoldGateStatus)
+            {
+                if (battleEvent.Amount > 0)
+                    SpawnN1HoldGateStamp(battleEvent.TargetId);
+                else
+                    StopPersistentN1HoldGateStamp(battleEvent.TargetId);
+                return;
+            }
+            var isE1SteadyLineStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    E1ActiveSkillIntegration.SteadyLineAbilityId, StringComparison.Ordinal);
+            if (isE1SteadyLineStatus)
+            {
+                if (battleEvent.Amount > 0)
+                    StartPersistentE1SteadyLineFeedback(battleEvent.TargetId);
+                else
+                    StopPersistentE1SteadyLineFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isE2TrackJudgment = battleEvent.Type == BattleEventType.Attack &&
+                !battleEvent.IsSecondary && string.Equals(battleEvent.SourceEffectId,
+                    E2ActiveSkillIntegration.TrackJudgmentAbilityId, StringComparison.Ordinal);
+            if (isE2TrackJudgment)
+            {
+                SpawnE2TrackJudgmentFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isE3BellReturn = string.Equals(battleEvent.SourceEffectId,
+                E3ActiveSkillIntegration.BellReturnAbilityId, StringComparison.Ordinal);
+            if (isE3BellReturn && battleEvent.Type == BattleEventType.Status &&
+                battleEvent.Amount > 0 && battleEvent.ChildIndex == 0)
+                SpawnE3BellReturnFeedback(battleEvent.ActorId);
+            var isB1BlockadeQuake = battleEvent.Type == BattleEventType.Attack &&
+                string.Equals(battleEvent.SourceEffectId,
+                    B1ActiveSkillIntegration.BlockadeQuakeAbilityId, StringComparison.Ordinal);
+            if (isB1BlockadeQuake && battleEvent.ChildIndex == 0)
+                SpawnB1BlockadeQuakeFeedback(battleEvent.ActorId);
+            var isB2Recall = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    B2ActiveSkillIntegration.RecallAbilityId, StringComparison.Ordinal) &&
+                battleEvent.Amount > 0;
+            if (isB2Recall)
+            {
+                var b2Source = battlePresentation.FindView(battleEvent.ActorId);
+                if (b2Source != null && b2Source.State != null)
+                    battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                    {
+                        TargetId = battleEvent.TargetId,
+                        ProfileId = BattleFeedbackProfileIds.B2RecallLost,
+                        Position = BattleBaseCenterFor(b2Source),
+                        Width = BattleBaseWidthFor(b2Source.State) * 0.95f,
+                        DurationSeconds = BattleProjectileProfiles.B2RecallDurationSeconds,
+                        ElapsedSeconds = 0f,
+                        StartDelaySeconds = 0f,
+                        HeightOverride = 0f,
+                        Motion = Vector2.zero,
+                        RenderScale = 1f
+                    });
+                return;
+            }
+            var isB2DeviantLight = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    B2ActiveSkillIntegration.DeviantLightAbilityId, StringComparison.Ordinal);
+            if (isB2DeviantLight)
+            {
+                if (battleEvent.Amount < 0)
+                    StopPersistentB2DeviantLightFeedback(battleEvent.TargetId);
+                else
+                    StartPersistentB2DeviantLightFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isN2CrossCut = battleEvent.Type == BattleEventType.Attack &&
+                !battleEvent.IsSecondary && string.Equals(battleEvent.SourceEffectId,
+                    N2ActiveSkillIntegration.CrossCutAbilityId, StringComparison.Ordinal);
+            if (isN2CrossCut)
+            {
+                var n2Target = battlePresentation.FindView(battleEvent.TargetId);
+                if (n2Target == null || n2Target.State == null) return;
+                var center = n2Target.GetAnchor(BattlePresentationIds.HitAnchor);
+                var width = BattleBaseWidthFor(n2Target.State) * 0.95f;
+                var diagonalTravel = width * 0.72f;
+                var firstOffset = new Vector2(diagonalTravel, -diagonalTravel);
+                var secondOffset = new Vector2(-diagonalTravel, -diagonalTravel);
+                battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                {
+                    TargetId = battleEvent.TargetId,
+                    ProfileId = BattleFeedbackProfileIds.N2CrossCutSlash,
+                    Position = center + firstOffset,
+                    Width = width,
+                    DurationSeconds = 0.29f,
+                    ElapsedSeconds = 0f,
+                    StartDelaySeconds = 0f,
+                    HeightOverride = 0f,
+                    Motion = -firstOffset,
+                    RenderScale = 1f,
+                    MirrorX = false
+                });
+                battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                {
+                    TargetId = battleEvent.TargetId,
+                    ProfileId = BattleFeedbackProfileIds.N2CrossCutSlash,
+                    Position = center + secondOffset,
+                    Width = width,
+                    DurationSeconds = 0.29f,
+                    ElapsedSeconds = 0f,
+                    StartDelaySeconds = 0.09f,
+                    HeightOverride = 0f,
+                    Motion = -secondOffset,
+                    RenderScale = 1f,
+                    MirrorX = true
+                });
+                return;
+            }
+            var isN4MistHunt = battleEvent.Type == BattleEventType.Attack &&
+                !battleEvent.IsSecondary && string.Equals(battleEvent.SourceEffectId,
+                    N4ActiveSkillIntegration.MistHuntAbilityId, StringComparison.Ordinal);
+            if (isN4MistHunt)
+            {
+                var n4Target = battlePresentation.FindView(battleEvent.TargetId);
+                var n4Source = battlePresentation.FindView(battleEvent.ActorId);
+                if (n4Target == null || n4Target.State == null) return;
+                if (LoadBattleVfxSprite(BattleProjectileProfiles.N4MistHuntCrescentResourcePath) != null)
+                {
+                    var n4TargetCenter = n4Target.GetAnchor(BattlePresentationIds.HitAnchor);
+                    var n4Mirror = n4Source != null && n4Source.GetAnchor(BattlePresentationIds.BodyAnchor).x >
+                        n4Target.GetAnchor(BattlePresentationIds.BodyAnchor).x;
+                    var n4Travel = BattleBaseWidthFor(n4Target.State) * 0.72f;
+                    var n4Side = n4Mirror ? -1f : 1f;
+                    var n4StartOffset = new Vector2(n4Side * n4Travel, n4Travel * 0.08f);
+                    battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                    {
+                        TargetId = battleEvent.TargetId,
+                        ProfileId = BattleFeedbackProfileIds.N4MistHuntCrescent,
+                        Position = n4TargetCenter + n4StartOffset,
+                        Width = BattleBaseWidthFor(n4Target.State) * 1.1f,
+                        DurationSeconds = 0.22f,
+                        ElapsedSeconds = 0f,
+                        StartDelaySeconds = 0f,
+                        HeightOverride = 0f,
+                        Motion = -n4StartOffset,
+                        ArcControlOffset = new Vector2(n4Side * n4Travel * 0.55f, -n4Travel * 0.24f),
+                        RenderScale = 1f,
+                        MirrorX = n4Mirror,
+                        UseArcMotion = true
+                    });
+                    return;
+                }
+            }
+            var isWhiteTrailStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C03ActiveSkillIntegration.WhiteTrailAbilityId, StringComparison.Ordinal);
+            if (isWhiteTrailStatus)
+            {
+                if (battleEvent.Amount < 0)
+                    StopPersistentWhiteTrailFeedback(battleEvent.TargetId);
+                else
+                    SetPersistentWhiteTrailFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isWhiteTrailTransfer = battleEvent.Type == BattleEventType.Status &&
+                battleEvent.Amount == DeterministicBattle.LeifuWhiteTrailActionCount &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C03ActiveSkillIntegration.TransferAbilityId, StringComparison.Ordinal);
+            if (isWhiteTrailTransfer)
+            {
+                StopPersistentWhiteTrailFeedback(battleEvent.ActorId);
+                SpawnWhiteTrailTransferFeedback(battleEvent.ActorId, battleEvent.TargetId);
+                SetPersistentWhiteTrailFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isMilaAfterSpringRelease = battleEvent.Type == BattleEventType.Status &&
+                battleEvent.Amount >= 0 &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C04ActiveSkillIntegration.AfterSpringAbilityId, StringComparison.Ordinal);
+            var isMilaHiddenSpringStatus = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C04ActiveSkillIntegration.HiddenSpringAbilityId, StringComparison.Ordinal);
+            if (isMilaHiddenSpringStatus)
+            {
+                if (battleEvent.Amount > 0)
+                    SetPersistentMilaHiddenSpringSeeds(battleEvent.TargetId, battleEvent.Amount);
+                else
+                    StopPersistentMilaHiddenSpringSeeds(battleEvent.TargetId);
+            }
+            if (isMilaAfterSpringRelease)
+            {
+                StopPersistentMilaHiddenSpringSeeds(battleEvent.TargetId);
+                var releaseTarget = battlePresentation.FindView(battleEvent.TargetId);
+                if (releaseTarget != null && releaseTarget.State != null && releaseTarget.State.IsAlive)
+                    battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                    {
+                        TargetId = battleEvent.TargetId,
+                        ProfileId = BattleFeedbackProfileIds.C04AfterSpringRelease,
+                        Position = BattleBaseCenterFor(releaseTarget),
+                        Width = BattleBaseWidthFor(releaseTarget.State) * 1.1f,
+                        DurationSeconds = 0.72f,
+                        ElapsedSeconds = 0f,
+                        StartDelaySeconds = 0f,
+                        HeightOverride = 0f,
+                        Motion = Vector2.zero,
+                        RenderScale = 1f
+                    });
+                return;
+            }
+            if (isOpenDawnCast)
+            {
+                var skillTarget = battlePresentation.FindView(battleEvent.TargetId);
+                if (skillTarget == null || skillTarget.State == null || !skillTarget.State.IsAlive) return;
+                var skillBaseWidth = BattleBaseWidthFor(skillTarget.State);
+                battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                {
+                    TargetId = battleEvent.TargetId,
+                    ProfileId = BattleFeedbackProfileIds.OpenDawn,
+                    Position = BattleBaseCenterFor(skillTarget),
+                    Width = skillBaseWidth * 1.45f,
+                    DurationSeconds = 0.72f,
+                    ElapsedSeconds = 0f,
+                    StartDelaySeconds = 0.08f,
+                    HeightOverride = 0f,
+                    Motion = Vector2.zero,
+                    RenderScale = 1f
+                });
+                return;
+            }
+            var isC05BarrierStart = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C05ActiveSkillIntegration.RebuildBridgeAbilityId, StringComparison.Ordinal);
+            if (isC05BarrierStart)
+            {
+                StartPersistentC05BarrierFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isC05BarrierRemoved = battleEvent.Type == BattleEventType.Status &&
+                (string.Equals(battleEvent.SourceEffectId, C05ActiveSkillIntegration.BarrierBrokenStatusId,
+                    StringComparison.Ordinal) ||
+                 (battleEvent.SourceEffectId ?? string.Empty).StartsWith(
+                    C05ActiveSkillIntegration.BarrierStatusId + ":", StringComparison.Ordinal));
+            if (isC05BarrierRemoved)
+            {
+                StopPersistentC05BarrierFeedback(battleEvent.TargetId);
+                if (string.Equals(battleEvent.SourceEffectId,
+                        C05ActiveSkillIntegration.BarrierBrokenStatusId, StringComparison.Ordinal))
+                    SpawnC05BarrierBreakFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isC05ColumnBuff = battleEvent.Type == BattleEventType.Status &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C05ActiveSkillIntegration.ColumnActionBuffStatusId, StringComparison.Ordinal);
+            if (isC05ColumnBuff)
+            {
+                if (battleEvent.Amount < 0)
+                    StopPersistentC05ColumnBuffFeedback(battleEvent.TargetId);
+                else
+                    StartPersistentC05ColumnBuffFeedback(battleEvent.TargetId);
+                return;
+            }
+            var isYiwenRescueHeal = battleEvent.IsSecondary &&
+                battleEvent.Type == BattleEventType.Heal &&
+                (string.Equals(battleEvent.SourceEffectId,
+                     C02ActiveSkillIntegration.ReturnBeaconAbilityId, StringComparison.Ordinal) ||
+                 string.Equals(battleEvent.SourceEffectId,
+                     C02ActiveSkillIntegration.WaitingAbilityId, StringComparison.Ordinal));
+            if (isYiwenRescueHeal)
+                SpawnYiwenRescueBeam(battleEvent.ActorId, battleEvent.TargetId);
             var isLeechHeal = battleEvent != null && battleEvent.IsSecondary &&
                 battleEvent.Type == BattleEventType.Heal &&
                 string.Equals(battleEvent.SourceEffectId, "B06", StringComparison.Ordinal);
-            if (battleEvent == null || (battleEvent.IsSecondary && !isLeechHeal) ||
+            var isOpenDawnHit = battleEvent.IsSecondary && battleEvent.Type == BattleEventType.Attack &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C01ActiveSkillIntegration.OpenDawnAbilityId, StringComparison.Ordinal);
+            var isC05Counter = battleEvent.IsSecondary && battleEvent.Type == BattleEventType.Attack &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C05ActiveSkillIntegration.HoldBridgeAbilityId, StringComparison.Ordinal);
+            if ((battleEvent.IsSecondary && !isLeechHeal && !isOpenDawnHit && !isYiwenRescueHeal &&
+                 !isC05Counter) ||
                 (battleEvent.Type != BattleEventType.Attack &&
                  battleEvent.Type != BattleEventType.Heal)) return;
             var feedbackKey = string.Concat(
@@ -9784,6 +12775,25 @@ namespace SeekerAutoChess.Prototype
             if (!consumedBattleFeedbackKeys.Add(feedbackKey)) return;
             var target = battlePresentation.FindView(battleEvent.TargetId);
             if (target == null || target.State == null) return;
+            var feedbackTarget = target;
+            var feedbackTargetId = battleEvent.TargetId;
+            var removeC05BarrierMappingAfterImpact = false;
+            if (!battleEvent.IsSecondary && battleEvent.Type == BattleEventType.Attack &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C05ActiveSkillIntegration.HoldBridgeAbilityId, StringComparison.Ordinal))
+            {
+                string barrierOwnerId;
+                if (c05BarrierOwnerByColumn.TryGetValue(C05ColumnForSlot(target.State.Slot), out barrierOwnerId))
+                {
+                    var barrierOwner = battlePresentation.FindView(barrierOwnerId);
+                    if (barrierOwner != null && barrierOwner.State != null && barrierOwner.State.IsAlive)
+                    {
+                        feedbackTarget = barrierOwner;
+                        feedbackTargetId = barrierOwnerId;
+                        removeC05BarrierMappingAfterImpact = !HasPersistentC05BarrierFeedback(barrierOwnerId);
+                    }
+                }
+            }
 
             var profileId = battleEvent.Type == BattleEventType.Heal
                 ? BattleFeedbackProfileIds.HealFeedback
@@ -9797,11 +12807,11 @@ namespace SeekerAutoChess.Prototype
             var hasLayeredHeal = hasRing && hasRise;
             if (hasLayeredHeal)
             {
-                var baseCenter = BattleBaseCenterFor(target);
-                var baseWidth = BattleBaseWidthFor(target.State);
+                var baseCenter = BattleBaseCenterFor(feedbackTarget);
+                var baseWidth = BattleBaseWidthFor(feedbackTarget.State);
                 battleFeedbackVisuals.Add(new BattleFeedbackVisual
                 {
-                    TargetId = battleEvent.TargetId,
+                    TargetId = feedbackTargetId,
                     ProfileId = BattleFeedbackProfileIds.HealFeedbackRing,
                     Position = baseCenter,
                     Width = baseWidth * 1.1f,
@@ -9814,7 +12824,7 @@ namespace SeekerAutoChess.Prototype
                 });
                 battleFeedbackVisuals.Add(new BattleFeedbackVisual
                 {
-                    TargetId = battleEvent.TargetId,
+                    TargetId = feedbackTargetId,
                     ProfileId = BattleFeedbackProfileIds.HealFeedbackRise,
                     Position = baseCenter - Vector2.up * (baseWidth * 0.35f),
                     Width = 0f,
@@ -9829,18 +12839,677 @@ namespace SeekerAutoChess.Prototype
             }
 
             var position = profileId == BattleFeedbackProfileIds.HealFeedback
-                ? BattleBaseCenterFor(target)
-                : target.GetAnchor(BattlePresentationIds.HitAnchor);
+                ? BattleBaseCenterFor(feedbackTarget)
+                : feedbackTarget.GetAnchor(BattlePresentationIds.HitAnchor);
             battleFeedbackVisuals.Add(new BattleFeedbackVisual
             {
-                TargetId = battleEvent.TargetId,
+                TargetId = feedbackTargetId,
                 ProfileId = profileId,
                 Position = position,
-                Width = FeedbackWidthFor(profileId, target.State),
+                Width = FeedbackWidthFor(profileId, feedbackTarget.State),
                 DurationSeconds = profileId == BattleFeedbackProfileIds.HealFeedback
                     ? 0.28f
                     : profileId == BattleFeedbackProfileIds.HitReaction ? 0.12f
                     : profileId == BattleFeedbackProfileIds.HostileHitFeedbackV2 ? 0.18f : 0.16f,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+            if (removeC05BarrierMappingAfterImpact)
+                c05BarrierOwnerByColumn.Remove(C05ColumnForSlot(target.State.Slot));
+        }
+
+        private bool HasPersistentC05BarrierFeedback(string targetId)
+        {
+            foreach (var feedback in battleFeedbackVisuals)
+            {
+                if (feedback.Persistent && string.Equals(feedback.TargetId, targetId, StringComparison.Ordinal) &&
+                    string.Equals(feedback.ProfileId, BattleFeedbackProfileIds.C05Barrier,
+                        StringComparison.Ordinal)) return true;
+            }
+            return false;
+        }
+
+        private void SetPersistentMilaHiddenSpringSeeds(string targetId, int remainingActions)
+        {
+            if (string.IsNullOrEmpty(targetId)) return;
+            persistentMilaHiddenSpringSeeds[targetId] = Mathf.Clamp(remainingActions, 1, 2);
+        }
+
+        private void StopPersistentMilaHiddenSpringSeeds(string targetId)
+        {
+            if (string.IsNullOrEmpty(targetId)) return;
+            persistentMilaHiddenSpringSeeds.Remove(targetId);
+        }
+
+        private void SetPersistentC06FireCharges(string targetId, int remainingCharges)
+        {
+            for (var index = battleFeedbackVisuals.Count - 1; index >= 0; index--)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) &&
+                    string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C06FireCharge,
+                        StringComparison.Ordinal))
+                    battleFeedbackVisuals.RemoveAt(index);
+            }
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            var count = Mathf.Clamp(remainingCharges, 1, C06ActiveSkillIntegration.NockSelfChargeCount);
+            var center = target.GetAnchor(BattlePresentationIds.HealthBarAnchor) + new Vector2(0f, -20f);
+            var width = BattleBaseWidthFor(target.State) * 0.096f;
+            for (var index = 0; index < count; index++)
+            {
+                var offset = count == 1 ? 0f : (index - (count - 1) * 0.5f) * width * 0.9f;
+                battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                {
+                    TargetId = targetId,
+                    ProfileId = BattleFeedbackProfileIds.C06FireCharge,
+                    Position = center + Vector2.right * offset,
+                    Width = width,
+                    DurationSeconds = float.MaxValue,
+                    ElapsedSeconds = 0f,
+                    StartDelaySeconds = index * 0.04f,
+                    HeightOverride = 0f,
+                    Motion = Vector2.zero,
+                    RenderScale = 1f,
+                    Persistent = true
+                });
+            }
+        }
+
+        private void StopPersistentC06FireCharges(string targetId)
+        {
+            for (var index = battleFeedbackVisuals.Count - 1; index >= 0; index--)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C06FireCharge,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.DurationSeconds = 0.18f;
+            }
+        }
+
+        private void StartPersistentC06ReturnFireBuff(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C06ReturnFireBuff,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = true;
+                existing.FadingOut = false;
+                existing.DurationSeconds = float.MaxValue;
+                return;
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C06ReturnFireBuff,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State),
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentC06ReturnFireBuff(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C06ReturnFireBuff,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.DurationSeconds = 0.22f;
+            }
+        }
+
+        private void StartOrRefreshPersistentOlinTideFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.OlinTide,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = true;
+                existing.FadingOut = false;
+                existing.DurationSeconds = float.MaxValue;
+                return;
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.OlinTide,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State) * 1.1f,
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentOlinTideFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.OlinTide,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.24f;
+            }
+        }
+
+        private void SetPersistentReturnBeaconFeedback(string targetId, int remainingActions)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = battleFeedbackVisuals.Count - 1; index >= 0; index--)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) &&
+                    string.Equals(existing.ProfileId, BattleFeedbackProfileIds.ReturnBeaconRing,
+                        StringComparison.Ordinal))
+                    battleFeedbackVisuals.RemoveAt(index);
+            }
+            var ringCount = Mathf.Clamp(remainingActions, 1, DeterministicBattle.YiwenReturnBeaconActionCount);
+            var baseCenter = BattleBaseCenterFor(target);
+            var baseWidth = BattleBaseWidthFor(target.State);
+            for (var index = 0; index < ringCount; index++)
+            {
+                battleFeedbackVisuals.Add(new BattleFeedbackVisual
+                {
+                    TargetId = targetId,
+                    ProfileId = BattleFeedbackProfileIds.ReturnBeaconRing,
+                    Position = baseCenter,
+                    Width = baseWidth * (index == 0 ? 1.08f : 0.82f),
+                    DurationSeconds = float.MaxValue,
+                    ElapsedSeconds = 0f,
+                    StartDelaySeconds = index * 0.06f,
+                    HeightOverride = 0f,
+                    Motion = Vector2.zero,
+                    RenderScale = 1f,
+                    Persistent = true
+                });
+            }
+        }
+
+        private void StopPersistentReturnBeaconFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.ReturnBeaconRing,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.24f;
+            }
+        }
+
+        private void SpawnN1HoldGateStamp(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = true;
+                existing.FadingOut = false;
+                existing.DurationSeconds = float.MaxValue;
+                existing.ElapsedSeconds = 0f;
+                return;
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.N1HoldGateStamp,
+                Position = target.GetAnchor(BattlePresentationIds.BodyAnchor),
+                Width = BattleBaseWidthFor(target.State) *
+                    BattleProjectileProfiles.N1HoldGateStampDisplayScale * 0.78f,
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentN1HoldGateStamp(string targetId)
+        {
+            if (string.IsNullOrEmpty(targetId)) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.N1HoldGateStamp,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.22f;
+            }
+        }
+
+        private void StartPersistentE1SteadyLineFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            StopPersistentE1SteadyLineFeedback(targetId);
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.E1SteadyLine,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State) * 1.15f,
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentE1SteadyLineFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.E1SteadyLine,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.22f;
+            }
+        }
+
+        private void SpawnE2TrackJudgmentFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.E2TrackJudgment,
+                Position = target.GetAnchor(BattlePresentationIds.HitAnchor),
+                Width = BattleBaseWidthFor(target.State) *
+                    BattleProjectileProfiles.E2TrackJudgmentDisplayScale,
+                DurationSeconds = BattleProjectileProfiles.E2TrackJudgmentDurationSeconds,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+        }
+
+        private void SpawnE3BellReturnFeedback(string actorId)
+        {
+            var source = battlePresentation.FindView(actorId);
+            if (source == null || source.State == null || !source.State.IsAlive) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = actorId,
+                ProfileId = BattleFeedbackProfileIds.E3BellReturn,
+                Position = BattleBaseCenterFor(source),
+                Width = BattleBaseWidthFor(source.State) * 1.55f,
+                DurationSeconds = 0.62f,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+        }
+
+        private void SpawnB1BlockadeQuakeFeedback(string actorId)
+        {
+            var source = battlePresentation.FindView(actorId);
+            if (source == null || source.State == null || !source.State.IsAlive) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = actorId,
+                ProfileId = BattleFeedbackProfileIds.B1BlockadeQuake,
+                Position = BattleBaseCenterFor(source),
+                Width = BattleBaseWidthFor(source.State) * 2f,
+                DurationSeconds = 0.46f,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+        }
+
+        private void StartPersistentC05BarrierFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            var column = C05ColumnForSlot(target.State.Slot);
+            c05BarrierOwnerByColumn[column] = targetId;
+            var protectedUnits = target.State.IsPlayer
+                ? battlePresentation.PlayerUnits : battlePresentation.EnemyUnits;
+            foreach (var unit in protectedUnits)
+            {
+                if (unit == null || !unit.IsAlive || C05ColumnForSlot(unit.Slot) != column) continue;
+                StartPersistentC05BarrierFeedbackForUnit(unit.Id);
+            }
+        }
+
+        private void StartPersistentC05BarrierFeedbackForUnit(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) &&
+                    string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C05Barrier,
+                        StringComparison.Ordinal))
+                {
+                    existing.Persistent = true;
+                    existing.FadingOut = false;
+                    existing.DurationSeconds = float.MaxValue;
+                    return;
+                }
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C05Barrier,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State) * 1.15f,
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentC05BarrierFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null) return;
+            var column = C05ColumnForSlot(target.State.Slot);
+            var protectedUnits = target.State.IsPlayer
+                ? battlePresentation.PlayerUnits : battlePresentation.EnemyUnits;
+            foreach (var unit in protectedUnits)
+            {
+                if (unit == null || C05ColumnForSlot(unit.Slot) != column) continue;
+                StopPersistentC05BarrierFeedbackForUnit(unit.Id);
+            }
+        }
+
+        private void StopPersistentC05BarrierFeedbackForUnit(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C05Barrier,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.30f;
+            }
+        }
+
+        private void SpawnC05BarrierBreakFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null) return;
+            var column = C05ColumnForSlot(target.State.Slot);
+            var protectedUnits = target.State.IsPlayer
+                ? battlePresentation.PlayerUnits : battlePresentation.EnemyUnits;
+            foreach (var unit in protectedUnits)
+            {
+                if (unit == null || !unit.IsAlive || C05ColumnForSlot(unit.Slot) != column) continue;
+                SpawnC05BarrierBreakFeedbackForUnit(unit.Id);
+            }
+        }
+
+        private void SpawnC05BarrierBreakFeedbackForUnit(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C05BarrierBreak,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State) * 1.15f,
+                DurationSeconds = 0.38f,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+        }
+
+        private void StartPersistentC05ColumnBuffFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) &&
+                    string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                        StringComparison.Ordinal))
+                {
+                    existing.Persistent = true;
+                    existing.FadingOut = false;
+                    existing.DurationSeconds = float.MaxValue;
+                    return;
+                }
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C05ColumnActionBuff,
+                Position = BattleBaseCenterFor(target),
+                Width = BattleBaseWidthFor(target.State),
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0.08f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentC05ColumnBuffFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C05ColumnActionBuff,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.22f;
+            }
+        }
+
+        private void SpawnYiwenRescueBeam(string sourceId, string targetId)
+        {
+            var source = battlePresentation.FindView(sourceId);
+            var target = battlePresentation.FindView(targetId);
+            if (source == null || target == null || source.State == null || target.State == null) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                SourceId = sourceId,
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.RescueBeam,
+                Position = Vector2.zero,
+                Width = 0f,
+                DurationSeconds = 0.32f,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f
+            });
+        }
+
+        private void SetPersistentWhiteTrailFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C03WhiteMark,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = true;
+                existing.FadingOut = false;
+                existing.DurationSeconds = float.MaxValue;
+                return;
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C03WhiteMark,
+                Position = target.GetAnchor(BattlePresentationIds.BodyAnchor),
+                Width = C03WhiteMarkWidthFor(target.State),
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentWhiteTrailFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.C03WhiteMark,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.20f;
+            }
+        }
+
+        private void StartPersistentB2DeviantLightFeedback(string targetId)
+        {
+            var target = battlePresentation.FindView(targetId);
+            if (target == null || target.State == null || !target.State.IsAlive) return;
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.B2DeviantLight,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = true;
+                existing.FadingOut = false;
+                existing.DurationSeconds = float.MaxValue;
+                return;
+            }
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.B2DeviantLight,
+                Position = target.GetAnchor(BattlePresentationIds.BodyAnchor) + new Vector2(46f, -48f),
+                Width = BattleBaseWidthFor(target.State) * 0.21f,
+                DurationSeconds = float.MaxValue,
+                ElapsedSeconds = 0f,
+                StartDelaySeconds = 0f,
+                HeightOverride = 0f,
+                Motion = Vector2.zero,
+                RenderScale = 1f,
+                Persistent = true
+            });
+        }
+
+        private void StopPersistentB2DeviantLightFeedback(string targetId)
+        {
+            for (var index = 0; index < battleFeedbackVisuals.Count; index++)
+            {
+                var existing = battleFeedbackVisuals[index];
+                if (!string.Equals(existing.TargetId, targetId, StringComparison.Ordinal) ||
+                    !string.Equals(existing.ProfileId, BattleFeedbackProfileIds.B2DeviantLight,
+                        StringComparison.Ordinal)) continue;
+                existing.Persistent = false;
+                existing.FadingOut = true;
+                existing.ElapsedSeconds = 0f;
+                existing.StartDelaySeconds = 0f;
+                existing.DurationSeconds = 0.22f;
+            }
+        }
+
+        private void SpawnWhiteTrailTransferFeedback(string sourceId, string targetId)
+        {
+            var source = battlePresentation.FindView(sourceId);
+            var target = battlePresentation.FindView(targetId);
+            if (source == null || target == null || source.State == null || target.State == null) return;
+            battleFeedbackVisuals.Add(new BattleFeedbackVisual
+            {
+                SourceId = sourceId,
+                TargetId = targetId,
+                ProfileId = BattleFeedbackProfileIds.C03MarkTransfer,
+                Position = Vector2.zero,
+                Width = 0f,
+                DurationSeconds = 0.26f,
                 ElapsedSeconds = 0f,
                 StartDelaySeconds = 0f,
                 HeightOverride = 0f,
@@ -9858,9 +13527,16 @@ namespace SeekerAutoChess.Prototype
             }
             if (string.Equals(profileId, BattleFeedbackProfileIds.HitReaction,
                     StringComparison.Ordinal)) return 76f * 1.5f;
+            if (string.Equals(profileId, BattleFeedbackProfileIds.N2CrossCutSlash,
+                     StringComparison.Ordinal)) return BattleBaseWidthFor(target) * 0.95f;
             if (string.Equals(profileId, BattleFeedbackProfileIds.HostileHitFeedbackV2,
                     StringComparison.Ordinal)) return 84f * 1.5f;
             return 84f * 1.5f;
+        }
+
+        private float C03WhiteMarkWidthFor(BattleUnitPresentationState target)
+        {
+            return Mathf.Max(1f, BattleBaseWidthFor(target) * 0.72f * 0.80f);
         }
 
         private Vector2 BattleBaseCenterFor(BattleUnitViewDriver target)
@@ -9902,6 +13578,11 @@ namespace SeekerAutoChess.Prototype
                 visibleRect.width);
         }
 
+        private static int C05ColumnForSlot(int slot)
+        {
+            return slot < 0 ? -1 : slot % 3;
+        }
+
         private string FeedbackProfileForAttack(string actorId)
         {
             var actor = battlePresentation.FindView(actorId);
@@ -9915,10 +13596,23 @@ namespace SeekerAutoChess.Prototype
 
         private void QueueBattleFloatingNumber(BattleEvent battleEvent)
         {
-            if (battleEvent == null || battleEvent.Type == BattleEventType.Defeat || battleEvent.Amount <= 0) return;
+            if (battleEvent == null ||
+                (battleEvent.Type != BattleEventType.Attack && battleEvent.Type != BattleEventType.Heal) ||
+                battleEvent.Amount <= 0) return;
             var cue = battleVisual;
             var target = battlePresentation.FindView(battleEvent.TargetId);
             if (cue == null || target == null) return;
+            if (!battleEvent.IsSecondary && battleEvent.Type == BattleEventType.Attack &&
+                string.Equals(battleEvent.SourceEffectId,
+                    C05ActiveSkillIntegration.HoldBridgeAbilityId, StringComparison.Ordinal))
+            {
+                string barrierOwnerId;
+                if (c05BarrierOwnerByColumn.TryGetValue(C05ColumnForSlot(target.State.Slot), out barrierOwnerId))
+                {
+                    var barrierOwner = battlePresentation.FindView(barrierOwnerId);
+                    if (barrierOwner != null) target = barrierOwner;
+                }
+            }
 
             // The old overlay was visible for the final 52% of the cue. Keep that
             // per-cue timing relationship and double it without extending the action itself.
@@ -9962,7 +13656,7 @@ namespace SeekerAutoChess.Prototype
         private RoguelikeChoiceSet EnsureRoguelikeChoiceSet()
         {
             if (!expeditionFlow.CanChooseUpgrade) return null;
-            if (roguelikeBuildDiagnosticsOpen && roguelikeDiagnosticSuppressChoiceSet) return null;
+            if (IsDiagnosticRunId(runId) && roguelikeDiagnosticSuppressChoiceSet) return null;
             roguelikeBuild.SynchronizeRunStateVersion(runEconomyActions.StateVersion);
             var progress = Mathf.Clamp((round - 1) * 10000 / Mathf.Max(1, FinalRound - 1), 0, 9999);
             return roguelikeBuild.EnsureChoiceSet(runId, progress, currentEncounterIsElite,
@@ -10156,6 +13850,7 @@ namespace SeekerAutoChess.Prototype
             battlePresentation.Reset();
             battleFloatingNumbers.Clear();
             battleFeedbackVisuals.Clear();
+            c05BarrierOwnerByColumn.Clear();
             battlePaused = false;
             battleControlsEnabled = false;
             battleSceneOpacity = 0f;
@@ -10183,7 +13878,9 @@ namespace SeekerAutoChess.Prototype
 
         private void SaveGame()
         {
-            if (expeditionFlow == null || expeditionFlow.IsBattling || runRoster == null || runDeck == null ||
+            if (SkillDiagnosticActive || IsDiagnosticRunId(runId) ||
+                expeditionFlow == null || expeditionFlow.IsBattling ||
+                runRoster == null || runDeck == null ||
                 nextRunDeckSelection == null || playerCollection == null)
             {
                 return;
@@ -10205,6 +13902,7 @@ namespace SeekerAutoChess.Prototype
                 runAttackBonus = runAttackBonus,
                 runHealthBonus = runHealthBonus,
                 roguelikeRulesVersion = RoguelikeRulesVersion,
+                attackSpeedRulesVersion = AttackSpeedRulesVersion,
                 roguelikeRunStateVersion = roguelikeBuild.StateVersion,
                 roguelikeChoiceOrdinal = roguelikeBuild.ChoiceOrdinal,
                 pendingRoguelikeChoiceSet = roguelikeBuild.PendingChoiceSet,
@@ -10265,9 +13963,23 @@ namespace SeekerAutoChess.Prototype
                 lastRunEconomyActionId = runEconomyActions.LastActionId,
                 lastRunEconomyResultCode = (int)runEconomyActions.LastResultCode,
                 collection = new PrototypeCollectionSaveData[playerCollection.Entries.Count],
+                storePurchaseSerial = storePurchaseSerial,
+                storeEpicPitySkr = storeEpicPitySkr,
+                storeLegendaryPitySkr = storeLegendaryPitySkr,
+                ownedBasePackIds = ownedBasePackIds.ToArray(),
+                storeOpeningActive = storeOpeningActive,
+                storeOpeningProgress = storeOpeningProgress,
+                pendingStoreOrderId = pendingStoreOrderId,
+                pendingStoreInstanceIds = CopyIds(pendingStoreInstanceIds),
+                pendingStoreDefinitionIds = CopyIds(pendingStoreDefinitionIds),
+                pendingStoreQualities = pendingStoreQualities == null
+                    ? new int[0] : (int[])pendingStoreQualities.Clone(),
                 equipment = new PrototypeEquipmentSaveData[equipmentInventory.Instances.Count],
                 activeRunLoadouts = new PrototypeLoadoutSnapshotSaveData[runEquipmentSnapshots.Count],
-                defenseUnits = new PrototypeUnitSaveData[defenseSlots.Length]
+                defenseUnits = new PrototypeUnitSaveData[defenseSlots.Length],
+                arenaRating = arenaRating,
+                arenaChallengesRemaining = arenaChallengesRemaining,
+                arenaChallengeDayKey = arenaChallengeDayKey
             };
             for (var i = 0; i < playerCollection.Entries.Count; i++)
             {
@@ -10322,6 +14034,10 @@ namespace SeekerAutoChess.Prototype
                 data.units[i].basePower = runUnit.BasePower;
                 data.units[i].runLevel = runUnit.RunLevel;
                 data.units[i].acquisitionBasis = runUnit.AcquisitionBasis;
+                data.units[i].quality = (int)runUnit.Quality;
+                data.units[i].aptitudeRoll = runUnit.AptitudeRoll;
+                data.units[i].sourceBusinessId = runUnit.SourceBusinessId;
+                data.units[i].externalStar = runUnit.ExternalStar;
                 data.units[i].maxHealth = unit.MaxHealth;
                 data.units[i].attackDamage = unit.AttackDamage;
                 data.units[i].healAmount = unit.HealAmount;
@@ -10340,6 +14056,10 @@ namespace SeekerAutoChess.Prototype
                 data.benchUnits[i].basePower = runUnit.BasePower;
                 data.benchUnits[i].runLevel = runUnit.RunLevel;
                 data.benchUnits[i].acquisitionBasis = runUnit.AcquisitionBasis;
+                data.benchUnits[i].quality = (int)runUnit.Quality;
+                data.benchUnits[i].aptitudeRoll = runUnit.AptitudeRoll;
+                data.benchUnits[i].sourceBusinessId = runUnit.SourceBusinessId;
+                data.benchUnits[i].externalStar = runUnit.ExternalStar;
                 data.benchUnits[i].maxHealth = unit.MaxHealth;
                 data.benchUnits[i].attackDamage = unit.AttackDamage;
                 data.benchUnits[i].healAmount = unit.HealAmount;
@@ -10353,12 +14073,24 @@ namespace SeekerAutoChess.Prototype
                 data.defenseUnits[i].occupied = true;
                 data.defenseUnits[i].nameKey = unit.NameKey;
                 data.defenseUnits[i].power = unit.Power;
+                data.defenseUnits[i].basePower = unit.BasePower;
+                data.defenseUnits[i].runLevel = unit.RunLevel;
+                data.defenseUnits[i].quality = (int)unit.Quality;
+                data.defenseUnits[i].aptitudeRoll = unit.AptitudeRoll;
+                data.defenseUnits[i].externalStar = unit.ExternalStar;
+                data.defenseUnits[i].characterInstanceId = unit.CharacterInstanceId;
                 data.defenseUnits[i].maxHealth = unit.MaxHealth;
                 data.defenseUnits[i].attackDamage = unit.AttackDamage;
                 data.defenseUnits[i].healAmount = unit.HealAmount;
                 data.defenseUnits[i].isHealer = unit.IsHealer;
             }
             PrototypeSaveStore.Save(SaveKey, data);
+        }
+
+        private static bool IsDiagnosticRunId(string value)
+        {
+            return !string.IsNullOrEmpty(value) &&
+                value.StartsWith("diag-C", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool LoadGame()
@@ -10370,6 +14102,16 @@ namespace SeekerAutoChess.Prototype
             RestoreEquipment(data.equipment);
             RestoreRunEquipmentSnapshots(data.activeRunLoadouts);
             RestoreDefense(data.defenseUnits);
+            pendingDefenseRemovedCount = ReconcileDefenseWithActiveDeck();
+            arenaRating = data.saveVersion >= 32 && data.arenaRating > 0
+                ? data.arenaRating : ArenaPrototypeRules.TemporaryInitialRating;
+            arenaChallengeDayKey = data.arenaChallengeDayKey;
+            arenaChallengesRemaining = ArenaPrototypeRules.NormalizeChallengesRemaining(
+                arenaChallengeDayKey,
+                data.saveVersion >= 32 ? data.arenaChallengesRemaining : ArenaPrototypeRules.DailyChallengeLimit,
+                DateTime.Now);
+            arenaChallengeDayKey = ArenaPrototypeRules.DayKey(DateTime.Now);
+            arenaOpponents = ArenaPrototypeRules.CreateDeterministicBots(arenaRating);
             if (data.saveVersion < 21)
             {
                 expeditionEnergy = ExpeditionEnergyRules.InitialEnergy;
@@ -10381,6 +14123,37 @@ namespace SeekerAutoChess.Prototype
                 expeditionEnergy = Mathf.Max(0, data.expeditionEnergy);
                 skrBalance = Mathf.Max(0, data.skrBalance);
                 currentExpeditionRewardsEnabled = data.expeditionRewardsEnabled;
+            }
+            storePurchaseSerial = Mathf.Max(0, data.storePurchaseSerial);
+            storeEpicPitySkr = Mathf.Max(0, data.storeEpicPitySkr);
+            storeLegendaryPitySkr = Mathf.Max(0, data.storeLegendaryPitySkr);
+            storeOpeningActive = data.storeOpeningActive;
+            storeOpeningProgress = Mathf.Clamp01(data.storeOpeningProgress);
+            pendingStoreOrderId = data.pendingStoreOrderId;
+            pendingStoreInstanceIds = data.pendingStoreInstanceIds ?? new string[0];
+            pendingStoreDefinitionIds = data.pendingStoreDefinitionIds ?? new string[0];
+            pendingStoreQualities = data.pendingStoreQualities ?? new int[0];
+            if (storeOpeningActive &&
+                (pendingStoreInstanceIds.Length != StoreRules.DrawCountPerCharacterPack ||
+                 pendingStoreDefinitionIds.Length != StoreRules.DrawCountPerCharacterPack ||
+                 pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack))
+            {
+                storeOpeningActive = false;
+                storeOpeningProgress = 0f;
+                pendingStoreOrderId = null;
+                pendingStoreInstanceIds = new string[0];
+                pendingStoreDefinitionIds = new string[0];
+                pendingStoreQualities = new int[0];
+            }
+            ownedBasePackIds.Clear();
+            if (data.ownedBasePackIds != null)
+            {
+                for (var i = 0; i < data.ownedBasePackIds.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(data.ownedBasePackIds[i]) &&
+                        !ownedBasePackIds.Contains(data.ownedBasePackIds[i]))
+                        ownedBasePackIds.Add(data.ownedBasePackIds[i]);
+                }
             }
             expeditionEntryCommitted = data.saveVersion >= 22
                 ? data.expeditionEntryCommitted
@@ -10467,7 +14240,8 @@ namespace SeekerAutoChess.Prototype
             // compatibility, then retired instead of being mislabeled as B01/B02.
             runAttackBonus = 0;
             runHealthBonus = 0;
-            if (data.saveVersion >= 26 && data.roguelikeRulesVersion == RoguelikeRulesVersion)
+            if (data.saveVersion >= 26 && data.roguelikeRulesVersion >= 1 &&
+                data.roguelikeRulesVersion <= RoguelikeRulesVersion)
             {
                 roguelikeBuild.Restore(data.roguelikeRunStateVersion, data.roguelikeChoiceOrdinal,
                     data.pendingRoguelikeChoiceSet, data.acquiredRoguelikeEffects,
@@ -10625,16 +14399,34 @@ namespace SeekerAutoChess.Prototype
                 if (!definition.IsCollectible || ContainsOwnedCharacter(restored, definition.DefinitionId)) continue;
                 restored.Add(new OwnedCharacterState(definition.DefinitionId, 1, 0, CharacterQuality.Common));
             }
+            restored = PlayerCollection.AddMissingFormalQualityVariants(characterCatalog, restored);
             playerCollection = restored.Count > 0
                 ? new PlayerCollection(characterCatalog, restored)
                 : PlayerCollection.CreatePrototype(characterCatalog);
 
             var nextIds = data.nextRunDeckCharacterInstanceIds;
+            if (data.saveVersion < 30)
+                nextIds = PreferredFormalDeckInstanceIds();
             if (nextIds == null || nextIds.Length == 0) nextIds = data.nextRunDeckUnitIds;
             if (nextIds == null || nextIds.Length == 0) nextIds = data.activeDeckUnitIds;
             if (nextIds == null || nextIds.Length == 0) nextIds = activeDeckUnitIds;
             nextRunDeckSelection = new RunDeckSelection(
                 playerCollection, nextIds, MaximumDeckSize, MinimumDeckSize);
+        }
+
+        private string[] PreferredFormalDeckInstanceIds()
+        {
+            var preferred = new List<string>();
+            foreach (var definition in characterCatalog.Definitions)
+            {
+                if (!definition.IsCollectible || preferred.Count >= MaximumDeckSize) continue;
+                var instanceId = PlayerCollection.FormalQualityInstanceId(
+                    definition.DefinitionId, CharacterQuality.Legendary);
+                OwnedCharacterState owned;
+                if (playerCollection.TryGetByInstanceId(instanceId, out owned))
+                    preferred.Add(instanceId);
+            }
+            return preferred.ToArray();
         }
 
         private static bool ContainsOwnedCharacter(
@@ -10761,8 +14553,16 @@ namespace SeekerAutoChess.Prototype
             if (savedUnit == null || !savedUnit.occupied) return null;
             var runLevel = Mathf.Clamp(savedUnit.runLevel == 0 ? 1 : savedUnit.runLevel, 1, RunUnitRules.MaximumRunLevel);
             var basePower = savedUnit.basePower == 0 ? savedUnit.power : savedUnit.basePower;
+            var quality = Enum.IsDefined(typeof(CharacterQuality), savedUnit.quality)
+                ? (CharacterQuality)savedUnit.quality : CharacterQuality.Common;
+            var sourceBusinessId = string.IsNullOrEmpty(savedUnit.sourceBusinessId)
+                ? savedUnit.runUnitId : savedUnit.sourceBusinessId;
+            var aptitudeRoll = string.IsNullOrEmpty(savedUnit.sourceBusinessId)
+                ? -1 : Mathf.Clamp(savedUnit.aptitudeRoll, 0, CharacterRarityInstanceRules.RollScale);
             return new RunUnitState(savedUnit.nameKey, basePower, runLevel,
-                Mathf.Max(0, savedUnit.acquisitionBasis), savedUnit.runUnitId);
+                Mathf.Max(0, savedUnit.acquisitionBasis), savedUnit.runUnitId,
+                quality, aptitudeRoll,
+                sourceBusinessId, Mathf.Clamp(savedUnit.externalStar, 0, 2));
         }
 
         private void EnsureRunEconomyIdentity()
@@ -10814,7 +14614,22 @@ namespace SeekerAutoChess.Prototype
             {
                 var savedUnit = savedDefense[i];
                 if (savedUnit == null || !savedUnit.occupied) continue;
-                var unit = CreateUnit(savedUnit.nameKey, savedUnit.power, PlayerColor(savedUnit.nameKey));
+                var definition = characterCatalog.Get(savedUnit.nameKey);
+                var quality = Enum.IsDefined(typeof(CharacterQuality), savedUnit.quality)
+                    ? (CharacterQuality)savedUnit.quality : CharacterQuality.Common;
+                var sourceId = string.IsNullOrEmpty(savedUnit.characterInstanceId)
+                    ? "defense." + i + "." + savedUnit.nameKey : savedUnit.characterInstanceId;
+                var aptitudeRoll = savedUnit.aptitudeRoll;
+                if (aptitudeRoll < 0 || aptitudeRoll > CharacterRarityInstanceRules.RollScale)
+                    aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(sourceId);
+                var basePower = savedUnit.basePower > 0 ? savedUnit.basePower : savedUnit.power;
+                var stats = CharacterRarityInstanceRules.CalculateCombatStats(definition, basePower, 1,
+                    quality, aptitudeRoll, Mathf.Clamp(savedUnit.externalStar, 0, 2));
+                var unit = UnitData.Create(definition, basePower, PlayerColor(savedUnit.nameKey), 1, stats);
+                unit.CharacterInstanceId = sourceId;
+                unit.Quality = quality;
+                unit.AptitudeRoll = aptitudeRoll;
+                unit.ExternalStar = Mathf.Clamp(savedUnit.externalStar, 0, 2);
                 unit.MaxHealth = savedUnit.maxHealth;
                 unit.AttackDamage = savedUnit.attackDamage;
                 unit.HealAmount = savedUnit.healAmount;
@@ -10939,9 +14754,9 @@ namespace SeekerAutoChess.Prototype
             if (unit == null || expeditionEconomy.ActiveBattleTargetSlot != slot) return;
             if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I01")
                 unit.OpeningShield += Mathf.Max(1, Mathf.CeilToInt(unit.MaxHealth * 0.15f));
-            if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I02" &&
-                unit.SpeedTier < CombatSpeedTier.Fast)
-                unit.SpeedTier = (CombatSpeedTier)((int)unit.SpeedTier + 1);
+            if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I02")
+                unit.AttackSpeedBasisPoints = ContinuousAttackSpeedRules.CalculateFinal(
+                    unit.AttackSpeedBasisPoints, 1500);
         }
 
         private BattleUnitPresentationState CreateBattleUnitPresentation(
@@ -11030,6 +14845,7 @@ namespace SeekerAutoChess.Prototype
 
         private sealed class BattleFeedbackVisual
         {
+            public string SourceId;
             public string TargetId;
             public string ProfileId;
             public Vector2 Position;
@@ -11039,7 +14855,12 @@ namespace SeekerAutoChess.Prototype
             public float StartDelaySeconds;
             public float HeightOverride;
             public Vector2 Motion;
+            public Vector2 ArcControlOffset;
             public float RenderScale;
+            public bool MirrorX;
+            public bool UseArcMotion;
+            public bool Persistent;
+            public bool FadingOut;
         }
 
         private sealed class UnitData
@@ -11054,8 +14875,13 @@ namespace SeekerAutoChess.Prototype
             public int HealAmount;
             public int Armor;
             public CombatSpeedTier SpeedTier;
+            public int AttackSpeedBasisPoints;
             public int OpeningShield;
             public bool IsHealer;
+            public string CharacterInstanceId;
+            public CharacterQuality Quality;
+            public int AptitudeRoll;
+            public int ExternalStar;
 
             public static UnitData Create(
                 CharacterDefinition definition,
@@ -11077,6 +14903,7 @@ namespace SeekerAutoChess.Prototype
                     HealAmount = stats.HealAmount,
                     Armor = stats.Armor,
                     SpeedTier = stats.SpeedTier,
+                    AttackSpeedBasisPoints = stats.AttackSpeedBasisPoints,
                     IsHealer = stats.HealAmount > 0
                 };
             }

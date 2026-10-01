@@ -21,6 +21,7 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int runAttackBonus;
         public int runHealthBonus;
         public int roguelikeRulesVersion;
+        public int attackSpeedRulesVersion;
         public int roguelikeRunStateVersion;
         public int roguelikeChoiceOrdinal;
         public RoguelikeChoiceSet pendingRoguelikeChoiceSet;
@@ -81,9 +82,22 @@ namespace SeekerAutoChess.Prototype.Persistence
         public string lastRunEconomyActionId;
         public int lastRunEconomyResultCode;
         public PrototypeCollectionSaveData[] collection;
+        public int storePurchaseSerial;
+        public int storeEpicPitySkr;
+        public int storeLegendaryPitySkr;
+        public string[] ownedBasePackIds;
+        public bool storeOpeningActive;
+        public float storeOpeningProgress;
+        public string pendingStoreOrderId;
+        public string[] pendingStoreInstanceIds;
+        public string[] pendingStoreDefinitionIds;
+        public int[] pendingStoreQualities;
         public PrototypeEquipmentSaveData[] equipment;
         public PrototypeLoadoutSnapshotSaveData[] activeRunLoadouts;
         public PrototypeUnitSaveData[] defenseUnits;
+        public int arenaRating;
+        public int arenaChallengesRemaining;
+        public string arenaChallengeDayKey;
     }
 
     [Serializable]
@@ -129,6 +143,11 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int basePower;
         public int runLevel;
         public int acquisitionBasis;
+        public int quality;
+        public int aptitudeRoll;
+        public string sourceBusinessId;
+        public int externalStar;
+        public string characterInstanceId;
         public int maxHealth;
         public int attackDamage;
         public int healAmount;

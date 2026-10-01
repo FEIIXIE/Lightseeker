@@ -10,35 +10,57 @@ namespace SeekerAutoChess.Core
         public int BasePower { get; }
         public int RunLevel { get; }
         public int AcquisitionBasis { get; }
+        public CharacterQuality Quality { get; }
+        public int AptitudeRoll { get; }
+        public string SourceBusinessId { get; }
+        public int ExternalStar { get; }
 
         public RunUnitState(
             string definitionId,
             int basePower,
             int runLevel = 1,
             int acquisitionBasis = 0,
-            string runUnitId = null)
+            string runUnitId = null,
+            CharacterQuality quality = CharacterQuality.Common,
+            int aptitudeRoll = -1,
+            string sourceBusinessId = null,
+            int externalStar = 0)
         {
             if (string.IsNullOrWhiteSpace(definitionId)) throw new ArgumentException("A unit definition id is required.", nameof(definitionId));
             if (basePower <= 0) throw new ArgumentOutOfRangeException(nameof(basePower));
             if (runLevel < 1 || runLevel > RunUnitRules.MaximumRunLevel) throw new ArgumentOutOfRangeException(nameof(runLevel));
             if (acquisitionBasis < 0) throw new ArgumentOutOfRangeException(nameof(acquisitionBasis));
+            if (!Enum.IsDefined(typeof(CharacterQuality), quality)) throw new ArgumentOutOfRangeException(nameof(quality));
+            if (externalStar < 0 || externalStar > 2) throw new ArgumentOutOfRangeException(nameof(externalStar));
             RunUnitId = runUnitId ?? string.Empty;
             DefinitionId = definitionId;
             BasePower = basePower;
             RunLevel = runLevel;
             AcquisitionBasis = acquisitionBasis;
+            Quality = quality;
+            ExternalStar = externalStar;
+            SourceBusinessId = string.IsNullOrWhiteSpace(sourceBusinessId)
+                ? (string.IsNullOrEmpty(RunUnitId) ? definitionId : RunUnitId)
+                : sourceBusinessId;
+            AptitudeRoll = aptitudeRoll < 0
+                ? CharacterRarityInstanceRules.ComputeAptitudeRoll(SourceBusinessId)
+                : aptitudeRoll;
+            if (AptitudeRoll < 0 || AptitudeRoll > CharacterRarityInstanceRules.RollScale)
+                throw new ArgumentOutOfRangeException(nameof(aptitudeRoll));
         }
 
         public RunUnitState Promote()
         {
             if (RunLevel >= RunUnitRules.MaximumRunLevel) throw new InvalidOperationException("A maximum-level run unit cannot be promoted.");
-            return new RunUnitState(DefinitionId, BasePower, RunLevel + 1, AcquisitionBasis, RunUnitId);
+            return new RunUnitState(DefinitionId, BasePower, RunLevel + 1, AcquisitionBasis, RunUnitId,
+                Quality, AptitudeRoll, SourceBusinessId, ExternalStar);
         }
 
         internal RunUnitState Promote(int combinedAcquisitionBasis)
         {
             if (RunLevel >= RunUnitRules.MaximumRunLevel) throw new InvalidOperationException("A maximum-level run unit cannot be promoted.");
-            return new RunUnitState(DefinitionId, BasePower, RunLevel + 1, combinedAcquisitionBasis, RunUnitId);
+            return new RunUnitState(DefinitionId, BasePower, RunLevel + 1, combinedAcquisitionBasis, RunUnitId,
+                Quality, AptitudeRoll, SourceBusinessId, ExternalStar);
         }
 
         public void EnsureRunUnitId(string runUnitId)
@@ -108,6 +130,13 @@ namespace SeekerAutoChess.Core
         public bool TryRestoreAt(int index, RunUnitState unit)
         {
             if (index < 0 || index >= slots.Length || unit == null || slots[index] != null) return false;
+            slots[index] = unit;
+            return true;
+        }
+
+        public bool ReplaceAt(int index, RunUnitState unit)
+        {
+            if (index < 0 || index >= slots.Length || unit == null) return false;
             slots[index] = unit;
             return true;
         }

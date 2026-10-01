@@ -43,5 +43,18 @@ namespace SeekerAutoChess.Tests
             Assert.That(derived.AttackDamage, Is.EqualTo(5));
             Assert.That(derived.Armor, Is.EqualTo(20));
         }
+
+        [TestCase(1, 11500)]
+        [TestCase(-1, 8200)]
+        public void LegacySpeedTierShiftMigratesToContinuousPercent(int shift, int expected)
+        {
+            var stats = new CombatStatBlock(100, 10, 0,
+                speedTier: CombatSpeedTier.Standard);
+            var snapshot = new EquipmentLoadoutSnapshot(null,
+                new EquipmentStatModifier(speedTierShift: shift));
+
+            Assert.That(EquipmentDerivedStatCalculator.Calculate(stats, snapshot)
+                .AttackSpeedBasisPoints, Is.EqualTo(expected));
+        }
     }
 }

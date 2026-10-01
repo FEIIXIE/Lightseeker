@@ -131,7 +131,10 @@ namespace SeekerAutoChess.Core
             if (battleEvent.Kind == CardBattleEventKind.StatusFeedback)
             {
                 var unit = FindUnit(battleEvent.TargetId);
-                unit.Statuses[battleEvent.StatusKey] = battleEvent.StatusValueAfter;
+                if (string.IsNullOrEmpty(battleEvent.StatusValueAfter))
+                    unit.Statuses.Remove(battleEvent.StatusKey);
+                else
+                    unit.Statuses[battleEvent.StatusKey] = battleEvent.StatusValueAfter;
             }
         }
     }

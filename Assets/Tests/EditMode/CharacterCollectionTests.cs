@@ -87,6 +87,20 @@ namespace SeekerAutoChess.Tests
         }
 
         [Test]
+        public void DraftDeckCanTemporarilyDropBelowThreeBeforeSaveValidation()
+        {
+            var catalog = CharacterCatalog.CreatePrototype();
+            var collection = PlayerCollection.CreatePrototype(catalog);
+            var draft = new RunDeckSelection(collection,
+                new[] { "unit.guardian", "unit.archer", "unit.healer" }, maximumSize: 8, minimumSize: 0);
+
+            Assert.That(draft.TryRemove("unit.guardian"), Is.True);
+            Assert.That(draft.TryRemove("unit.archer"), Is.True);
+            Assert.That(draft.TryRemove("unit.healer"), Is.True);
+            Assert.That(draft.Count, Is.EqualTo(0));
+        }
+
+        [Test]
         public void CollectionAllowsDuplicateCharactersButDeckSelectsOneInstancePerCharacter()
         {
             var catalog = CharacterCatalog.CreatePrototype();
@@ -107,6 +121,38 @@ namespace SeekerAutoChess.Tests
             Assert.That(selection.ContainsInstance("character.guardian.b"), Is.True);
             Assert.That(selection.CreateSnapshot().GetCharacterInstanceId("unit.guardian"),
                 Is.EqualTo("character.guardian.b"));
+        }
+
+        [Test]
+        public void PrototypeCollectionIncludesStableEpicAndLegendaryInstances()
+        {
+            var catalog = CharacterCatalog.CreatePrototype();
+            var collection = PlayerCollection.CreatePrototype(catalog);
+
+            Assert.That(collection.GetByInstanceId("character.unit.guardian.epic").Quality,
+                Is.EqualTo(CharacterQuality.Epic));
+            Assert.That(collection.GetByInstanceId("character.unit.guardian.legendary").Quality,
+                Is.EqualTo(CharacterQuality.Legendary));
+            Assert.That(collection.GetAll("unit.guardian").Count, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void FormalQualityMigrationIsIdempotentAndPreservesExistingCards()
+        {
+            var catalog = CharacterCatalog.CreatePrototype();
+            var source = new[]
+            {
+                new OwnedCharacterState("saved.guardian", "unit.guardian", 1, 2, CharacterQuality.Epic),
+                new OwnedCharacterState("saved.healer", "unit.healer", 1, 1, CharacterQuality.Common)
+            };
+
+            var migrated = PlayerCollection.AddMissingFormalQualityVariants(catalog, source);
+            var migratedAgain = PlayerCollection.AddMissingFormalQualityVariants(catalog, migrated);
+
+            Assert.That(migrated.Count, Is.EqualTo(migratedAgain.Count));
+            Assert.That(migratedAgain[0].CharacterInstanceId, Is.EqualTo("saved.guardian"));
+            Assert.That(migratedAgain.FindAll(entry => entry.DefinitionId == "unit.guardian").Count,
+                Is.EqualTo(3));
         }
     }
 }

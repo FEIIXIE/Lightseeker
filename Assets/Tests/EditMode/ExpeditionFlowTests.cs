@@ -25,6 +25,23 @@ namespace SeekerAutoChess.Tests
         }
 
         [Test]
+        public void DiagnosticRunCanAdvanceThroughMultipleVictoryCycles()
+        {
+            var flow = new ExpeditionFlow();
+
+            for (var battle = 0; battle < 3; battle++)
+            {
+                Assert.That(flow.TryBeginBattle(), Is.True, "begin battle " + battle);
+                Assert.That(flow.TryFinishBattle(playerWon: true, runEnded: false), Is.True,
+                    "finish battle " + battle);
+                Assert.That(flow.TryChooseUpgrade(), Is.True, "choose upgrade " + battle);
+                Assert.That(flow.TryChooseRoute(), Is.True, "choose route " + battle);
+            }
+
+            Assert.That(flow.CanPrepare, Is.True);
+        }
+
+        [Test]
         public void LossReturnsToPreparationAndDoesNotOfferReward()
         {
             var flow = new ExpeditionFlow();

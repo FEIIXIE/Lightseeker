@@ -283,7 +283,8 @@ namespace SeekerAutoChess.Core
             var random = new StableRandom(ChapterOneEncounterRules.Mix(
                 mapSeed, nodeId + ":items:" + sourceId, EconomyVersion));
             var selected = new List<string>();
-            while (selected.Count < Math.Min(Math.Max(1, count), pool.Count))
+            var selectionCount = Math.Min(Math.Max(1, count), pool.Count);
+            while (selected.Count < selectionCount)
             {
                 var itemIndex = random.Next(pool.Count);
                 selected.Add(pool[itemIndex]);

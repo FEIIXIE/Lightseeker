@@ -1,2 +1,3 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Unity emits empty YAML scalar fields in .meta files with a trailing space.
+# Keep general whitespace checks enabled, but do not reject that generated form.
+*.meta whitespace=-blank-at-eol
