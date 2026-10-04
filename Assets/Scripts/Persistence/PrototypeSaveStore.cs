@@ -36,14 +36,17 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int finalScore;
         public int expeditionEnergy;
         public int skrBalance;
+        public int skrSubunitMicro;
         public bool expeditionRewardsEnabled;
         public bool expeditionEntryCommitted;
         public int tideCrystalBalance;
+        // Legacy v32-and-earlier read compatibility. The material repair economy was retired in v33.
         public int stoneBalance;
         public int lampOilBalance;
         public int mistLensBalance;
         public int nextLocalEquipmentSerial;
         public int pendingTideCrystals;
+        // Legacy v32-and-earlier read compatibility; never written by the current runtime.
         public int pendingStone;
         public int pendingLampOil;
         public int pendingMistLens;
@@ -51,6 +54,7 @@ namespace SeekerAutoChess.Prototype.Persistence
         public string[] completedRewardNodeIds;
         public bool expeditionRewardsClaimed;
         public bool chapterOneBossDefeated;
+        // Legacy migration input. A repaired lighthouse becomes a lit lighthouse.
         public bool chapterOneLighthouseRepaired;
         public PrototypeUnitSaveData[] units;
         public PrototypeUnitSaveData[] benchUnits;
@@ -82,6 +86,7 @@ namespace SeekerAutoChess.Prototype.Persistence
         public string lastRunEconomyActionId;
         public int lastRunEconomyResultCode;
         public PrototypeCollectionSaveData[] collection;
+        public string[] favoriteCharacterInstanceIds;
         public int storePurchaseSerial;
         public int storeEpicPitySkr;
         public int storeLegendaryPitySkr;
@@ -98,6 +103,62 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int arenaRating;
         public int arenaChallengesRemaining;
         public string arenaChallengeDayKey;
+        public PrototypeLanternInstanceSaveData[] lanternInventory;
+        public string activeLanternInstanceId;
+        public PrototypeLanternSnapshotSaveData expeditionLanternSnapshot;
+        public PrototypeExpeditionRunRewardSnapshotSaveData expeditionRewardSnapshot;
+        public bool chapterOneLanternAwarded;
+        public bool chapterOneLighthouseLit;
+        public string arenaBattleId;
+        public PrototypeLanternSnapshotSaveData arenaAttackLanternSnapshot;
+        public PrototypeLanternSnapshotSaveData arenaDefenseLanternSnapshot;
+        public int arenaDefenseSnapshotVersion;
+        public bool arenaDefenseNeedsResync;
+        public bool marketSeeded;
+        public string marketLeaseSeasonId;
+        public int marketShopLeaseCount;
+        public int marketStateVersion;
+        public long marketBurnPoolMicroSkr;
+        public long marketTeamRevenueMicroSkr;
+        public int marketListingSerial;
+        public int marketReceiptSerial;
+        public PrototypeMarketListingSaveData[] marketListings;
+        public PrototypeMarketReceiptSaveData[] marketReceipts;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeMarketListingSaveData
+    {
+        public string listingId;
+        public string sellerId;
+        public string sellerDisplayName;
+        public int assetKind;
+        public string assetInstanceId;
+        public string templateId;
+        public int quality;
+        public string seasonId;
+        public long priceMicroSkr;
+        public long createdAtUtcTicks;
+        public int state;
+        public string buyerId;
+        public long resolvedAtUtcTicks;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeMarketReceiptSaveData
+    {
+        public string receiptId;
+        public string listingId;
+        public string sellerId;
+        public string buyerId;
+        public long sellerProceedsMicroSkr;
+        // Legacy v38 field. v39+ writes sellerFeeMicroSkr instead.
+        public long buyerFeeMicroSkr;
+        public long sellerFeeMicroSkr;
+        public long burnMicroSkr;
+        public long teamMicroSkr;
+        public long buyerTotalMicroSkr;
+        public long completedAtUtcTicks;
     }
 
     [Serializable]
@@ -108,6 +169,7 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int copyCount;
         public int externalStar;
         public int quality;
+        public long acquiredAtUtcTicks;
     }
 
     [Serializable]
@@ -152,6 +214,68 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int attackDamage;
         public int healAmount;
         public bool isHealer;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeLanternModifierSaveData
+    {
+        public string modifierId;
+        public int value;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeLanternInstanceSaveData
+    {
+        public string lanternInstanceId;
+        public string templateId;
+        public int quality;
+        public string seasonId;
+        public string sourceChapterId;
+        public string sourceDifficultyId;
+        public string coreEffectId;
+        public string baseFlameStatId;
+        public int baseFlameValue;
+        public int contractStage;
+        public PrototypeLanternModifierSaveData[] modifierRolls;
+        public string rewardReceiptId;
+        public string rulesVersion;
+        public int usageLocks;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeLanternSnapshotSaveData
+    {
+        public bool isNone;
+        public string lanternInstanceId;
+        public string templateId;
+        public int quality;
+        public string seasonId;
+        public string sourceChapterId;
+        public string coreEffectId;
+        public string baseFlameStatId;
+        public int baseFlameValue;
+        public int contractStage;
+        public PrototypeLanternModifierSaveData[] modifierRolls;
+        public string rulesVersion;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeRewardTableReferenceSaveData
+    {
+        public string tableId;
+        public string version;
+    }
+
+    [Serializable]
+    internal sealed class PrototypeExpeditionRunRewardSnapshotSaveData
+    {
+        public string difficultyId;
+        public string entryTypeId;
+        public string paymentTierId;
+        public PrototypeRewardTableReferenceSaveData crystalRewards;
+        public PrototypeRewardTableReferenceSaveData equipmentRewards;
+        public PrototypeRewardTableReferenceSaveData lanternRewards;
+        public string rulesVersion;
     }
 
     internal static class PrototypeSaveStore

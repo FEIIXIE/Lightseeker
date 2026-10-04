@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using SeekerAutoChess.Core;
 
@@ -15,6 +16,23 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
+        public void FormalStoreArtContractKeepsAuthoredModulesAndFrozenNavigation()
+        {
+            Assert.AreEqual("store-e-v1.1.0", StoreFormalArtContract.PackageVersion);
+            Assert.AreEqual(142, StoreFormalArtContract.SideCardWidth);
+            Assert.AreEqual(224, StoreFormalArtContract.SideCardHeight);
+            Assert.AreEqual(154, StoreFormalArtContract.CenterCardWidth);
+            Assert.AreEqual(244, StoreFormalArtContract.CenterCardHeight);
+            Assert.AreEqual(-11f, StoreFormalArtContract.LeftCardAngle);
+            Assert.AreEqual(11f, StoreFormalArtContract.RightCardAngle);
+            Assert.AreEqual(308, StoreFormalArtContract.BaseWidth);
+            Assert.AreEqual(116, StoreFormalArtContract.BaseHeight);
+            Assert.AreEqual(5, StoreFormalArtContract.QualityBadgeResourceIds.Length);
+            Assert.AreEqual(2158f, StoreFormalArtContract.FrozenNavigationTop);
+            Assert.AreEqual(242f, StoreFormalArtContract.FrozenNavigationHeight);
+        }
+
+        [Test]
         public void PackRolesAreDistinctAndDeterministic()
         {
             var catalog = CharacterCatalog.CreatePrototype();
@@ -28,6 +46,20 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
+        public void EverySampledStoreOrderReturnsThreeDistinctCardsWithoutCycling()
+        {
+            var catalog = CharacterCatalog.CreatePrototype();
+            for (var serial = 1; serial <= 1000; serial++)
+            {
+                var result = StoreRules.SelectDistinctCharacterIds(
+                    catalog, "store-order-" + serial, StoreRules.DrawCountPerCharacterPack);
+                Assert.AreEqual(StoreRules.DrawCountPerCharacterPack, result.Length);
+                Assert.AreEqual(result.Length, new HashSet<string>(result).Count,
+                    "Duplicate draw at serial " + serial);
+            }
+        }
+
+        [Test]
         public void WalletGatewayIsReplaceableAndLocalAdapterDoesNotReject()
         {
             IWalletSignatureGateway gateway = new LocalSkrWalletSignatureGateway();
@@ -35,6 +67,17 @@ namespace SeekerAutoChess.Tests.EditMode
                 "store-order-1", "character.pack.white.v1", 50, StoreRules.StoreRulesVersion, "test"));
             Assert.IsTrue(result.Approved);
             StringAssert.Contains("store-order-1", result.SignatureId);
+        }
+
+        [Test]
+        public void WalletGatewayApprovesDeckChangeRequest()
+        {
+            IWalletSignatureGateway gateway = new LocalSkrWalletSignatureGateway();
+            var result = gateway.RequestDeckChangeSignature(new WalletDeckChangeRequest(
+                "deck-change-test", "deck-loadout.v1", "characters=3;equipmentChanges=2"));
+
+            Assert.IsTrue(result.Approved);
+            StringAssert.Contains("deck-change-test", result.SignatureId);
         }
 
         [Test]
@@ -66,6 +109,17 @@ namespace SeekerAutoChess.Tests.EditMode
             Assert.AreEqual(firstStats.AttackDamage, repeatedStats.AttackDamage);
             Assert.GreaterOrEqual(firstRoll, 0);
             Assert.LessOrEqual(firstRoll, CharacterRarityInstanceRules.RollScale);
+        }
+
+        [Test]
+        public void StoreRevealWaitsForBothAssetPreloadAndMinimumAnimation()
+        {
+            Assert.IsFalse(StoreRevealPresentationPolicy.CanBeginCardReveal(false, 10f));
+            Assert.IsFalse(StoreRevealPresentationPolicy.CanBeginCardReveal(true,
+                StoreRevealPresentationPolicy.MinimumLoadingAnimationSeconds - 0.01f));
+            Assert.IsTrue(StoreRevealPresentationPolicy.CanBeginCardReveal(true,
+                StoreRevealPresentationPolicy.MinimumLoadingAnimationSeconds));
+            Assert.Greater(StoreRevealPresentationPolicy.CardRevealDurationSeconds, 0f);
         }
     }
 }

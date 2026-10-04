@@ -572,6 +572,7 @@ namespace SeekerAutoChess.Prototype.Presentation
         public readonly int HealAmount;
         public readonly int Armor;
         public readonly CombatSpeedTier SpeedTier;
+        public readonly CharacterQuality Quality;
         public int MaxShield { get; internal set; }
         public readonly int RunLevel;
         public readonly Vector2 FormationFootPosition;
@@ -590,6 +591,7 @@ namespace SeekerAutoChess.Prototype.Presentation
             int healAmount,
             int armor,
             CombatSpeedTier speedTier,
+            CharacterQuality quality,
             int openingShield,
             Vector2 formationFootPosition,
             int runLevel = 1)
@@ -605,6 +607,7 @@ namespace SeekerAutoChess.Prototype.Presentation
             HealAmount = healAmount;
             Armor = armor;
             SpeedTier = speedTier;
+            Quality = quality;
             MaxShield = Math.Max(0, openingShield);
             CurrentShield = MaxShield;
             RunLevel = Math.Max(1, Math.Min(RunUnitRules.MaximumRunLevel, runLevel));

@@ -1,10 +1,57 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using SeekerAutoChess.Core;
 using UnityEngine;
 
 namespace SeekerAutoChess.Prototype.Presentation
 {
+    public enum HarborPageVariant
+    {
+        Formal,
+        ConstructionAlternate
+    }
+
+    public static class HarborFormalArtContract
+    {
+        public const string PackageVersion = "port-page-a-bounty-tower-v1.1.0";
+        public const string ConstructionAlternatePackageVersion =
+            "port-page-a-bounty-tower-construction-alt-v1.0.0";
+        public const string ResourceRoot = "Art/Harbor/V110/modules/";
+
+        public const string Background = "ART-UI-HARBOR-A-BACKGROUND-1080x2400-v1.1.0";
+        public const string WideNormal = "ART-UI-HARBOR-A-DESTINATION-WIDE-NORMAL-280x88-v1.1.0";
+        public const string WidePressed = "ART-UI-HARBOR-A-DESTINATION-WIDE-PRESSED-280x88-v1.1.0";
+        public const string CompactNormal = "ART-UI-HARBOR-A-DESTINATION-COMPACT-NORMAL-260x88-v1.1.0";
+        public const string CompactPressed = "ART-UI-HARBOR-A-DESTINATION-COMPACT-PRESSED-260x88-v1.1.0";
+        public const string Construction = "ART-UI-HARBOR-A-DESTINATION-CONSTRUCTION-260x78-v1.1.0";
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+        public const int NavigationTop = 2158;
+        public const int NavigationHeight = 242;
+    }
+
+    public static class BountyTowerAFormalArtContract
+    {
+        public const string PackageVersion = "bounty-tower-a-three-pages-v1.0.0";
+        public const string ResourceRoot = "Art/BountyTower/V100/modules/";
+
+        public const string DailyShell = "ART-UI-BOUNTY-A-DAILY-SHELL-1080x2400-v1.0.0";
+        public const string PveShell = "ART-UI-BOUNTY-A-PVE-SHELL-1080x2400-v1.0.0";
+        public const string PvpShell = "ART-UI-BOUNTY-A-PVP-SHELL-1080x2400-v1.0.0";
+        public const string SelectedRankRow = "ART-UI-BOUNTY-A-RANK-ROW-SELECTED-920x64-v1.0.0";
+        public const string EligibilityDivider = "ART-UI-BOUNTY-A-ELIGIBILITY-DIVIDER-920x72-v1.0.0";
+        public const string DifficultyGold = "ART-UI-BOUNTY-A-DIFFICULTY-GOLD-144x44-v1.0.0";
+        public const string DifficultyTeal = "ART-UI-BOUNTY-A-DIFFICULTY-TEAL-144x44-v1.0.0";
+        public const string DifficultyBlue = "ART-UI-BOUNTY-A-DIFFICULTY-BLUE-144x44-v1.0.0";
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+        public const int PoolRightEdge = 1016;
+        public const int PvpTabRightEdge = 1016;
+    }
+
     internal enum LayeredBackgroundKind
     {
         Home,
@@ -41,54 +88,236 @@ namespace SeekerAutoChess.Prototype.Presentation
         Completed
     }
 
+    public static class ArenaFormalArtContract
+    {
+        public const string PackageVersion = "arena-page-e-horizontal-detail-v1.0.0";
+        public const string ResourceRoot = "Art/Arena/V100/modules/";
+
+        public const string MapBackground = "ART-UI-ARENA-MAP-BG-1080x2400-v1.0.0";
+        public const string StatusPanel = "ART-UI-ARENA-STATUS-PANEL-1000x190-v1.0.0";
+        public const string MainBoard = "ART-UI-ARENA-MAIN-BOARD-1000x1600-v1.0.0";
+        public const string TopThreeCard = "ART-UI-ARENA-TOP3-CARD-284x440-v1.0.0";
+        public const string RankRow = "ART-UI-ARENA-RANK-ROW-920x104-v1.0.0";
+        public const string PlayerRankRow = "ART-UI-ARENA-RANK-ROW-PLAYER-920x104-v1.0.0";
+        public const string TopThreeButton = "ART-UI-ARENA-BUTTON-TOP3-220x68-v1.0.0";
+        public const string ViewButton = "ART-UI-ARENA-BUTTON-VIEW-190x64-v1.0.0";
+        public const string DefenseButton = "ART-UI-ARENA-BUTTON-DEFENSE-320x90-v1.0.0";
+        public const string ModalButton = "ART-UI-ARENA-BUTTON-MODAL-390x86-v1.0.0";
+        public const string DetailPanel = "ART-UI-ARENA-DETAIL-PANEL-1000x700-v1.0.0";
+        public const string DefenderSlot = "ART-UI-ARENA-DEFENDER-SLOT-134x210-v1.0.0";
+
+        public const string AnchorCrest = "ART-UI-ARENA-CREST-ANCHOR-180-v1.0.0";
+        public const string LighthouseCrest = "ART-UI-ARENA-CREST-LIGHTHOUSE-180-v1.0.0";
+        public const string TridentCrest = "ART-UI-ARENA-CREST-TRIDENT-180-v1.0.0";
+        public const string TrophyIcon = "ART-UI-ARENA-ICON-TROPHY-64-v1.0.0";
+        public const string SwordsIcon = "ART-UI-ARENA-ICON-SWORDS-64-v1.0.0";
+        public const string ClockIcon = "ART-UI-ARENA-ICON-CLOCK-64-v1.0.0";
+        public const string ShieldIcon = "ART-UI-ARENA-ICON-SHIELD-64-v1.0.0";
+
+        public static readonly string[] TopThreeCrests =
+        {
+            AnchorCrest, LighthouseCrest, TridentCrest
+        };
+
+        public static readonly string[] PublicDefenders =
+        {
+            "ART-UI-ARENA-DEFENDER-C01-118x176-v1.0.0",
+            "ART-UI-ARENA-DEFENDER-C02-118x176-v1.0.0",
+            "ART-UI-ARENA-DEFENDER-C03-118x176-v1.0.0",
+            "ART-UI-ARENA-DEFENDER-C06-118x176-v1.0.0"
+        };
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+        public const int NavigationTop = 2158;
+        public const int NavigationHeight = 242;
+        public const int RightButtonEdge = 980;
+    }
+
+    public static class ArenaBattleResultAFormalArtContract
+    {
+        public const string PackageVersion = "arena-battle-result-a-v1.1.0";
+        public const string ResourceRoot = "Art/Arena/ResultA/V110/modules/";
+
+        public const string FullShell =
+            "ART-UI-ARENA-RESULT-A-FULL-SHELL-1032x728-v1.1.0";
+        public const string ButtonPressedOverlay =
+            "ART-UI-ARENA-RESULT-A-BUTTON-PRESSED-OVERLAY-460x96-v1.1.0";
+        public const string ButtonDisabledOverlay =
+            "ART-UI-ARENA-RESULT-A-BUTTON-DISABLED-OVERLAY-460x96-v1.1.0";
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+    }
+
+    public static class DeckAtlasFormalArtContract
+    {
+        public const string PackageVersion = "deck-page-a-atlas-v1.0.6";
+        public const string InteractionPackageVersion = "deck-page-a-interaction-states-v1.1.0";
+        public const string ResourceRoot = "Art/Deck/V106/";
+        public const string ModuleRoot = ResourceRoot + "modules/";
+        public const string InteractionModuleRoot = "Art/Deck/InteractionV110/modules/";
+        public const string LargeCharacterRoot = ResourceRoot + "character-exports/large/";
+        public const string SmallCharacterRoot = ResourceRoot + "character-exports/small/";
+
+        public const string ActivePanel = "ART-UI-DECK-A-ACTIVE-PANEL-1000x440-v1.0.6";
+        public const string LibraryPanel = "ART-UI-DECK-A-LIBRARY-PANEL-1000x1600-v1.0.6";
+        public const string LibraryPanelFront = "ART-UI-DECK-A-LIBRARY-PANEL-FRONT-1000x1600-v1.0.6";
+        public const string SortBar = "ART-UI-DECK-A-SORT-BAR-650x64-v1.0.6";
+        public const string SmallCardBase = "ART-UI-DECK-A-CARD-SMALL-BASE-130x182-v1.0.6";
+        public const string SmallCardFront = "ART-UI-DECK-A-CARD-SMALL-FRONT-130x182-v1.0.6";
+        public const string LargeCardBase = "ART-UI-DECK-A-CARD-LARGE-BASE-270x378-v1.0.6";
+        public const string LargeCardFront = "ART-UI-DECK-A-CARD-LARGE-FRONT-270x378-v1.0.6";
+        public const string FavoriteControl = "ART-UI-DECK-A-CONTROL-FAVORITE-44-v1.0.6";
+        public const string AddControl = "ART-UI-DECK-A-CONTROL-ADD-44-v1.0.6";
+        public const string FavoriteSelectedControl =
+            "ART-UI-DECK-A-CONTROL-FAVORITE-SELECTED-44-v1.1.0";
+        public const string RemoveControl = "ART-UI-DECK-A-CONTROL-REMOVE-44-v1.1.0";
+
+        public static string SortBarFor(DeckCollectionSortMode mode)
+        {
+            switch (mode)
+            {
+                case DeckCollectionSortMode.Quality:
+                    // The approved v1.0.6 sort bar is byte-identical to the v1.1.0 quality state.
+                    return SortBar;
+                case DeckCollectionSortMode.Name:
+                    return "ART-UI-DECK-A-SORT-BAR-NAME-SELECTED-650x64-v1.1.0";
+                case DeckCollectionSortMode.AcquiredAt:
+                    return "ART-UI-DECK-A-SORT-BAR-ACQUIRED-SELECTED-650x64-v1.1.0";
+                case DeckCollectionSortMode.Favorite:
+                    return "ART-UI-DECK-A-SORT-BAR-FAVORITE-SELECTED-650x64-v1.1.0";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode));
+            }
+        }
+
+        public static string QualityLayer(bool small, CharacterQuality quality)
+        {
+            return "ART-UI-DECK-A-CARD-" + (small ? "SMALL" : "LARGE") +
+                   "-QUALITY-" + quality.ToString().ToUpperInvariant() +
+                   (small ? "-130x182-v1.0.6" : "-270x378-v1.0.6");
+        }
+
+        public static string CharacterLayer(string definitionId, bool small)
+        {
+            var characterId = "C01";
+            switch (definitionId)
+            {
+                case "unit.healer": characterId = "C02"; break;
+                case "unit.thornGuard": characterId = "C03"; break;
+                case "unit.archer": characterId = "C04"; break;
+                case "unit.starblade": characterId = "C05"; break;
+                case "unit.starpriest": characterId = "C06"; break;
+            }
+            return "ART-UI-DECK-A-CHAR-" + characterId + (small
+                ? "-SMALL-116x126-v1.0.6"
+                : "-LARGE-240x261-v1.0.6");
+        }
+    }
+
+    public static class CharacterDetailCFormalArtContract
+    {
+        public const string PackageVersion = "character-detail-equipment-c-v1.0.0";
+        public const string ResourceRoot = "Art/CharacterDetailC/V100/";
+        public const string CharacterRoot = ResourceRoot + "character-exports/";
+        public const string EquipmentRoot = ResourceRoot + "equipment-exports/";
+        public const string IconRoot = ResourceRoot + "icons/";
+        public const string ModuleRoot = ResourceRoot + "modules/";
+
+        public const string BodySlot = "ART-UI-CHARDETAIL-C-EQUIP-BODY-SLOT-104-v1.0.0";
+        public const string FeetSlot = "ART-UI-CHARDETAIL-C-EQUIP-FEET-SLOT-104-v1.0.0";
+        public const string HandsSlot = "ART-UI-CHARDETAIL-C-EQUIP-HANDS-SLOT-104-v1.0.0";
+        public const string HeadSlot = "ART-UI-CHARDETAIL-C-EQUIP-HEAD-SLOT-104-v1.0.0";
+        public const string WeaponSlot = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-SLOT-104-v1.0.0";
+        public const string WeaponCarousel = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-CAROUSEL-150x180-v1.0.0";
+        public const string WeaponSummary = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-SUMMARY-72-v1.0.0";
+        public const string StatHealth = "ART-UI-CHARDETAIL-C-STAT-HEALTH-48-v1.0.0";
+        public const string StatAttack = "ART-UI-CHARDETAIL-C-STAT-ATTACK-48-v1.0.0";
+        public const string StatArmor = "ART-UI-CHARDETAIL-C-STAT-ARMOR-48-v1.0.0";
+        public const string StatSpeed = "ART-UI-CHARDETAIL-C-STAT-SPEED-48-v1.0.0";
+        public const string AttributeCompare = "ART-UI-CHARDETAIL-C-ATTRIBUTE-COMPARE-220x100-v1.0.0";
+        public const string ButtonDisabled = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-DISABLED-390x86-v1.0.1";
+        public const string ButtonNormal = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-NORMAL-390x86-v1.0.0";
+        public const string ButtonPressed = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-PRESSED-390x86-v1.0.0";
+        public const string ArrowLeft = "ART-UI-CHARDETAIL-C-CAROUSEL-ARROW-LEFT-64-v1.0.0";
+        public const string ArrowRight = "ART-UI-CHARDETAIL-C-CAROUSEL-ARROW-RIGHT-64-v1.0.0";
+        public const string CarouselEmpty = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-EMPTY-190x280-v1.0.0";
+        public const string CarouselNormal = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-NORMAL-190x280-v1.0.0";
+        public const string CarouselSelected = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-SELECTED-190x280-v1.0.0";
+        public const string CharacterViewport = "ART-UI-CHARDETAIL-C-CHARACTER-VIEWPORT-520x370-v1.0.0";
+        public const string EquipmentPanel = "ART-UI-CHARDETAIL-C-EQUIPMENT-PANEL-1032x1280-v1.0.0";
+        public const string EquipmentPanelFront = "ART-UI-CHARDETAIL-C-EQUIPMENT-PANEL-FRONT-1032x1280-v1.0.0";
+        public const string SlotNormal = "ART-UI-CHARDETAIL-C-EQUIPMENT-SLOT-NORMAL-140-v1.0.0";
+        public const string SlotSelected = "ART-UI-CHARDETAIL-C-EQUIPMENT-SLOT-SELECTED-140-v1.0.0";
+        public const string HeroPanel = "ART-UI-CHARDETAIL-C-HERO-PANEL-1032x620-v1.0.0";
+        public const string PageDotActive = "ART-UI-CHARDETAIL-C-PAGE-DOT-ACTIVE-16-v1.0.0";
+        public const string PageDotInactive = "ART-UI-CHARDETAIL-C-PAGE-DOT-INACTIVE-16-v1.0.0";
+        public const string SelectionSummary = "ART-UI-CHARDETAIL-C-SELECTION-SUMMARY-912x100-v1.0.0";
+        public const string StatArea = "ART-UI-CHARDETAIL-C-STAT-AREA-388x370-v1.0.0";
+
+        public static string SlotIcon(EquipmentSlot slot)
+        {
+            switch (slot)
+            {
+                case EquipmentSlot.Head: return HeadSlot;
+                case EquipmentSlot.Body: return BodySlot;
+                case EquipmentSlot.Weapon: return WeaponSlot;
+                case EquipmentSlot.Hands: return HandsSlot;
+                default: return FeetSlot;
+            }
+        }
+    }
+
     internal static class PrototypeArtResourceIds
     {
-        public const string HomeSeaChartBackground = "ART-HOME-SEA-CHART-BG-04";
-        public const string HomeChapterOneIsland = "ART-HOME-CH01-LIGHTHOUSE-ISLAND-04";
-        public const string HomeCloudFar = "ART-HOME-CLOUD-FAR-02";
-        public const string HomeCloudNear = "ART-HOME-CLOUD-NEAR-02";
-        public const string HomeLighthouseBeamOverlay = "ART-HOME-LIGHTHOUSE-BEAM-02";
-        public const string HomeLighthouseFlagSheet = "ART-HOME-LIGHTHOUSE-FLAG-4F-02";
-        public const string HomeStatusCard = "ART-UI-HOME-STATUS-CARD-01";
-        public const string HomeChapterMarker = "ART-UI-HOME-CHAPTER-MARKER-01";
         public const string HomeTopFrame = "ART-UI-HOME-TOP-FRAME-01";
         public const string HomeAffairsIcon = "ART-ICON-HOME-AFFAIRS-01";
-        public const string HomeHarborIcon = "ART-ICON-HOME-HARBOR-01";
-        public const string HomeMaterialStoneIcon = "ART-ICON-HOME-MATERIAL-STONE-01";
-        public const string HomeMaterialOilIcon = "ART-ICON-HOME-MATERIAL-OIL-01";
-        public const string HomeMaterialLensIcon = "ART-ICON-HOME-MATERIAL-LENS-01";
-        public const string HomePrimaryNormal = "ART-UI-HOME-PRIMARY-NORMAL-01";
-        public const string HomePrimaryPressed = "ART-UI-HOME-PRIMARY-PRESSED-01";
-        public const string HomePrimaryDisabled = "ART-UI-HOME-PRIMARY-DISABLED-01";
-        public const string HomeBottomDock = "ART-UI-HOME-BOTTOM-DOCK-01";
-        public const string HomeNavActive = "ART-UI-HOME-NAV-ACTIVE-01";
-        public const string HomeNavShopIcon = "ART-ICON-HOME-NAV-SHOP-01";
-        public const string HomeNavDeckIcon = "ART-ICON-HOME-NAV-DECK-01";
-        public const string HomeNavHomeIcon = "ART-ICON-HOME-NAV-HOME-01";
-        public const string HomeNavPvpIcon = "ART-ICON-HOME-NAV-PVP-01";
-        public const string HomeNavRankIcon = "ART-ICON-HOME-NAV-RANK-01";
         public const string HomeBase = "ART-HOME-WHITE-TIDE-BASE-01";
         public const string HomeLighthouseGlow = "ART-HOME-WHITE-TIDE-LIGHTHOUSE-GLOW-01";
         public const string HomeBeam = "ART-HOME-WHITE-TIDE-BEAM-01";
         public const string HomeRouteReflection = "ART-HOME-WHITE-TIDE-ROUTE-REFLECTION-01";
         public const string HomeForegroundFog = "ART-HOME-WHITE-TIDE-FOREGROUND-FOG-01";
 
-        public const string HomeV38StaticBase = "ART-UI-HOME-STATIC-NO-DYNAMIC-TEXT-1080x2400-01";
-        public const string HomeV38StaticBaseEnglish = "localized/en/ART-UI-HOME-STATIC-EN-1080x2400-01";
-        public const string HomeV38ExpeditionNormal = "buttons/ART-UI-HOME-EXPEDITION-NORMAL-NO-TEXT-01";
-        public const string HomeV38ExpeditionContinue = "buttons/ART-UI-HOME-EXPEDITION-CONTINUE-NO-TEXT-01";
-        public const string HomeV38ExpeditionFreeNoReward = "buttons/ART-UI-HOME-EXPEDITION-FREE-NO-REWARD-NO-TEXT-01";
-        public const string HomeV38ExpeditionDisabled = "buttons/ART-UI-HOME-EXPEDITION-DISABLED-NO-TEXT-01";
-        public const string HomeV38BottomNavShop = "bottom-nav/ART-UI-HOME-BOTTOM-NAV-SHOP-ACTIVE-01";
-        public const string HomeV38BottomNavDeck = "bottom-nav/ART-UI-HOME-BOTTOM-NAV-DECK-ACTIVE-01";
-        public const string HomeV38BottomNavHome = "bottom-nav/ART-UI-HOME-BOTTOM-NAV-HOME-ACTIVE-01";
-        public const string HomeV38BottomNavPvp = "bottom-nav/ART-UI-HOME-BOTTOM-NAV-PVP-ACTIVE-01";
-        public const string HomeV38BottomNavHarbor = "bottom-nav/ART-UI-HOME-BOTTOM-NAV-HARBOR-ACTIVE-01";
-        public const string HomeV38BottomNavShopEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-SHOP-ACTIVE-EN-01";
-        public const string HomeV38BottomNavDeckEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-DECK-ACTIVE-EN-01";
-        public const string HomeV38BottomNavHomeEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HOME-ACTIVE-EN-01";
-        public const string HomeV38BottomNavPvpEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-PVP-ACTIVE-EN-01";
-        public const string HomeV38BottomNavHarborEnglish = "localized/en/bottom-nav/ART-UI-HOME-BOTTOM-NAV-HARBOR-ACTIVE-EN-01";
+        public const string HomeLighthouseBackground =
+            "modules/ART-UI-HOME-THINLINE-BACKGROUND-1080x2400-v1.5.0";
+        public const string HomeLighthouseTowerUnlit =
+            "modules/ART-UI-HOME-THINLINE-WHITE-TIDE-TOWER-650x770-v1.5.0";
+        public const string HomeLighthouseLitOverlay =
+            "modules/ART-UI-HOME-THINLINE-LIT-OVERLAY-1080x2400-v1.4.0";
+
+        public const string HomeLighthousePlayerMedallion =
+            "modules/ART-UI-HOME-THINLINE-PLAYER-AVATAR-122-v1.4.0";
+        public const string HomeLighthousePlayerNameLine =
+            "modules/ART-UI-HOME-THINLINE-PROFILE-LINE-275x63-v1.4.0";
+        public const string HomeLighthousePlayerPowerBadge =
+            "modules/ART-UI-HOME-THINLINE-POWER-ICON-32-v1.4.0";
+        public const string HomeLighthouseEnergyGlyph =
+            "modules/ART-UI-HOME-THINLINE-ENERGY-46x68-v1.4.0";
+        public const string HomeLighthouseResourceSeparator =
+            "modules/ART-UI-HOME-THINLINE-SEPARATOR-6x64-v1.4.0";
+        public const string HomeLighthouseSkrBadge =
+            "modules/ART-UI-HOME-THINLINE-SKR-62-v1.4.0";
+        public const string HomeLighthouseTideCrystal =
+            "modules/ART-UI-HOME-THINLINE-TIDE-64-v1.4.0";
+        public const string HomeLighthouseAffairs =
+            "modules/ART-UI-HOME-THINLINE-AFFAIRS-86-v1.4.0";
+        public const string HomeLighthouseWarehouse =
+            "modules/ART-UI-HOME-THINLINE-WAREHOUSE-86-v1.4.0";
+        public const string HomeLighthouseChapterOrnament =
+            "modules/ART-UI-HOME-THINLINE-CHAPTER-ORNAMENT-790x160-v1.4.0";
+        public const string HomeLighthouseLanternPanel =
+            "modules/ART-UI-HOME-THINLINE-LANTERN-PANEL-864x351-v1.4.0";
+        public const string HomeLighthouseExpeditionNormal =
+            "modules/ART-UI-HOME-THINLINE-CTA-NORMAL-740x132-v1.4.0";
+        public const string HomeLighthouseExpeditionPressed =
+            "modules/ART-UI-HOME-THINLINE-CTA-PRESSED-740x137-v1.4.0";
+        public const string HomeLighthouseExpeditionDisabled =
+            "modules/ART-UI-HOME-THINLINE-CTA-DISABLED-740x134-v1.4.0";
+        public const string HomeLighthouseNavNeutral =
+            "modules/ART-UI-HOME-THINLINE-NAV-NEUTRAL-1080x242-v1.0.0";
+        public const string HomeLighthouseNavSelection =
+            "modules/ART-UI-HOME-NAV-SELECTION-CIRCLE-ORNAMENT-169x129-v1.0.0";
 
         public const string BattleAbandonedSignalYardReadability =
             "ART-BATTLE-CHAPTER-01-ABANDONED-SIGNAL-YARD-READABILITY-02";
@@ -224,15 +453,7 @@ namespace SeekerAutoChess.Prototype.Presentation
     internal sealed class ResourcesLayeredBackgroundSource : ILayeredBackgroundSource
     {
         private readonly Dictionary<string, Texture2D> textureCache = new Dictionary<string, Texture2D>();
-        private readonly BackgroundLayerDefinition[] homeLayers =
-        {
-            Layer(BackgroundLayerRole.HomeSeaChart, PrototypeArtResourceIds.HomeSeaChartBackground, "Art/Home"),
-            Layer(BackgroundLayerRole.HomeCloudFar, PrototypeArtResourceIds.HomeCloudFar, "Art/Home"),
-            Layer(BackgroundLayerRole.HomeBeamOverlay, PrototypeArtResourceIds.HomeLighthouseBeamOverlay, "Art/Home"),
-            Layer(BackgroundLayerRole.HomeChapterIsland, PrototypeArtResourceIds.HomeChapterOneIsland, "Art/Home"),
-            Layer(BackgroundLayerRole.HomeFlagSheet, PrototypeArtResourceIds.HomeLighthouseFlagSheet, "Art/Home"),
-            Layer(BackgroundLayerRole.HomeCloudNear, PrototypeArtResourceIds.HomeCloudNear, "Art/Home")
-        };
+        private readonly BackgroundLayerDefinition[] homeLayers = new BackgroundLayerDefinition[0];
 
         private readonly BackgroundLayerDefinition[] battleLayers =
         {
@@ -328,13 +549,9 @@ namespace SeekerAutoChess.Prototype.Presentation
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> pieceBaseSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
-        private readonly Dictionary<string, string> characterAvatarResourceIds =
-            new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> characterQualityAvatarResourceIds =
             new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> characterAvatarSprites =
-            new Dictionary<string, Sprite>(StringComparer.Ordinal);
-        private readonly Dictionary<string, Sprite> characterSlotAvatarSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> equipmentIconResourceIds =
             new Dictionary<string, string>(StringComparer.Ordinal);
@@ -347,6 +564,16 @@ namespace SeekerAutoChess.Prototype.Presentation
         private readonly Dictionary<string, Sprite> equipmentUiSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private readonly Dictionary<string, Texture2D> homeUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> storeUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> arenaUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> deckUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> harborUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> bountyTowerUiTextures =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private readonly Dictionary<string, Texture2D> expeditionUiV46Textures =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
@@ -481,49 +708,22 @@ namespace SeekerAutoChess.Prototype.Presentation
         private void RegisterAvatar(string unitDefinitionId, string qualityId, string resourceId)
         {
             characterQualityAvatarResourceIds[CharacterRarityKey(unitDefinitionId, qualityId)] = resourceId;
-            if (string.Equals(qualityId, "common", StringComparison.Ordinal))
-                characterAvatarResourceIds[unitDefinitionId] = resourceId;
         }
 
-        public bool TryGetCharacterAvatar(string unitDefinitionId, out Sprite sprite)
-        {
-            return TryGetCharacterAvatar(unitDefinitionId, "common", out sprite);
-        }
-
-        public bool TryGetCharacterAvatar(string unitDefinitionId, string qualityId, out Sprite sprite)
+        public bool TryGetCharacterAvatar(string unitDefinitionId, string qualityId,
+            AvatarArtContext context, out Sprite sprite)
         {
             sprite = null;
             string resourceId;
             if (!characterQualityAvatarResourceIds.TryGetValue(
                     CharacterRarityKey(unitDefinitionId, qualityId), out resourceId))
-                return TryGetCharacterAvatar(unitDefinitionId, out sprite);
-            if (!characterAvatarSprites.TryGetValue(resourceId, out sprite))
+                return false;
+            var spec = AvatarArtContract.GetContextSpec(context);
+            var cacheKey = context + "|" + resourceId;
+            if (!characterAvatarSprites.TryGetValue(cacheKey, out sprite))
             {
-                sprite = Resources.Load<Sprite>(AvatarArtContract.ResourcesFolder + resourceId);
-                characterAvatarSprites[resourceId] = sprite;
-            }
-            return sprite != null;
-        }
-
-        public bool TryGetCharacterSlotAvatar(string unitDefinitionId, out Sprite sprite)
-        {
-            return TryGetCharacterSlotAvatar(unitDefinitionId, "common", out sprite);
-        }
-
-        public bool TryGetCharacterSlotAvatar(string unitDefinitionId, string qualityId, out Sprite sprite)
-        {
-            sprite = null;
-            string resourceId;
-            if (!characterQualityAvatarResourceIds.TryGetValue(
-                    CharacterRarityKey(unitDefinitionId, qualityId), out resourceId))
-            {
-                if (!characterAvatarResourceIds.TryGetValue(unitDefinitionId, out resourceId)) return false;
-            }
-            var slotResourceId = resourceId + AvatarArtContract.SlotResourceSuffix;
-            if (!characterSlotAvatarSprites.TryGetValue(slotResourceId, out sprite))
-            {
-                sprite = Resources.Load<Sprite>(AvatarArtContract.SlotResourcesFolder + slotResourceId);
-                characterSlotAvatarSprites[slotResourceId] = sprite;
+                sprite = Resources.Load<Sprite>(spec.ResourcePath(resourceId));
+                characterAvatarSprites[cacheKey] = sprite;
             }
             return sprite != null;
         }
@@ -574,13 +774,121 @@ namespace SeekerAutoChess.Prototype.Presentation
             return texture;
         }
 
-        public Texture2D GetHomeV38Texture(string resourceId)
+        public Texture2D GetHomeLighthouseTexture(string resourceId)
         {
-            var cacheKey = "v38/" + resourceId;
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var usesV150 = resourceId.EndsWith("-v1.5.0", StringComparison.Ordinal);
+            var packageRoot = usesV150 ? "Art/HomeLighthouseV150/" : "Art/HomeLighthouseV140/";
+            var cacheKey = packageRoot + resourceId;
             Texture2D texture;
             if (homeUiTextures.TryGetValue(cacheKey, out texture)) return texture;
-            texture = Resources.Load<Texture2D>("Art/HomeV38/" + resourceId);
+            texture = Resources.Load<Texture2D>(packageRoot + resourceId);
             homeUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetStoreETexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            Texture2D texture;
+            if (storeUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(StoreFormalArtContract.ResourceRoot + resourceId);
+            storeUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetArenaETexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            Texture2D texture;
+            if (arenaUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(ArenaFormalArtContract.ResourceRoot + resourceId);
+            arenaUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetHarborTexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            Texture2D texture;
+            if (harborUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(HarborFormalArtContract.ResourceRoot + resourceId);
+            harborUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetBountyTowerTexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            Texture2D texture;
+            if (bountyTowerUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(BountyTowerAFormalArtContract.ResourceRoot + resourceId);
+            bountyTowerUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetArenaBattleResultATexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var cacheKey = ArenaBattleResultAFormalArtContract.ResourceRoot + resourceId;
+            Texture2D texture;
+            if (arenaUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            arenaUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetDeckAtlasTexture(string resourceId, bool character, bool small)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var root = character
+                ? (small ? DeckAtlasFormalArtContract.SmallCharacterRoot :
+                    DeckAtlasFormalArtContract.LargeCharacterRoot)
+                : DeckAtlasFormalArtContract.ModuleRoot;
+            var cacheKey = root + resourceId;
+            Texture2D texture;
+            if (deckUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            deckUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetDeckInteractionTexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var cacheKey = DeckAtlasFormalArtContract.InteractionModuleRoot + resourceId;
+            Texture2D texture;
+            if (deckUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            deckUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetCharacterDetailCTexture(string resourceId, string group)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var root = CharacterDetailCFormalArtContract.ModuleRoot;
+            if (string.Equals(group, "character", StringComparison.Ordinal))
+                root = CharacterDetailCFormalArtContract.CharacterRoot;
+            else if (string.Equals(group, "equipment", StringComparison.Ordinal))
+                root = CharacterDetailCFormalArtContract.EquipmentRoot;
+            else if (string.Equals(group, "icon", StringComparison.Ordinal))
+                root = CharacterDetailCFormalArtContract.IconRoot;
+            var cacheKey = root + resourceId;
+            Texture2D texture;
+            if (deckUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            deckUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetLanternCircularTexture(string templateId, LanternQuality quality)
+        {
+            var resourceId = LanternArtContract.ResourceId(templateId, quality);
+            Texture2D texture;
+            if (homeUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(resourceId);
+            homeUiTextures[resourceId] = texture;
             return texture;
         }
 
@@ -731,6 +1039,69 @@ namespace SeekerAutoChess.Prototype.Presentation
             texture = Resources.Load<Texture2D>("Art/DetailModal/V114/" + resourceId);
             expeditionUiV46Textures[cacheKey] = texture;
             return texture;
+        }
+
+        public IEnumerator PreloadStoreRevealAssets(string[] unitDefinitionIds, string[] qualityIds)
+        {
+            var detailResourceIds = new[]
+            {
+                PrototypeArtResourceIds.DetailTideWindowShell,
+                PrototypeArtResourceIds.DetailMetadataUnderline,
+                PrototypeArtResourceIds.DetailTagPillTeal,
+                PrototypeArtResourceIds.DetailTagPillPurple,
+                PrototypeArtResourceIds.DetailStatHealth,
+                PrototypeArtResourceIds.DetailStatAttack,
+                PrototypeArtResourceIds.DetailStatArmor,
+                PrototypeArtResourceIds.DetailStatSpeed
+            };
+            var detailRequests = new Dictionary<string, ResourceRequest>(StringComparer.Ordinal);
+            for (var index = 0; index < detailResourceIds.Length; index++)
+            {
+                var resourceId = detailResourceIds[index];
+                var cacheKey = "detail-v114/" + resourceId;
+                if (expeditionUiV46Textures.ContainsKey(cacheKey) || detailRequests.ContainsKey(cacheKey)) continue;
+                detailRequests.Add(cacheKey,
+                    Resources.LoadAsync<Texture2D>("Art/DetailModal/V114/" + resourceId));
+            }
+
+            var badgeRequests = new Dictionary<string, ResourceRequest>(StringComparer.Ordinal);
+            var characterRequests = new Dictionary<string, ResourceRequest>(StringComparer.Ordinal);
+            var count = unitDefinitionIds == null || qualityIds == null
+                ? 0 : Mathf.Min(unitDefinitionIds.Length, qualityIds.Length);
+            for (var index = 0; index < count; index++)
+            {
+                var qualityId = UnitLevelBadgeQualityId(qualityIds[index]);
+                var badgeResourceId = "unit-level-badge-b-" + qualityId + "-lv1";
+                var badgeCacheKey = "unit-level-badge-v111/" + badgeResourceId;
+                if (!expeditionUiV46Textures.ContainsKey(badgeCacheKey) &&
+                    !badgeRequests.ContainsKey(badgeCacheKey))
+                {
+                    badgeRequests.Add(badgeCacheKey, Resources.LoadAsync<Texture2D>(
+                        "Art/FormationBattle/V111/level-badges/2x/" + badgeResourceId));
+                }
+
+                CharacterArtDefinition definition;
+                if (!rarityCharacterDefinitions.TryGetValue(
+                        CharacterRarityKey(unitDefinitionIds[index], qualityId), out definition) &&
+                    !characterDefinitions.TryGetValue(unitDefinitionIds[index], out definition)) continue;
+                if (!characterSprites.ContainsKey(definition.ResourceId) &&
+                    !characterRequests.ContainsKey(definition.ResourceId))
+                {
+                    characterRequests.Add(definition.ResourceId,
+                        Resources.LoadAsync<Sprite>(definition.ResourcesPath));
+                }
+            }
+
+            foreach (var request in detailRequests.Values) yield return request;
+            foreach (var request in badgeRequests.Values) yield return request;
+            foreach (var request in characterRequests.Values) yield return request;
+
+            foreach (var pair in detailRequests)
+                expeditionUiV46Textures[pair.Key] = pair.Value.asset as Texture2D;
+            foreach (var pair in badgeRequests)
+                expeditionUiV46Textures[pair.Key] = pair.Value.asset as Texture2D;
+            foreach (var pair in characterRequests)
+                characterSprites[pair.Key] = pair.Value.asset as Sprite;
         }
 
         private static string UnitLevelBadgeQualityId(string qualityId)

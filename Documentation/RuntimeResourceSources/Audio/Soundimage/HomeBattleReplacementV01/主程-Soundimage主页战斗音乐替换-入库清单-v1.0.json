@@ -1,0 +1,36 @@
+{
+  "documentVersion": "v1.0",
+  "updatedDate": "2026-10-02",
+  "status": "ACTIVE / RUNTIME_INTEGRATED",
+  "sourceRole": "主程",
+  "engineVersion": "v0.43.210",
+  "license": {
+    "name": "Soundimage International Public License",
+    "creator": "Eric Matyas",
+    "site": "https://soundimage.org/",
+    "licenseUrl": "https://soundimage.org/sample-page/",
+    "attributionUrl": "https://soundimage.org/attribution-info/"
+  },
+  "items": [
+    {
+      "scene": "home-and-general",
+      "track": "Kingdom Quest",
+      "sourcePath": "source/Kingdom-Quest.ogg",
+      "runtimePath": "Assets/Resources/Audio/Music/BGM_HOME_KINGDOM_QUEST_SOUNDIMAGE_V01.ogg",
+      "sourcePage": "https://soundimage.org/fantasy-11/",
+      "bytes": 1720033,
+      "sha256": "99F9841388F0517757F168314F0C7D55E519CE14D25F9646207C3AE5EFCA9976",
+      "processing": "runtime filename only; audio bytes unchanged"
+    },
+    {
+      "scene": "active-battle-only",
+      "track": "Training",
+      "sourcePath": "source/Training.mp3",
+      "runtimePath": "Assets/Resources/Audio/Music/BGM_BATTLE_TRAINING_SOUNDIMAGE_V01.mp3",
+      "sourcePage": "https://soundimage.org/sports/",
+      "bytes": 918814,
+      "sha256": "6798F27610B77234D22E646917DE6D33FE31059AB888E7A51C405077124CA406",
+      "processing": "runtime filename only; audio bytes unchanged"
+    }
+  ]
+}

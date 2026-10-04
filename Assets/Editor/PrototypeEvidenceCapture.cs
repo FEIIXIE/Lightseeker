@@ -35,7 +35,7 @@ namespace SeekerAutoChess.EditorTools
                 Path.Combine(Application.dataPath, "../../../outputs/screenshots"));
             Directory.CreateDirectory(outputDirectory);
             var outputPath = Path.Combine(outputDirectory,
-                "SeekerAutoChess-v0.43.0-chapter1-economy-1080x2400.png");
+                "SeekerAutoChess-v0.43.213-home-navigation-home-1080x2400.png");
             ScreenCapture.CaptureScreenshot(outputPath, 1);
             Debug.Log("UI trial screenshot requested: " + outputPath);
         }

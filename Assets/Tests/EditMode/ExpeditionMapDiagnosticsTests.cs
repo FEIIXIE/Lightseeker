@@ -68,16 +68,16 @@ namespace SeekerAutoChess.Tests.EditMode
         {
             var firstLedger = new ExpeditionRewardLedger();
             Assert.That(ExpeditionProgression.TryCompleteNode(
-                firstLedger, "M01", 1, 0, 0, 0), Is.True);
+                firstLedger, "M01", 1), Is.True);
             Assert.That(ExpeditionProgression.TryCompleteNode(
-                firstLedger, "M01", 1, 0, 0, 0), Is.False);
+                firstLedger, "M01", 1), Is.False);
 
             var restored = new ExpeditionRewardLedger();
-            restored.Restore(1, 0, 0, 0, new string[0], firstLedger.CompletedNodeIds, false);
+            restored.Restore(1, new string[0], firstLedger.CompletedNodeIds, false);
             Assert.That(ExpeditionProgression.TryCompleteNode(
-                restored, "M01", 1, 0, 0, 0), Is.False);
+                restored, "M01", 1), Is.False);
             Assert.That(ExpeditionProgression.TryCompleteNode(
-                restored, "M02", 1, 0, 0, 0), Is.True);
+                restored, "M02", 1), Is.True);
         }
 
         [Test]

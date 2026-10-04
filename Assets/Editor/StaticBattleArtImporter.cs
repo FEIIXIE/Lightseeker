@@ -8,7 +8,6 @@ namespace SeekerAutoChess.EditorTools
     {
         private const string AssetFolder = "Assets/Resources/Art/BattleUnits/";
         private const string AvatarAssetFolder = "Assets/Resources/Art/Avatars/";
-        private const string AvatarSlotAssetFolder = "Assets/Resources/Art/Avatars/SlotCircular/";
 
         [InitializeOnLoadMethod]
         private static void EnforcePackAfterScriptReload()
@@ -25,9 +24,8 @@ namespace SeekerAutoChess.EditorTools
                 }
                 foreach (var entry in AvatarArtContract.Entries)
                 {
-                    EnforceAvatar(AvatarAssetFolder + entry.ResourceId + ".png");
-                    EnforceAvatar(AvatarSlotAssetFolder + entry.ResourceId +
-                                  AvatarArtContract.SlotResourceSuffix + ".png");
+                    foreach (var spec in AvatarArtContract.ContextSpecs)
+                        EnforceAvatar("Assets/Resources/" + spec.ResourcePath(entry.ResourceId) + ".png");
                 }
             };
         }

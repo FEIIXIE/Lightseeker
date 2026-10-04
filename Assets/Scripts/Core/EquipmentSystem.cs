@@ -162,6 +162,115 @@ namespace SeekerAutoChess.Core
         }
     }
 
+    /// <summary>
+    /// Transactional out-of-run equipment assignment draft. Deck editing mutates this
+    /// copy only; the live inventory is changed atomically after wallet approval.
+    /// </summary>
+    public sealed class EquipmentAssignmentDraft
+    {
+        private readonly EquipmentCatalog catalog;
+        private readonly Dictionary<string, string> assignments;
+
+        internal EquipmentAssignmentDraft(EquipmentCatalog catalog,
+            IEnumerable<EquipmentInstanceState> instances)
+        {
+            this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+            assignments = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var instance in instances)
+                assignments[instance.EquipmentInstanceId] = instance.EquippedCharacterInstanceId;
+        }
+
+        public string GetAssignedCharacterId(string equipmentInstanceId)
+        {
+            string characterInstanceId;
+            if (!assignments.TryGetValue(equipmentInstanceId, out characterInstanceId))
+                throw new KeyNotFoundException("Unknown equipment instance: " + equipmentInstanceId);
+            return characterInstanceId;
+        }
+
+        public bool IsEquippedTo(string equipmentInstanceId, string characterInstanceId)
+        {
+            return string.Equals(GetAssignedCharacterId(equipmentInstanceId),
+                characterInstanceId, StringComparison.Ordinal);
+        }
+
+        public bool TryEquip(EquipmentInstanceState instance, string characterInstanceId,
+            IEnumerable<EquipmentInstanceState> allInstances)
+        {
+            if (instance == null || string.IsNullOrWhiteSpace(characterInstanceId) ||
+                (instance.UsageLocks & EquipmentUsageLock.Market) != 0 ||
+                !assignments.ContainsKey(instance.EquipmentInstanceId)) return false;
+            var currentOwner = GetAssignedCharacterId(instance.EquipmentInstanceId);
+            if (!string.IsNullOrEmpty(currentOwner) &&
+                !string.Equals(currentOwner, characterInstanceId, StringComparison.Ordinal)) return false;
+
+            var slot = catalog.Get(instance.TemplateId).Slot;
+            foreach (var other in allInstances)
+            {
+                if (other.EquipmentInstanceId == instance.EquipmentInstanceId ||
+                    !IsEquippedTo(other.EquipmentInstanceId, characterInstanceId) ||
+                    catalog.Get(other.TemplateId).Slot != slot) continue;
+                if ((other.UsageLocks & EquipmentUsageLock.Market) != 0) return false;
+                assignments[other.EquipmentInstanceId] = null;
+            }
+            assignments[instance.EquipmentInstanceId] = characterInstanceId;
+            return true;
+        }
+
+        public bool TryUnequip(EquipmentInstanceState instance, string characterInstanceId)
+        {
+            if (instance == null || (instance.UsageLocks & EquipmentUsageLock.Market) != 0 ||
+                !IsEquippedTo(instance.EquipmentInstanceId, characterInstanceId)) return false;
+            assignments[instance.EquipmentInstanceId] = null;
+            return true;
+        }
+
+        public int ClearCharacter(string characterInstanceId)
+        {
+            if (string.IsNullOrWhiteSpace(characterInstanceId)) return 0;
+            var cleared = 0;
+            var ids = new List<string>(assignments.Keys);
+            foreach (var equipmentInstanceId in ids)
+            {
+                if (!string.Equals(assignments[equipmentInstanceId], characterInstanceId,
+                        StringComparison.Ordinal)) continue;
+                assignments[equipmentInstanceId] = null;
+                cleared++;
+            }
+            return cleared;
+        }
+
+        public EquipmentLoadoutSnapshot CreateSnapshot(string characterInstanceId,
+            IEnumerable<EquipmentInstanceState> allInstances)
+        {
+            var ids = new List<string>();
+            var modifier = new EquipmentStatModifier();
+            foreach (var instance in allInstances)
+            {
+                if (!IsEquippedTo(instance.EquipmentInstanceId, characterInstanceId) ||
+                    (instance.UsageLocks & EquipmentUsageLock.Market) != 0) continue;
+                ids.Add(instance.EquipmentInstanceId);
+                modifier = EquipmentStatModifier.Add(modifier,
+                    catalog.Get(instance.TemplateId).Modifier);
+            }
+            return new EquipmentLoadoutSnapshot(ids, modifier);
+        }
+
+        public int CountChanges(IEnumerable<EquipmentInstanceState> allInstances)
+        {
+            var count = 0;
+            foreach (var instance in allInstances)
+                if (!string.Equals(GetAssignedCharacterId(instance.EquipmentInstanceId),
+                        instance.EquippedCharacterInstanceId, StringComparison.Ordinal)) count++;
+            return count;
+        }
+
+        internal bool TryGetAssignment(string equipmentInstanceId, out string characterInstanceId)
+        {
+            return assignments.TryGetValue(equipmentInstanceId, out characterInstanceId);
+        }
+    }
+
     public sealed class EquipmentInventory
     {
         private readonly EquipmentCatalog catalog;
@@ -180,6 +289,11 @@ namespace SeekerAutoChess.Core
                 if (instance == null || byId.ContainsKey(instance.EquipmentInstanceId))
                     throw new ArgumentException("Equipment instances must be non-null and unique.", nameof(instances));
                 catalog.Get(instance.TemplateId);
+                if ((instance.UsageLocks & EquipmentUsageLock.Market) != 0)
+                {
+                    instance.EquippedCharacterInstanceId = null;
+                    instance.UsageLocks = EquipmentUsageLock.Market;
+                }
                 byId.Add(instance.EquipmentInstanceId, instance);
                 copied.Add(instance);
             }
@@ -194,7 +308,22 @@ namespace SeekerAutoChess.Core
             return instance;
         }
 
+        public bool Contains(string equipmentInstanceId)
+        {
+            return !string.IsNullOrWhiteSpace(equipmentInstanceId) && byId.ContainsKey(equipmentInstanceId);
+        }
+
         public bool TryAdd(EquipmentInstanceState instance)
+        {
+            return TryAdd(instance, false);
+        }
+
+        public bool TryAddFirst(EquipmentInstanceState instance)
+        {
+            return TryAdd(instance, true);
+        }
+
+        private bool TryAdd(EquipmentInstanceState instance, bool insertFirst)
         {
             if (instance == null || byId.ContainsKey(instance.EquipmentInstanceId)) return false;
             try
@@ -206,7 +335,8 @@ namespace SeekerAutoChess.Core
                 return false;
             }
             byId.Add(instance.EquipmentInstanceId, instance);
-            instances.Add(instance);
+            if (insertFirst) instances.Insert(0, instance);
+            else instances.Add(instance);
             return true;
         }
 
@@ -245,6 +375,11 @@ namespace SeekerAutoChess.Core
             EquipmentInstanceState instance;
             if (usageLock == EquipmentUsageLock.None || !byId.TryGetValue(equipmentInstanceId, out instance))
                 return false;
+            if ((usageLock & EquipmentUsageLock.Market) != 0)
+            {
+                string ignored;
+                return TryBeginMarketListing(equipmentInstanceId, out ignored);
+            }
             instance.UsageLocks |= usageLock;
             return true;
         }
@@ -264,9 +399,96 @@ namespace SeekerAutoChess.Core
             var modifier = new EquipmentStatModifier();
             foreach (var instance in instances)
             {
-                if (instance.EquippedCharacterInstanceId != characterInstanceId) continue;
+                if (instance.EquippedCharacterInstanceId != characterInstanceId ||
+                    (instance.UsageLocks & EquipmentUsageLock.Market) != 0) continue;
                 ids.Add(instance.EquipmentInstanceId);
                 modifier = EquipmentStatModifier.Add(modifier, catalog.Get(instance.TemplateId).Modifier);
+            }
+            return new EquipmentLoadoutSnapshot(ids, modifier);
+        }
+
+        public EquipmentAssignmentDraft CreateAssignmentDraft()
+        {
+            return new EquipmentAssignmentDraft(catalog, instances);
+        }
+
+        public bool TryApplyAssignmentDraft(EquipmentAssignmentDraft draft,
+            IEnumerable<string> activeCharacterInstanceIds)
+        {
+            if (draft == null || activeCharacterInstanceIds == null) return false;
+            var active = new HashSet<string>(activeCharacterInstanceIds, StringComparer.Ordinal);
+            var occupiedSlots = new HashSet<string>(StringComparer.Ordinal);
+            var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var instance in instances)
+            {
+                string characterInstanceId;
+                if (!draft.TryGetAssignment(instance.EquipmentInstanceId, out characterInstanceId)) return false;
+                if ((instance.UsageLocks & EquipmentUsageLock.Market) != 0)
+                    characterInstanceId = null;
+                if (!string.IsNullOrEmpty(characterInstanceId))
+                {
+                    if (!active.Contains(characterInstanceId)) return false;
+                    var slotKey = characterInstanceId + "\n" + catalog.Get(instance.TemplateId).Slot;
+                    if (!occupiedSlots.Add(slotKey)) return false;
+                }
+                resolved[instance.EquipmentInstanceId] = characterInstanceId;
+            }
+
+            foreach (var instance in instances)
+                instance.EquippedCharacterInstanceId = resolved[instance.EquipmentInstanceId];
+            return true;
+        }
+
+        public bool TryBeginMarketListing(string equipmentInstanceId,
+            out string unequippedCharacterInstanceId)
+        {
+            unequippedCharacterInstanceId = null;
+            EquipmentInstanceState instance;
+            if (string.IsNullOrWhiteSpace(equipmentInstanceId) ||
+                !byId.TryGetValue(equipmentInstanceId, out instance)) return false;
+
+            unequippedCharacterInstanceId = instance.EquippedCharacterInstanceId;
+            instance.EquippedCharacterInstanceId = null;
+            instance.UsageLocks = EquipmentUsageLock.Market;
+            return true;
+        }
+
+        public bool TryCancelMarketListing(string equipmentInstanceId)
+        {
+            EquipmentInstanceState instance;
+            if (string.IsNullOrWhiteSpace(equipmentInstanceId) ||
+                !byId.TryGetValue(equipmentInstanceId, out instance) ||
+                (instance.UsageLocks & EquipmentUsageLock.Market) == 0) return false;
+            instance.UsageLocks &= ~EquipmentUsageLock.Market;
+            return true;
+        }
+
+        public bool TryCompleteMarketSale(string equipmentInstanceId)
+        {
+            EquipmentInstanceState instance;
+            if (string.IsNullOrWhiteSpace(equipmentInstanceId) ||
+                !byId.TryGetValue(equipmentInstanceId, out instance)) return false;
+            instance.EquippedCharacterInstanceId = null;
+            byId.Remove(equipmentInstanceId);
+            instances.Remove(instance);
+            return true;
+        }
+
+        public EquipmentLoadoutSnapshot ResolveOwnedAvailableSnapshot(
+            EquipmentLoadoutSnapshot snapshot)
+        {
+            if (snapshot == null) return new EquipmentLoadoutSnapshot(null, null);
+            var ids = new List<string>();
+            var modifier = new EquipmentStatModifier();
+            foreach (var equipmentInstanceId in snapshot.EquipmentInstanceIds)
+            {
+                EquipmentInstanceState instance;
+                if (string.IsNullOrWhiteSpace(equipmentInstanceId) ||
+                    !byId.TryGetValue(equipmentInstanceId, out instance) ||
+                    (instance.UsageLocks & EquipmentUsageLock.Market) != 0) continue;
+                ids.Add(instance.EquipmentInstanceId);
+                modifier = EquipmentStatModifier.Add(modifier,
+                    catalog.Get(instance.TemplateId).Modifier);
             }
             return new EquipmentLoadoutSnapshot(ids, modifier);
         }

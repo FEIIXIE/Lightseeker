@@ -9,36 +9,23 @@ namespace SeekerAutoChess.Core
         private readonly string[] completedNodeIds;
 
         public int TideCrystals { get; }
-        public int Stone { get; }
-        public int LampOil { get; }
-        public int MistLens { get; }
         public IReadOnlyList<string> EquipmentTemplateIds { get { return equipmentTemplateIds; } }
         public IReadOnlyList<string> CompletedNodeIds { get { return completedNodeIds; } }
 
         public ExpeditionRewardSnapshot(
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             IEnumerable<string> equipmentTemplateIds)
-            : this(tideCrystals, stone, lampOil, mistLens, equipmentTemplateIds, null)
+            : this(tideCrystals, equipmentTemplateIds, null)
         {
         }
 
         public ExpeditionRewardSnapshot(
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             IEnumerable<string> equipmentTemplateIds,
             IEnumerable<string> completedNodeIds)
         {
-            if (tideCrystals < 0 || stone < 0 || lampOil < 0 || mistLens < 0)
-                throw new ArgumentOutOfRangeException(nameof(tideCrystals));
+            if (tideCrystals < 0) throw new ArgumentOutOfRangeException(nameof(tideCrystals));
             TideCrystals = tideCrystals;
-            Stone = stone;
-            LampOil = lampOil;
-            MistLens = mistLens;
             this.equipmentTemplateIds = equipmentTemplateIds == null
                 ? new string[0]
                 : new List<string>(equipmentTemplateIds).ToArray();
@@ -60,9 +47,6 @@ namespace SeekerAutoChess.Core
             new HashSet<string>(StringComparer.Ordinal);
 
         public int TideCrystals { get; private set; }
-        public int Stone { get; private set; }
-        public int LampOil { get; private set; }
-        public int MistLens { get; private set; }
         public bool IsClaimed { get; private set; }
         public IReadOnlyList<string> EquipmentTemplateIds { get { return equipmentTemplateIds; } }
         public IReadOnlyList<string> CompletedNodeIds { get { return completedNodeIds; } }
@@ -79,34 +63,24 @@ namespace SeekerAutoChess.Core
         public bool TryRecordCompletedNode(
             string nodeId,
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             string equipmentTemplateId = null)
         {
             if (IsClaimed || string.IsNullOrWhiteSpace(nodeId) ||
-                completedNodeIdSet.Contains(nodeId) || tideCrystals < 0 || stone < 0 ||
-                lampOil < 0 || mistLens < 0)
+                completedNodeIdSet.Contains(nodeId) || tideCrystals < 0)
                 return false;
 
             completedNodeIdSet.Add(nodeId);
             completedNodeIds.Add(nodeId);
             TideCrystals += tideCrystals;
-            Stone += stone;
-            LampOil += lampOil;
-            MistLens += mistLens;
             if (!string.IsNullOrWhiteSpace(equipmentTemplateId))
                 equipmentTemplateIds.Add(equipmentTemplateId);
             return true;
         }
 
-        public bool TryAddCurrencyAndMaterials(int tideCrystals, int stone, int lampOil, int mistLens)
+        public bool TryAddCurrency(int tideCrystals)
         {
-            if (IsClaimed || tideCrystals < 0 || stone < 0 || lampOil < 0 || mistLens < 0) return false;
+            if (IsClaimed || tideCrystals < 0) return false;
             TideCrystals += tideCrystals;
-            Stone += stone;
-            LampOil += lampOil;
-            MistLens += mistLens;
             return true;
         }
 
@@ -129,34 +103,24 @@ namespace SeekerAutoChess.Core
         public ExpeditionRewardSnapshot CreateSnapshot()
         {
             return new ExpeditionRewardSnapshot(
-                TideCrystals, Stone, LampOil, MistLens, equipmentTemplateIds, completedNodeIds);
+                TideCrystals, equipmentTemplateIds, completedNodeIds);
         }
 
         public void Restore(
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             IEnumerable<string> equipmentTemplates,
             bool isClaimed)
         {
-            Restore(tideCrystals, stone, lampOil, mistLens,
-                equipmentTemplates, null, isClaimed);
+            Restore(tideCrystals, equipmentTemplates, null, isClaimed);
         }
 
         public void Restore(
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             IEnumerable<string> equipmentTemplates,
             IEnumerable<string> completedNodes,
             bool isClaimed)
         {
             TideCrystals = Math.Max(0, tideCrystals);
-            Stone = Math.Max(0, stone);
-            LampOil = Math.Max(0, lampOil);
-            MistLens = Math.Max(0, mistLens);
             equipmentTemplateIds.Clear();
             if (equipmentTemplates != null)
             {
@@ -181,9 +145,6 @@ namespace SeekerAutoChess.Core
         public void Reset()
         {
             TideCrystals = 0;
-            Stone = 0;
-            LampOil = 0;
-            MistLens = 0;
             equipmentTemplateIds.Clear();
             completedNodeIds.Clear();
             completedNodeIdSet.Clear();

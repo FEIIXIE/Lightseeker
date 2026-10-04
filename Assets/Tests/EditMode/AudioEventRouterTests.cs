@@ -277,6 +277,70 @@ namespace SeekerAutoChess.Tests
                 Is.EqualTo(BattleAudioResourcePolicy.SkillReleaseResourcePath));
         }
 
+        [Test]
+        public void HomeBackgroundMusicUsesMusicGroupAndHonorsMute()
+        {
+            var mixer = new AudioMixerGroups { Master = 0.8f, Music = 0.5f };
+            Assert.That(HomeBackgroundMusicPolicy.ResourcePath,
+                Is.EqualTo("Audio/Music/BGM_HOME_KINGDOM_QUEST_SOUNDIMAGE_V01"));
+            Assert.That(HomeBackgroundMusicPolicy.ResolveVolume(mixer),
+                Is.EqualTo(0.8f * 0.5f * HomeBackgroundMusicPolicy.VolumeScale).Within(0.0001f));
+            mixer.Muted = true;
+            Assert.That(HomeBackgroundMusicPolicy.ResolveVolume(mixer), Is.Zero);
+        }
+
+        [Test]
+        public void BackgroundMusicRoutesGeneralExpeditionPreparationAndActiveBattleContexts()
+        {
+            Assert.That(BackgroundMusicPolicy.ResolveTrack(false, false),
+                Is.EqualTo(BackgroundMusicTrack.Home));
+            Assert.That(BackgroundMusicPolicy.ResolveTrack(true, false),
+                Is.EqualTo(BackgroundMusicTrack.Expedition));
+            Assert.That(BackgroundMusicPolicy.ResolveTrack(true, true),
+                Is.EqualTo(BackgroundMusicTrack.Battle));
+            Assert.That(BackgroundMusicPolicy.ResolveTrack(false, true),
+                Is.EqualTo(BackgroundMusicTrack.Battle));
+        }
+
+        [Test]
+        public void BackgroundMusicUsesApprovedResourcesAndTransitionDurations()
+        {
+            Assert.That(BackgroundMusicPolicy.ResourcePath(BackgroundMusicTrack.Expedition),
+                Is.EqualTo("Audio/Music/BGM_EXPEDITION_THE_VOYAGE_BEGINS_30S_LOOP_SOUNDIMAGE_V02"));
+            Assert.That(BackgroundMusicPolicy.ResourcePath(BackgroundMusicTrack.Battle),
+                Is.EqualTo("Audio/Music/BGM_BATTLE_TRAINING_SOUNDIMAGE_V01"));
+            Assert.That(BackgroundMusicPolicy.TransitionSeconds(
+                BackgroundMusicTrack.Home, BackgroundMusicTrack.Expedition), Is.EqualTo(1.0f));
+            Assert.That(BackgroundMusicPolicy.TransitionSeconds(
+                BackgroundMusicTrack.Expedition, BackgroundMusicTrack.Battle), Is.EqualTo(0.8f));
+            Assert.That(BackgroundMusicPolicy.TransitionSeconds(
+                BackgroundMusicTrack.Battle, BackgroundMusicTrack.Expedition), Is.EqualTo(1.5f));
+        }
+
+        [Test]
+        public void AttributionCatalogCoversEveryActiveThirdPartyRuntimeResource()
+        {
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Count, Is.EqualTo(12));
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Count(
+                entry => entry.Category == AttributionCategory.Music), Is.EqualTo(3));
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Count(
+                entry => entry.Category == AttributionCategory.SoundEffects), Is.EqualTo(7));
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Count(
+                entry => entry.Category == AttributionCategory.Fonts), Is.EqualTo(2));
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Any(entry =>
+                entry.Title == "Kingdom Quest" &&
+                entry.Credit.Contains("Eric Matyas") &&
+                entry.SourceUrl == "https://soundimage.org/fantasy-11/"), Is.True);
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Any(entry =>
+                entry.Title == "The Voyage Begins" && entry.Credit.Contains("crossfaded") &&
+                entry.SourceUrl == "https://soundimage.org/epic-battle/"), Is.True);
+            Assert.That(ThirdPartyAttributionCatalog.Entries.Any(entry =>
+                entry.Title == "Training" && entry.Credit.Contains("Eric Matyas") &&
+                entry.SourceUrl == "https://soundimage.org/sports/"), Is.True);
+            Assert.That(ThirdPartyAttributionCatalog.Entries.All(entry =>
+                !string.IsNullOrEmpty(entry.SourceUrl) && !string.IsNullOrEmpty(entry.LicenseUrl)), Is.True);
+        }
+
         private static CardBattleEvent Event(CardBattleEventKind kind, string ability, long sequence, string action)
         {
             return new CardBattleEvent { Kind = kind, BattleId = "audio-test", EventSequence = sequence,
