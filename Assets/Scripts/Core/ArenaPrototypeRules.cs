@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace SeekerAutoChess.Core
 {
@@ -69,6 +70,30 @@ namespace SeekerAutoChess.Core
             IsBot = isBot;
             RewardEligible = rewardEligible;
             DefenseUnits = defenseUnits ?? new ArenaUnitProfile[0];
+        }
+    }
+
+    [Serializable]
+    public sealed class ArenaRankingRow
+    {
+        public ArenaOpponentProfile Opponent;
+        public int OpponentIndex;
+        public int Rank;
+        public string DisplayName;
+        public int Rating;
+        public int Power;
+        public bool IsCurrentPlayer;
+
+        public ArenaRankingRow(ArenaOpponentProfile opponent, int opponentIndex, int rank,
+            string displayName, int rating, int power, bool isCurrentPlayer)
+        {
+            Opponent = opponent;
+            OpponentIndex = opponentIndex;
+            Rank = Math.Max(1, rank);
+            DisplayName = displayName ?? string.Empty;
+            Rating = Math.Max(0, rating);
+            Power = Math.Max(0, power);
+            IsCurrentPlayer = isCurrentPlayer;
         }
     }
 
@@ -211,6 +236,11 @@ namespace SeekerAutoChess.Core
             return result;
         }
 
+        public static bool ShouldHighlightOpponentRow(int opponentIndex, int selectedOpponentIndex)
+        {
+            return selectedOpponentIndex >= 0 && opponentIndex == selectedOpponentIndex;
+        }
+
         public static int CalculatePlayerDisplayRank(
             IReadOnlyList<ArenaOpponentProfile> ranking, int playerRating)
         {
@@ -219,6 +249,160 @@ namespace SeekerAutoChess.Core
             for (var index = 0; index < ranking.Count; index++)
                 if (ranking[index].Rating > playerRating) stronger++;
             return stronger + 1;
+        }
+
+        public static ArenaRankingRow[] CreateDisplayRanking(
+            IReadOnlyList<ArenaOpponentProfile> opponents, int playerRating,
+            int playerPower, string playerDisplayName)
+        {
+            var rows = new List<ArenaRankingRow>();
+            var playerInserted = false;
+            if (opponents != null)
+            {
+                for (var index = 0; index < opponents.Count; index++)
+                {
+                    var opponent = opponents[index];
+                    if (opponent == null) continue;
+                    if (!playerInserted && opponent.Rating <= playerRating)
+                    {
+                        rows.Add(new ArenaRankingRow(null, -1, rows.Count + 1,
+                            playerDisplayName, playerRating, playerPower, true));
+                        playerInserted = true;
+                    }
+                    rows.Add(new ArenaRankingRow(opponent, index, rows.Count + 1,
+                        opponent.DisplayName, opponent.Rating, opponent.Power, false));
+                }
+            }
+            if (!playerInserted)
+                rows.Add(new ArenaRankingRow(null, -1, rows.Count + 1,
+                    playerDisplayName, playerRating, playerPower, true));
+            return rows.ToArray();
+        }
+
+        public static ArenaRankingRow[] SelectNearby(
+            IReadOnlyList<ArenaRankingRow> ranking, int selectedRank, int count)
+        {
+            if (ranking == null || ranking.Count == 0 || count <= 0) return new ArenaRankingRow[0];
+            var take = Math.Min(count, ranking.Count);
+            var centerIndex = ranking.Count - 1;
+            for (var index = 0; index < ranking.Count; index++)
+                if (ranking[index].Rank >= selectedRank) { centerIndex = index; break; }
+            var start = Math.Max(0, Math.Min(ranking.Count - take, centerIndex - take / 2));
+            var result = new ArenaRankingRow[take];
+            for (var index = 0; index < take; index++) result[index] = ranking[start + index];
+            return result;
+        }
+    }
+
+    [Serializable]
+    public sealed class PrototypeLeaderboardEntry
+    {
+        public string AccountId;
+        public string DisplayName;
+        public long Score;
+        public long ReachedScoreSequence;
+        public bool Eligible;
+        public bool IsCurrentPlayer;
+
+        public PrototypeLeaderboardEntry(string accountId, string displayName, long score,
+            long reachedScoreSequence, bool eligible, bool isCurrentPlayer)
+        {
+            AccountId = accountId ?? string.Empty;
+            DisplayName = displayName ?? string.Empty;
+            Score = Math.Max(0L, score);
+            ReachedScoreSequence = Math.Max(0L, reachedScoreSequence);
+            Eligible = eligible;
+            IsCurrentPlayer = isCurrentPlayer;
+        }
+    }
+
+    public static class PrototypeLeaderboardRules
+    {
+        public const long MicroSkrPerSkr = 1000000L;
+        public const long TestPvePoolMicroSkr = 10000L * MicroSkrPerSkr;
+        public const long TestPvpPoolMicroSkr = 10000L * MicroSkrPerSkr;
+
+        public static PrototypeLeaderboardEntry[] RankEligible(
+            IEnumerable<PrototypeLeaderboardEntry> entries)
+        {
+            var result = new List<PrototypeLeaderboardEntry>();
+            if (entries != null)
+            {
+                foreach (var entry in entries)
+                    if (entry != null && entry.Eligible) result.Add(entry);
+            }
+            result.Sort(CompareEntries);
+            return result.ToArray();
+        }
+
+        public static int FindCurrentPlayerRank(IReadOnlyList<PrototypeLeaderboardEntry> ranking)
+        {
+            if (ranking == null) return 0;
+            for (var index = 0; index < ranking.Count; index++)
+                if (ranking[index] != null && ranking[index].IsCurrentPlayer) return index + 1;
+            return 0;
+        }
+
+        public static int CalculatePveRewardSlots(int eligibleCount)
+        {
+            if (eligibleCount <= 0) return 0;
+            return Math.Max(1, eligibleCount * 60 / 100);
+        }
+
+        public static long CalculatePveRewardMicroSkr(int rank, int eligibleCount, long poolMicroSkr)
+        {
+            var winnerCount = CalculatePveRewardSlots(eligibleCount);
+            if (rank <= 0 || rank > winnerCount || poolMicroSkr <= 0L) return 0L;
+            if (rank == 1) return BandShare(poolMicroSkr, 700, 1);
+
+            var top1End = eligibleCount * 1 / 100;
+            var top5End = eligibleCount * 5 / 100;
+            var top15End = eligibleCount * 15 / 100;
+            var top30End = eligibleCount * 30 / 100;
+            if (rank <= top1End) return BandShare(poolMicroSkr, 800, Math.Max(0, top1End - 1));
+            if (rank <= top5End) return BandShare(poolMicroSkr, 2000,
+                Math.Max(0, top5End - Math.Max(1, top1End)));
+            if (rank <= top15End) return BandShare(poolMicroSkr, 2500,
+                Math.Max(0, top15End - Math.Max(1, top5End)));
+            if (rank <= top30End) return BandShare(poolMicroSkr, 2200,
+                Math.Max(0, top30End - Math.Max(1, top15End)));
+            return BandShare(poolMicroSkr, 1800,
+                Math.Max(0, winnerCount - Math.Max(1, top30End)));
+        }
+
+        public static long CalculatePvpRewardMicroSkr(int rank, long poolMicroSkr)
+        {
+            if (rank <= 0 || rank > 100 || poolMicroSkr <= 0L) return 0L;
+            if (rank == 1) return BandShare(poolMicroSkr, 800, 1);
+            if (rank <= 3) return BandShare(poolMicroSkr, 1000, 2);
+            if (rank <= 10) return BandShare(poolMicroSkr, 1750, 7);
+            if (rank <= 25) return BandShare(poolMicroSkr, 2250, 15);
+            if (rank <= 50) return BandShare(poolMicroSkr, 2250, 25);
+            return BandShare(poolMicroSkr, 1950, 50);
+        }
+
+        public static string FormatSkr(long microSkr)
+        {
+            if (microSkr <= 0L) return "0";
+            var whole = microSkr / MicroSkrPerSkr;
+            var fraction = microSkr % MicroSkrPerSkr;
+            if (fraction == 0L) return whole.ToString();
+            return (microSkr / (double)MicroSkrPerSkr).ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
+        private static int CompareEntries(PrototypeLeaderboardEntry left, PrototypeLeaderboardEntry right)
+        {
+            var scoreOrder = right.Score.CompareTo(left.Score);
+            if (scoreOrder != 0) return scoreOrder;
+            var reachedOrder = left.ReachedScoreSequence.CompareTo(right.ReachedScoreSequence);
+            if (reachedOrder != 0) return reachedOrder;
+            return string.Compare(left.AccountId, right.AccountId, StringComparison.Ordinal);
+        }
+
+        private static long BandShare(long poolMicroSkr, int bandBasisPoints, int memberCount)
+        {
+            if (memberCount <= 0) return 0L;
+            return poolMicroSkr * bandBasisPoints / 10000L / memberCount;
         }
     }
 }

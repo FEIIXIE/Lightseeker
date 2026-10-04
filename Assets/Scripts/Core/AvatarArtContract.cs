@@ -3,6 +3,48 @@ using System.Collections.Generic;
 
 namespace SeekerAutoChess.Core
 {
+    public enum AvatarArtContext
+    {
+        SlotCircle,
+        PreparationList,
+        Recruit,
+        DragGhost,
+        Detail
+    }
+
+    public sealed class AvatarArtContextSpec
+    {
+        public AvatarArtContext Context { get; }
+        public string ResourcesFolder { get; }
+        public string ResourceSuffix { get; }
+        public int CanvasWidth { get; }
+        public int CanvasHeight { get; }
+        public int EntityX { get; }
+        public int EntityY { get; }
+        public int EntityWidth { get; }
+        public int EntityHeight { get; }
+
+        public AvatarArtContextSpec(AvatarArtContext context, string resourcesFolder,
+            string resourceSuffix, int canvasWidth, int canvasHeight,
+            int entityX, int entityY, int entityWidth, int entityHeight)
+        {
+            Context = context;
+            ResourcesFolder = resourcesFolder;
+            ResourceSuffix = resourceSuffix;
+            CanvasWidth = canvasWidth;
+            CanvasHeight = canvasHeight;
+            EntityX = entityX;
+            EntityY = entityY;
+            EntityWidth = entityWidth;
+            EntityHeight = entityHeight;
+        }
+
+        public string ResourcePath(string masterResourceId)
+        {
+            return ResourcesFolder + masterResourceId + ResourceSuffix;
+        }
+    }
+
     /// <summary>
     /// Shared UI-avatar handoff. Pages must reuse these assets and the same layer order:
     /// slot surface, avatar, then the foreground frame and status information.
@@ -29,14 +71,19 @@ namespace SeekerAutoChess.Core
 
     public static class AvatarArtContract
     {
-        public const int CanvasWidth = 1024;
-        public const int CanvasHeight = 1024;
         public const float PivotX = 0.5f;
         public const float PivotY = 0.5f;
         public const float SlotSafeInsetRatio = 10f / 104f;
-        public const string ResourcesFolder = "Art/Avatars/";
         public const string SlotResourcesFolder = "Art/Avatars/SlotCircular/";
         public const string SlotResourceSuffix = "-SLOT-CIRCLE-01";
+        public const string PreparationListResourcesFolder = "Art/Avatars/PreparationList/";
+        public const string PreparationListResourceSuffix = "-PREPARATION-LIST-90x104-v1.0.0";
+        public const string RecruitResourcesFolder = "Art/Avatars/Recruit/";
+        public const string RecruitResourceSuffix = "-RECRUIT-92x86-v1.0.0";
+        public const string DragGhostResourcesFolder = "Art/Avatars/DragGhost/";
+        public const string DragGhostResourceSuffix = "-DRAG-156x210-v1.0.0";
+        public const string DetailResourcesFolder = "Art/Avatars/Detail/";
+        public const string DetailResourceSuffix = "-DETAIL-500x370-v1.0.0";
         public const string OccupiedSlotSurfaceSemanticKey = "surface.avatar-slot.occupied.104";
         public const string SlotForegroundRimSemanticKey = "frame.avatar-slot.foreground.104";
         public const string OccupiedSlotSurfaceResourceId =
@@ -81,7 +128,32 @@ namespace SeekerAutoChess.Core
 
         private static readonly Dictionary<string, AvatarArtEntry> byDefinitionAndQuality = BuildIndex();
 
+        private static readonly AvatarArtContextSpec[] contextSpecs =
+        {
+            new AvatarArtContextSpec(AvatarArtContext.SlotCircle, SlotResourcesFolder,
+                SlotResourceSuffix, 104, 104, 10, 10, 84, 84),
+            new AvatarArtContextSpec(AvatarArtContext.PreparationList, PreparationListResourcesFolder,
+                PreparationListResourceSuffix, 90, 104, 0, 7, 90, 90),
+            new AvatarArtContextSpec(AvatarArtContext.Recruit, RecruitResourcesFolder,
+                RecruitResourceSuffix, 92, 86, 3, 0, 86, 86),
+            new AvatarArtContextSpec(AvatarArtContext.DragGhost, DragGhostResourcesFolder,
+                DragGhostResourceSuffix, 156, 210, 0, 27, 156, 156),
+            new AvatarArtContextSpec(AvatarArtContext.Detail, DetailResourcesFolder,
+                DetailResourceSuffix, 500, 370, 65, 0, 370, 370)
+        };
+        private static readonly Dictionary<AvatarArtContext, AvatarArtContextSpec> contextSpecById =
+            BuildContextIndex();
+
         public static IReadOnlyList<AvatarArtEntry> Entries { get { return entries; } }
+        public static IReadOnlyList<AvatarArtContextSpec> ContextSpecs { get { return contextSpecs; } }
+
+        public static AvatarArtContextSpec GetContextSpec(AvatarArtContext context)
+        {
+            AvatarArtContextSpec spec;
+            if (!contextSpecById.TryGetValue(context, out spec))
+                throw new KeyNotFoundException("Unknown avatar art context: " + context);
+            return spec;
+        }
 
         public static bool TryGet(string definitionId, out AvatarArtEntry entry)
         {
@@ -110,6 +182,13 @@ namespace SeekerAutoChess.Core
         {
             var result = new Dictionary<string, AvatarArtEntry>(StringComparer.Ordinal);
             foreach (var entry in entries) result.Add(Key(entry.DefinitionId, entry.QualityId), entry);
+            return result;
+        }
+
+        private static Dictionary<AvatarArtContext, AvatarArtContextSpec> BuildContextIndex()
+        {
+            var result = new Dictionary<AvatarArtContext, AvatarArtContextSpec>();
+            foreach (var spec in contextSpecs) result.Add(spec.Context, spec);
             return result;
         }
     }

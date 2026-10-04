@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: 824a21eae4e845b8b3f54cd5c169cc33
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps: {enableMipMap: 0, sRGBTexture: 1}
+  isReadable: 0
+  streamingMipmaps: 0
+  textureFormat: 1
+  maxTextureSize: 4096
+  textureSettings: {serializedVersion: 2, filterMode: 1, aniso: 1, mipBias: 0, wrapU: 1, wrapV: 1, wrapW: 1}
+  nPOTScale: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spritePixelsToUnits: 100
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  textureType: 0
+  textureShape: 1
+  platformSettings:
+  - {serializedVersion: 3, buildTarget: DefaultTexturePlatform, maxTextureSize: 4096, textureFormat: -1, textureCompression: 0, compressionQuality: 50, crunchedCompression: 0, overridden: 0}
+  - {serializedVersion: 3, buildTarget: Android, maxTextureSize: 4096, textureFormat: -1, textureCompression: 1, compressionQuality: 50, crunchedCompression: 0, overridden: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

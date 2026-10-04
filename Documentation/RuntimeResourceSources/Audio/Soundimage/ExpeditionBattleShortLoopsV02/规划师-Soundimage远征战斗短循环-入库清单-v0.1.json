@@ -1,0 +1,63 @@
+{
+  "documentVersion": "v0.1",
+  "updatedDate": "2026-10-02",
+  "status": "ACTIVE / ARCHIVE_ONLY / NOT_RUNTIME_INTEGRATED",
+  "sourceRole": "规划师",
+  "archiveRoot": "unity-client/SeekerAutoChess/Documentation/RuntimeResourceSources/Audio/Soundimage/ExpeditionBattleShortLoopsV02",
+  "runtimeIntegrated": false,
+  "engineVersionChanged": false,
+  "license": {
+    "name": "Soundimage International Public License",
+    "licenseUrl": "https://soundimage.org/sample-page/",
+    "attributionUrl": "https://soundimage.org/attribution-info/",
+    "creator": "Eric Matyas",
+    "site": "https://soundimage.org/"
+  },
+  "items": [
+    {
+      "role": "official-source",
+      "track": "The Voyage Begins",
+      "path": "source/The-Voyage-Begins.mp3",
+      "bytes": 1089361,
+      "sha256": "61022A39555D98F3A85CB8664D76DC73CD456A1A05BA7380EDE40287D0F9C2CA",
+      "sourcePage": "https://soundimage.org/epic-battle/",
+      "sourceUrl": "https://soundimage.org/wp-content/uploads/2023/12/The-Voyage-Begins.mp3"
+    },
+    {
+      "role": "official-source",
+      "track": "Fantasy Forest Battle",
+      "path": "source/Fantasy-Forest-Battle.mp3",
+      "bytes": 2948511,
+      "sha256": "43C6C5E84DC18564AD8EA8833DC636B4BF04EEFBA21CB2E13FA5AA4647B6D87E",
+      "sourcePage": "https://soundimage.org/epic-battle/",
+      "sourceUrl": "https://soundimage.org/wp-content/uploads/2016/07/Fantasy-Forest-Battle.mp3"
+    },
+    {
+      "role": "approved-delivery",
+      "scene": "expedition",
+      "track": "The Voyage Begins",
+      "path": "delivery/BGM_EXPEDITION_THE_VOYAGE_BEGINS_30S_LOOP_SOUNDIMAGE_V02.ogg",
+      "bytes": 726785,
+      "sha256": "8CB49BCDA54722959E19370785AB4292871A93FD09710F2678DDD9C652B401EC",
+      "durationSeconds": 26.255,
+      "derivedFrom": "source/The-Voyage-Begins.mp3",
+      "processing": "excerpt selection; 0.75s circular equal-power crossfade; Ogg Vorbis transcode; no tempo, pitch, orchestration, or loudness-normalization change"
+    },
+    {
+      "role": "approved-delivery",
+      "scene": "battle",
+      "track": "Fantasy Forest Battle",
+      "path": "delivery/BGM_BATTLE_FANTASY_FOREST_BATTLE_30S_LOOP_SOUNDIMAGE_V02.ogg",
+      "bytes": 615437,
+      "sha256": "5F7B36655C3E09D7AB56DB84AE793CFEE03B61AA0CA02CA03969CA474B4CC559",
+      "durationSeconds": 26.324,
+      "derivedFrom": "source/Fantasy-Forest-Battle.mp3",
+      "processing": "excerpt selection; 0.75s circular equal-power crossfade; Ogg Vorbis transcode; no tempo, pitch, orchestration, or loudness-normalization change"
+    }
+  ],
+  "relatedRecords": [
+    "outputs/audio/soundimage-expedition-battle-short-loops-v0.2/规划师-Soundimage远征战斗短循环-交接说明-v0.2.md",
+    "outputs/audio/soundimage-expedition-battle-short-loops-v0.2/规划师-Soundimage远征战斗短循环-校验报告-v0.2.json"
+  ],
+  "changeNote": "Pure archive and documentation update; no game artifact or engine version change."
+}

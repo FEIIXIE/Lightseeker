@@ -14,14 +14,11 @@ namespace SeekerAutoChess.Core
             ExpeditionRewardLedger ledger,
             string nodeId,
             int tideCrystals,
-            int stone,
-            int lampOil,
-            int mistLens,
             string equipmentTemplateId = null)
         {
             if (ledger == null) throw new ArgumentNullException(nameof(ledger));
             if (!ledger.TryRecordCompletedNode(
-                    nodeId, tideCrystals, stone, lampOil, mistLens, equipmentTemplateId))
+                    nodeId, tideCrystals, equipmentTemplateId))
                 return false;
             return true;
         }

@@ -20,11 +20,10 @@ namespace SeekerAutoChess.Tests.EditMode
 
             var chosenNodeId = branchSource.NextNodeIds[0];
             var ledger = new ExpeditionRewardLedger();
-            Assert.That(ledger.TryRecordCompletedNode(chosenNodeId, 3, 1, 0, 0), Is.True);
-            Assert.That(ledger.TryRecordCompletedNode(chosenNodeId, 3, 1, 0, 0), Is.False);
+            Assert.That(ledger.TryRecordCompletedNode(chosenNodeId, 3), Is.True);
+            Assert.That(ledger.TryRecordCompletedNode(chosenNodeId, 3), Is.False);
             Assert.That(ledger.CompletedNodeIds, Is.EqualTo(new[] { chosenNodeId }));
             Assert.That(ledger.TideCrystals, Is.EqualTo(3));
-            Assert.That(ledger.Stone, Is.EqualTo(1));
 
             foreach (var candidateId in branchSource.NextNodeIds)
             {
@@ -37,11 +36,11 @@ namespace SeekerAutoChess.Tests.EditMode
         public void Restore_PreservesCompletedNodeAuditAndRejectsReplay()
         {
             var ledger = new ExpeditionRewardLedger();
-            ledger.Restore(5, 2, 1, 0, new string[0],
+            ledger.Restore(5, new string[0],
                 new[] { "chapter1-3-1" }, false);
 
             Assert.That(ledger.TryRecordCompletedNode(
-                "chapter1-3-1", 5, 2, 1, 0), Is.False);
+                "chapter1-3-1", 5), Is.False);
             Assert.That(ledger.TideCrystals, Is.EqualTo(5));
             Assert.That(ledger.CompletedNodeIds, Is.EqualTo(new[] { "chapter1-3-1" }));
         }

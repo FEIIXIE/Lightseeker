@@ -298,9 +298,9 @@ namespace SeekerAutoChess.Tests.EditMode
             Assert.That(state.TryResolveAction("M07:choice:1"), Is.False);
 
             var ledger = new ExpeditionRewardLedger();
-            Assert.That(ledger.TryRecordCompletedNode("M07", 0, 0, 0, 0), Is.True);
+            Assert.That(ledger.TryRecordCompletedNode("M07", 0), Is.True);
             Assert.That(ledger.HasCompletedNode("M07"), Is.True);
-            Assert.That(ledger.TryRecordCompletedNode("M07", 0, 0, 0, 0), Is.False);
+            Assert.That(ledger.TryRecordCompletedNode("M07", 0), Is.False);
         }
 
         [Test]

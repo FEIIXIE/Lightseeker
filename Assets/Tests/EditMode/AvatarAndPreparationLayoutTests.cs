@@ -38,38 +38,62 @@ namespace SeekerAutoChess.Tests
                 Is.EqualTo("surface.avatar-slot.occupied.104"));
             Assert.That(AvatarArtContract.SlotForegroundRimSemanticKey,
                 Is.EqualTo("frame.avatar-slot.foreground.104"));
+
+            Assert.That(AvatarArtContract.ContextSpecs.Count, Is.EqualTo(5));
+            AssertContext(AvatarArtContext.SlotCircle, 104, 104, 10, 10, 84, 84);
+            AssertContext(AvatarArtContext.PreparationList, 90, 104, 0, 7, 90, 90);
+            AssertContext(AvatarArtContext.Recruit, 92, 86, 3, 0, 86, 86);
+            AssertContext(AvatarArtContext.DragGhost, 156, 210, 0, 27, 156, 156);
+            AssertContext(AvatarArtContext.Detail, 500, 370, 65, 0, 370, 370);
+        }
+
+        private static void AssertContext(AvatarArtContext context, int width, int height,
+            int entityX, int entityY, int entityWidth, int entityHeight)
+        {
+            var spec = AvatarArtContract.GetContextSpec(context);
+            Assert.That(spec.CanvasWidth, Is.EqualTo(width));
+            Assert.That(spec.CanvasHeight, Is.EqualTo(height));
+            Assert.That(spec.EntityX, Is.EqualTo(entityX));
+            Assert.That(spec.EntityY, Is.EqualTo(entityY));
+            Assert.That(spec.EntityWidth, Is.EqualTo(entityWidth));
+            Assert.That(spec.EntityHeight, Is.EqualTo(entityHeight));
         }
 
         [Test]
-        public void ImportedAvatars_UseSharedSquareFullRectContract()
+        public void ImportedAvatars_UseAllFiveNativeContextContracts()
         {
             foreach (var entry in AvatarArtContract.Entries)
             {
-                var path = "Assets/Resources/Art/Avatars/" + entry.ResourceId + ".png";
-                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                Assert.That(texture, Is.Not.Null, path);
-                Assert.That(texture.width, Is.EqualTo(AvatarArtContract.CanvasWidth), path);
-                Assert.That(texture.height, Is.EqualTo(AvatarArtContract.CanvasHeight), path);
+                foreach (var spec in AvatarArtContract.ContextSpecs)
+                {
+                    var path = "Assets/Resources/" + spec.ResourcePath(entry.ResourceId) + ".png";
+                    var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                    Assert.That(texture, Is.Not.Null, path);
+                    Assert.That(texture.width, Is.EqualTo(spec.CanvasWidth), path);
+                    Assert.That(texture.height, Is.EqualTo(spec.CanvasHeight), path);
 
-                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-                Assert.That(importer, Is.Not.Null, path);
-                Assert.That(importer.textureType, Is.EqualTo(TextureImporterType.Sprite), path);
-                Assert.That(importer.spriteImportMode, Is.EqualTo(SpriteImportMode.Single), path);
-                Assert.That(importer.mipmapEnabled, Is.False, path);
-                Assert.That(importer.filterMode, Is.EqualTo(FilterMode.Bilinear), path);
-                var settings = new TextureImporterSettings();
-                importer.ReadTextureSettings(settings);
-                Assert.That(settings.spriteMeshType, Is.EqualTo(SpriteMeshType.FullRect), path);
-                Assert.That(settings.spritePivot.x, Is.EqualTo(AvatarArtContract.PivotX).Within(0.0001f), path);
-                Assert.That(settings.spritePivot.y, Is.EqualTo(AvatarArtContract.PivotY).Within(0.0001f), path);
-
-                var slotPath = "Assets/Resources/Art/Avatars/SlotCircular/" + entry.ResourceId +
-                               AvatarArtContract.SlotResourceSuffix + ".png";
-                var slotTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(slotPath);
-                Assert.That(slotTexture, Is.Not.Null, slotPath);
-                Assert.That(slotTexture.width, Is.EqualTo(AvatarArtContract.CanvasWidth), slotPath);
-                Assert.That(slotTexture.height, Is.EqualTo(AvatarArtContract.CanvasHeight), slotPath);
+                    var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                    Assert.That(importer, Is.Not.Null, path);
+                    Assert.That(importer.textureType, Is.EqualTo(TextureImporterType.Sprite), path);
+                    Assert.That(importer.spriteImportMode, Is.EqualTo(SpriteImportMode.Single), path);
+                    Assert.That(importer.mipmapEnabled, Is.False, path);
+                    Assert.That(importer.filterMode, Is.EqualTo(FilterMode.Bilinear), path);
+                    Assert.That(importer.textureCompression,
+                        Is.EqualTo(TextureImporterCompression.Uncompressed), path);
+                    var settings = new TextureImporterSettings();
+                    importer.ReadTextureSettings(settings);
+                    Assert.That(settings.spriteMeshType, Is.EqualTo(SpriteMeshType.FullRect), path);
+                    Assert.That(settings.spritePivot.x,
+                        Is.EqualTo(AvatarArtContract.PivotX).Within(0.0001f), path);
+                    Assert.That(settings.spritePivot.y,
+                        Is.EqualTo(AvatarArtContract.PivotY).Within(0.0001f), path);
+                }
             }
+
+            var legacyMasters = AssetDatabase.FindAssets("t:Texture2D",
+                new[] { "Assets/Resources/Art/Avatars" });
+            Assert.That(legacyMasters.Length, Is.EqualTo(150),
+                "Only the 150 accepted context derivatives may remain in runtime Resources.");
         }
 
         [Test]
