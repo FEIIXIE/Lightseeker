@@ -16,8 +16,22 @@ namespace SeekerAutoChess.Tests.EditMode
             Assert.That(map.GetLayer(ExpeditionMapGraph.ChapterLayerCount)[0].Type,
                 Is.EqualTo(ExpeditionNodeType.Boss));
             Assert.That(map.GetNode("M19").Type, Is.EqualTo(ExpeditionNodeType.EliteBattle));
-            Assert.That(map.GetNode("M28").Type, Is.EqualTo(ExpeditionNodeType.NormalBattle));
+            Assert.That(map.GetNode("M18").Type, Is.EqualTo(ExpeditionNodeType.Supply));
+            Assert.That(map.GetNode("M28").Type, Is.EqualTo(ExpeditionNodeType.Supply));
             Assert.That(map.GetNode("M29").Type, Is.EqualTo(ExpeditionNodeType.Boss));
+        }
+
+        [Test]
+        public void LegacyVersion8_RecreatesFiveTypeMapWithoutRewritingActiveRuns()
+        {
+            var map = ExpeditionMapGraph.CreateChapterOne(
+                12345u, ExpeditionMapGraph.LegacyFiveTypeMapGenerationVersion);
+
+            Assert.That(map.GenerationVersion,
+                Is.EqualTo(ExpeditionMapGraph.LegacyFiveTypeMapGenerationVersion));
+            Assert.That(map.IsValidChapterOne(), Is.True);
+            Assert.That(map.GetNode("M28").Type,
+                Is.EqualTo(ExpeditionNodeType.NormalBattle));
         }
 
         [Test]
@@ -55,7 +69,7 @@ namespace SeekerAutoChess.Tests.EditMode
         public void GeneratedSeeds_RespectE21TopologyConstraints()
         {
             var expectedRankWidths = new[] { 1, 2, 3, 2, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1 };
-            for (uint seed = 1; seed <= 256; seed++)
+            for (uint seed = 1; seed <= 4096; seed++)
             {
                 var map = ExpeditionMapGraph.CreateChapterOne(seed);
                 Assert.That(map.ValidateChapterOne(), Is.Empty,
@@ -78,6 +92,7 @@ namespace SeekerAutoChess.Tests.EditMode
                     }
                 }
                 Assert.That(map.GetNode("M29").NextNodeIds, Is.Empty);
+                Assert.That(map.GetNode("M18").NextNodeIds, Is.EqualTo(new[] { "M19" }));
                 Assert.That(map.GetNode("M28").NextNodeIds, Is.EqualTo(new[] { "M29" }));
             }
         }

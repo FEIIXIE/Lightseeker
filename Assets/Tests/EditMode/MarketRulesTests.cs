@@ -31,6 +31,9 @@ namespace SeekerAutoChess.Tests.EditMode
             Assert.That(board.TryLeaseShop(MarketRules.ToMicroSkr(150), out balance), Is.True);
             Assert.That(balance, Is.EqualTo(MarketRules.ToMicroSkr(50)));
             Assert.That(board.ListingCapacity, Is.EqualTo(10));
+            Assert.That(board.TryLeaseShop(MarketRules.ToMicroSkr(100), out balance), Is.False);
+            Assert.That(balance, Is.EqualTo(MarketRules.ToMicroSkr(100)));
+            Assert.That(board.ListingCapacity, Is.EqualTo(10));
         }
 
         [Test]
@@ -45,8 +48,12 @@ namespace SeekerAutoChess.Tests.EditMode
             MarketTradeReceipt receipt;
             Assert.That(board.TryPurchase("buyer", listing.ListingId, MarketRules.ToMicroSkr(100),
                 2, out balance, out receipt), Is.True);
+            Assert.That(listing.State, Is.EqualTo(MarketListingState.Sold));
+            Assert.That(board.Find(listing.ListingId), Is.SameAs(listing));
+            Assert.That(board.Receipts.Count, Is.EqualTo(1));
             Assert.That(board.TryPurchase("buyer", listing.ListingId, MarketRules.ToMicroSkr(100),
                 3, out balance, out receipt), Is.False);
+            Assert.That(board.Receipts.Count, Is.EqualTo(1));
         }
 
         [Test]

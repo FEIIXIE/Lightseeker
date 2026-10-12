@@ -3,6 +3,32 @@ using System.Collections.Generic;
 
 namespace SeekerAutoChess.Core
 {
+    public static class RunEconomyIdentity
+    {
+        public static string StableId(string prefix, params string[] parts)
+        {
+            unchecked
+            {
+                uint hash = 2166136261;
+                if (parts != null)
+                {
+                    foreach (var part in parts)
+                    {
+                        var value = part ?? string.Empty;
+                        for (var index = 0; index < value.Length; index++)
+                        {
+                            hash ^= value[index];
+                            hash *= 16777619;
+                        }
+                        hash ^= 0xFF;
+                        hash *= 16777619;
+                    }
+                }
+                return (prefix ?? "id") + "-" + hash.ToString("X8");
+            }
+        }
+    }
+
     public sealed class RunUnitState
     {
         public string RunUnitId { get; private set; }
@@ -473,6 +499,31 @@ namespace SeekerAutoChess.Core
             if (copied.Count == 0) throw new ArgumentException("A run deck cannot be empty.", nameof(unitDefinitionIds));
             this.unitDefinitionIds = copied.ToArray();
             characterInstanceIds = new string[this.unitDefinitionIds.Length];
+        }
+
+        public RunDeckSnapshot(IEnumerable<string> unitDefinitionIds,
+            IEnumerable<string> characterInstanceIds)
+        {
+            if (unitDefinitionIds == null) throw new ArgumentNullException(nameof(unitDefinitionIds));
+            if (characterInstanceIds == null) throw new ArgumentNullException(nameof(characterInstanceIds));
+            var definitions = new List<string>(unitDefinitionIds);
+            var instances = new List<string>(characterInstanceIds);
+            if (definitions.Count == 0 || definitions.Count != instances.Count)
+                throw new ArgumentException(
+                    "A restored run deck requires matching non-empty definition and instance ids.");
+            var uniqueDefinitions = new HashSet<string>(StringComparer.Ordinal);
+            var uniqueInstances = new HashSet<string>(StringComparer.Ordinal);
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                if (string.IsNullOrWhiteSpace(definitions[index]) ||
+                    string.IsNullOrWhiteSpace(instances[index]) ||
+                    !uniqueDefinitions.Add(definitions[index]) ||
+                    !uniqueInstances.Add(instances[index]))
+                    throw new ArgumentException(
+                        "A restored run deck requires unique immutable character identities.");
+            }
+            this.unitDefinitionIds = definitions.ToArray();
+            this.characterInstanceIds = instances.ToArray();
         }
 
         public RunDeckSnapshot(IEnumerable<OwnedCharacterState> characters)

@@ -115,7 +115,7 @@ namespace SeekerAutoChess.Core
             var routes = AnalyzeRoutes(map);
             var builder = new StringBuilder(320);
             builder.Append("mapSeed=").Append(map.Seed).Append('\n');
-            builder.Append("mapGenerationVersion=").Append(ExpeditionMapGraph.MapGenerationVersion).Append('\n');
+            builder.Append("mapGenerationVersion=").Append(map.GenerationVersion).Append('\n');
             builder.Append("routeSkeleton=").Append(map.SkeletonId).Append('\n');
             builder.Append("currentNodeId=").Append(current == null ? "none" : current.Id).Append('\n');
             builder.Append("journeyProgress=").Append(progress.ToString("0.000", CultureInfo.InvariantCulture)).Append('\n');

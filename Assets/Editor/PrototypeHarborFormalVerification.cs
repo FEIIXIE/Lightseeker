@@ -144,7 +144,7 @@ namespace SeekerAutoChess.EditorTools
 
         private static void SelectFixedGameViewSize(int width, int height)
         {
-            var editorAssembly = typeof(Editor).Assembly;
+            var editorAssembly = typeof(UnityEditor.Editor).Assembly;
             var gameViewType = editorAssembly.GetType("UnityEditor.GameView");
             var sizesType = editorAssembly.GetType("UnityEditor.GameViewSizes");
             if (gameViewType == null || sizesType == null)

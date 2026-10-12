@@ -30,6 +30,17 @@ namespace SeekerAutoChess.Core
         public int DamageTakenPercent;
         public int DamageTakenBoostHitsRemaining;
         public int TemporarySpeedActions;
+        public int MerchantDirectDamageTakenReductionBasisPoints;
+        public int MerchantDirectDamageReductionExpiresAt;
+        public int MerchantShieldGainBonusBasisPoints;
+        public int MerchantLowHealthDirectDamageBonusBasisPoints;
+        public int MerchantDirectAttackDamageBonusBasisPoints;
+        public int MerchantDirectAttackBonusHitsRemaining;
+        public int MerchantActiveHealingBonusBasisPoints;
+        public int MerchantActiveActionBonusBasisPoints;
+        public int MerchantActiveActionBonusActionsRemaining;
+        public int MerchantTimedAttackSpeedBonusBasisPoints;
+        public int MerchantAttackSpeedBonusExpiresAt;
         public string FactionId;
         public string ProfessionId;
         public CharacterQuality Quality;
@@ -55,10 +66,13 @@ namespace SeekerAutoChess.Core
         public int MilaHiddenSpringSourceHealAmount;
         public int MilaHiddenSpringActionBonusBasisPoints;
         public int MilaHiddenSpringSpeedBonusBasisPoints;
+        public int MilaHiddenSpringOverflowConversionBasisPoints;
+        public int MilaHiddenSpringOverflowShieldCapBasisPoints;
         public bool MilaHiddenSpringSourceLegendary;
         public int MilaAfterSpringActionBonusBasisPoints;
         public int MilaAfterSpringActionsRemaining;
         public string MilaAfterSpringSourceId;
+        public int B09OverflowShieldRemaining;
         public int SharedBarrierColumn = -1;
         public int SharedBarrierInitialCapacity;
         public int SharedBarrierRemainingCapacity;
@@ -125,6 +139,23 @@ namespace SeekerAutoChess.Core
                 DamageTakenPercent = Math.Max(0, DamageTakenPercent),
                 DamageTakenBoostHitsRemaining = Math.Max(0, DamageTakenBoostHitsRemaining),
                 TemporarySpeedActions = Math.Max(0, TemporarySpeedActions),
+                MerchantDirectDamageTakenReductionBasisPoints = Math.Max(0,
+                    MerchantDirectDamageTakenReductionBasisPoints),
+                MerchantDirectDamageReductionExpiresAt = Math.Max(0,
+                    MerchantDirectDamageReductionExpiresAt),
+                MerchantShieldGainBonusBasisPoints = Math.Max(0, MerchantShieldGainBonusBasisPoints),
+                MerchantLowHealthDirectDamageBonusBasisPoints = Math.Max(0,
+                    MerchantLowHealthDirectDamageBonusBasisPoints),
+                MerchantDirectAttackDamageBonusBasisPoints = Math.Max(0,
+                    MerchantDirectAttackDamageBonusBasisPoints),
+                MerchantDirectAttackBonusHitsRemaining = Math.Max(0,
+                    MerchantDirectAttackBonusHitsRemaining),
+                MerchantActiveHealingBonusBasisPoints = Math.Max(0, MerchantActiveHealingBonusBasisPoints),
+                MerchantActiveActionBonusBasisPoints = Math.Max(0, MerchantActiveActionBonusBasisPoints),
+                MerchantActiveActionBonusActionsRemaining = Math.Max(0,
+                    MerchantActiveActionBonusActionsRemaining),
+                MerchantTimedAttackSpeedBonusBasisPoints = MerchantTimedAttackSpeedBonusBasisPoints,
+                MerchantAttackSpeedBonusExpiresAt = Math.Max(0, MerchantAttackSpeedBonusExpiresAt),
                 FactionId = FactionId,
                 ProfessionId = ProfessionId, Quality = Quality,
                 Energy = Math.Max(0, Math.Min(100, Energy)),
@@ -153,11 +184,17 @@ namespace SeekerAutoChess.Core
                     MilaHiddenSpringActionBonusBasisPoints),
                 MilaHiddenSpringSpeedBonusBasisPoints = Math.Max(0,
                     MilaHiddenSpringSpeedBonusBasisPoints),
+                MilaHiddenSpringOverflowConversionBasisPoints = Math.Max(0,
+                    MilaHiddenSpringOverflowConversionBasisPoints),
+                MilaHiddenSpringOverflowShieldCapBasisPoints = Math.Max(0,
+                    MilaHiddenSpringOverflowShieldCapBasisPoints),
                 MilaHiddenSpringSourceLegendary = MilaHiddenSpringSourceLegendary,
                 MilaAfterSpringActionBonusBasisPoints = Math.Max(0,
                     MilaAfterSpringActionBonusBasisPoints),
                 MilaAfterSpringActionsRemaining = Math.Max(0, MilaAfterSpringActionsRemaining),
                 MilaAfterSpringSourceId = MilaAfterSpringSourceId,
+                B09OverflowShieldRemaining = Math.Max(0,
+                    Math.Min(Math.Max(0, Shield), B09OverflowShieldRemaining)),
                 SharedBarrierColumn = SharedBarrierColumn,
                 SharedBarrierInitialCapacity = Math.Max(0, SharedBarrierInitialCapacity),
                 SharedBarrierRemainingCapacity = Math.Max(0, SharedBarrierRemainingCapacity),
@@ -226,6 +263,8 @@ namespace SeekerAutoChess.Core
         public List<BattleUnitState> PlayerUnits = new List<BattleUnitState>();
         public List<BattleUnitState> EnemyUnits = new List<BattleUnitState>();
         public List<RoguelikeAcquiredEffect> PlayerRoguelikeEffects = new List<RoguelikeAcquiredEffect>();
+        public int PlayerRoguelikeRuntimeGeneration;
+        public string PlayerKeystoneId;
     }
 
     [Serializable]
@@ -324,7 +363,7 @@ namespace SeekerAutoChess.Core
             var enemies = Clone(input.EnemyUnits);
             var result = new BattleResult { PlayerUnits = players, EnemyUnits = enemies };
             var acted = new HashSet<string>(StringComparer.Ordinal);
-            var enhancements = new D1BattleRuntime(input.PlayerRoguelikeEffects);
+            var enhancements = new D1BattleRuntime(input);
             enhancements.ApplyBattleStart(players);
             ApplyB1BattleStart(enemies, result.Events);
             var schedule = CreateSchedule(players, enemies, input.Seed);
@@ -403,7 +442,20 @@ namespace SeekerAutoChess.Core
         {
             var normalizedDamage = Math.Max(1, damage);
             var normalizedArmor = Math.Max(0, Math.Min(80, armor));
-            return Math.Max(1, normalizedDamage * 100 / (100 + normalizedArmor));
+            var denominator = 100 + normalizedArmor;
+            var numerator = (long)normalizedDamage * 100;
+            var rounded = numerator / denominator;
+            var remainder = numerator % denominator;
+            if (remainder * 10 >= (long)denominator * 6) rounded++;
+            return Math.Max(1, (int)Math.Min(int.MaxValue, rounded));
+        }
+
+        private static int ApplyMerchantShieldGain(BattleUnitState target, int shield)
+        {
+            var normalized = Math.Max(0, shield);
+            if (target == null || target.MerchantShieldGainBonusBasisPoints <= 0) return normalized;
+            return Math.Max(0, (int)(((long)normalized *
+                (10000 + target.MerchantShieldGainBonusBasisPoints) + 9999) / 10000));
         }
 
         private static int ApplyB1IncomingDamageModifiers(BattleUnitState target, int damage)
@@ -448,6 +500,7 @@ namespace SeekerAutoChess.Core
                 B1ActiveSkillIntegration.NoReturnDamageBonusActionCount;
             var shield = Math.Max(1, (int)((long)target.MaxHealth *
                 B1ActiveSkillIntegration.NoReturnShieldBasisPoints / 10000));
+            shield = ApplyMerchantShieldGain(target, shield);
             target.Shield += shield;
             events.Add(new BattleEvent
             {
@@ -541,6 +594,13 @@ namespace SeekerAutoChess.Core
             bool enemyFrenzyActive,
             IList<ActionScheduleEntry> schedule)
         {
+            if (actor.MerchantAttackSpeedBonusExpiresAt > 0 &&
+                actionTime >= actor.MerchantAttackSpeedBonusExpiresAt)
+            {
+                actor.AttackSpeedBonusBasisPoints -= actor.MerchantTimedAttackSpeedBonusBasisPoints;
+                actor.MerchantTimedAttackSpeedBonusBasisPoints = 0;
+                actor.MerchantAttackSpeedBonusExpiresAt = 0;
+            }
             var firstAction = !acted.Contains(actor.Id);
             var isN1 = IsN1(actor);
             if (isN1) actor.N1ActionCount++;
@@ -562,6 +622,7 @@ namespace SeekerAutoChess.Core
             if (isB1) actor.B1ActionCount++;
             var isB2 = B2ActiveSkillIntegration.IsB2(actor);
             if (isB2) actor.B2ActionCount++;
+            var consumeAfterSpringAction = actor.MilaAfterSpringActionsRemaining > 0;
             var pendingActionBonusBasisPoints = actor.OlinTideActionsRemaining > 0
                 ? actor.PendingActionBonusBasisPoints
                 : 0;
@@ -573,20 +634,25 @@ namespace SeekerAutoChess.Core
                 pendingActionBonusBasisPoints += actor.E3BellReturnActionBonusBasisPoints;
             if (actor.B1NoReturnDamageBonusActionsRemaining > 0)
                 pendingActionBonusBasisPoints += B1ActiveSkillIntegration.NoReturnDamageBonusBasisPoints;
+            if (actor.MerchantActiveActionBonusActionsRemaining > 0)
+                pendingActionBonusBasisPoints += actor.MerchantActiveActionBonusBasisPoints;
             if (CanUseOlinActive(actor) && actor.Energy >= HeroMaximumEnergy)
             {
                 actor.Energy = 0;
-                ExecuteOlinOpenDawn(actor, allies, opponents, events, actionTime, schedule);
+                ExecuteOlinOpenDawn(actor, allies, opponents, events, actionTime, schedule,
+                    enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
             if (CanUseYiwenActive(actor) && actor.Energy >= HeroMaximumEnergy)
             {
                 actor.Energy = 0;
-                ExecuteYiwenReturnBeacon(actor, allies, events, actionTime);
+                 ExecuteYiwenReturnBeacon(actor, allies, events, actionTime, enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, false);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, false,
+                    consumeAfterSpringAction);
                 return;
             }
             if (CanUseLeifuActive(actor) && actor.Energy >= HeroMaximumEnergy)
@@ -596,15 +662,17 @@ namespace SeekerAutoChess.Core
                     enhancements.LowHealthActionBasisPoints(actor) + pendingActionBonusBasisPoints,
                     schedule, enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
             if (CanUseMilaActive(actor) && actor.Energy >= HeroMaximumEnergy)
             {
                 actor.Energy = 0;
-                ExecuteMilaHiddenSpring(actor, allies, events, actionTime);
+                 ExecuteMilaHiddenSpring(actor, allies, events, actionTime, enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
             if (CanUseC05Active(actor) && actor.Energy >= HeroMaximumEnergy)
@@ -612,7 +680,8 @@ namespace SeekerAutoChess.Core
                 actor.Energy = 0;
                 ExecuteC05RebuildBridge(actor, allies, events, actionTime, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
             if (CanUseC06Active(actor) && actor.Energy >= HeroMaximumEnergy)
@@ -620,35 +689,40 @@ namespace SeekerAutoChess.Core
                 actor.Energy = 0;
                 ExecuteC06ShareFire(actor, allies, events, actionTime);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
             if (isN1 && actor.N1ActionCount % N1TriggerActionCount == 0)
             {
                 ExecuteN1HoldGate(actor, allies, events, actionTime);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, false, false, false);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false, false);
                 return;
             }
             if (isE1 && actor.E1ActionCount % E1TriggerActionCount == 0)
             {
                 ExecuteE1SteadyLine(actor, allies, events, actionTime);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, false, false);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isE2 && actor.E2ActionCount % E2TriggerActionCount == 0)
             {
                 ExecuteE2TrackJudgment(actor, allies, opponents, events, actionTime, enhancements, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isE3 && actor.E3ActionCount % E3TriggerActionCount == 0)
             {
-                ExecuteE3BellReturn(actor, allies, events, actionTime);
+                 ExecuteE3BellReturn(actor, allies, events, actionTime, enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, false, false);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isB1 && actor.B1ActionCount % B1TriggerActionCount == 0)
@@ -656,7 +730,8 @@ namespace SeekerAutoChess.Core
                 ExecuteB1BlockadeQuake(actor, allies, opponents, events, actionTime,
                     enhancements, schedule, pendingActionBonusBasisPoints);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isB2 && actor.B2ActionCount % B2TriggerActionCount == 0)
@@ -664,7 +739,8 @@ namespace SeekerAutoChess.Core
                 ExecuteB2DoubleLight(actor, allies, opponents, events, actionTime,
                     enhancements, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 actor.B2DoubleLightSpeedPenaltyActionsRemaining = 1;
                 actor.AttackSpeedBonusBasisPoints +=
                     B2ActiveSkillIntegration.DoubleLightSpeedPenaltyBasisPoints;
@@ -675,28 +751,32 @@ namespace SeekerAutoChess.Core
             {
                 ExecuteN2CrossCut(actor, allies, opponents, events, actionTime, enhancements, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isN3 && actor.N3ActionCount % N3TriggerActionCount == 0)
             {
                 ExecuteN3HeavyBolt(actor, allies, opponents, events, actionTime, enhancements, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isN4 && actor.N4ActionCount % N4TriggerActionCount == 0)
             {
                 ExecuteN4MistHunt(actor, allies, opponents, events, actionTime, enhancements, schedule);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             if (isN5 && actor.N5ActionCount % N5TriggerActionCount == 0)
             {
-                ExecuteN5DoubleStitch(actor, allies, events, actionTime);
+                 ExecuteN5DoubleStitch(actor, allies, events, actionTime, enhancements);
                 acted.Add(actor.Id);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, false, false);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction, false);
                 return;
             }
             var allyToHeal = FindLowestHealth(allies);
@@ -706,9 +786,12 @@ namespace SeekerAutoChess.Core
                 var before = allyToHeal.Health;
                 var c05ColumnHealBonus = actor.C05ColumnActionBuffActionsRemaining > 0
                     ? actor.C05ColumnActionBuffHealBonusBasisPoints : 0;
+                var afterSpringHealBonus = actor.MilaAfterSpringActionsRemaining > 0
+                    ? actor.MilaAfterSpringActionBonusBasisPoints : 0;
                 var heal = ApplyActionBonuses(actor, allyToHeal, actor.HealAmount, false, firstAction,
-                    enhancements.LowHealthActionBasisPoints(actor) + pendingActionBonusBasisPoints +
-                    c05ColumnHealBonus);
+                      enhancements.ActiveHealBonusBasisPoints(actor) + pendingActionBonusBasisPoints +
+                    c05ColumnHealBonus + afterSpringHealBonus +
+                    actor.MerchantActiveHealingBonusBasisPoints);
                 var stored = TryStoreMilaHeal(allyToHeal, heal, events, actionTime);
                 if (!stored)
                 {
@@ -723,7 +806,8 @@ namespace SeekerAutoChess.Core
                 }
                 acted.Add(actor.Id);
                 AddNormalActionEnergy(actor);
-                ConsumeActionScopedBonuses(actor, allies, events, actionTime);
+                ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                    consumeAfterSpringAction);
                 return;
             }
 
@@ -742,9 +826,16 @@ namespace SeekerAutoChess.Core
                 ? actor.NockReturnFireDamageBonusBasisPoints : 0;
             var c05ColumnAttackBonus = actor.C05ColumnActionBuffActionsRemaining > 0
                 ? actor.C05ColumnActionBuffAttackBonusBasisPoints : 0;
-            var directValue = ApplyActionBonuses(actor, target, (int)attackDamage, true, firstAction,
-                enhancements.LowHealthActionBasisPoints(actor) + pendingActionBonusBasisPoints +
-                afterSpringAttackBonus + c05ColumnAttackBonus + nockReturnFireBonus);
+             var directValue = ApplyActionBonuses(actor, target, (int)attackDamage, true, firstAction,
+                  enhancements.LowHealthActionBasisPoints(actor) + pendingActionBonusBasisPoints +
+                  afterSpringAttackBonus + c05ColumnAttackBonus + nockReturnFireBonus +
+                  enhancements.ExecuteDirectDamageBasisPoints(actor, target) +
+                  (target.Health * 2 < target.MaxHealth
+                      ? actor.MerchantLowHealthDirectDamageBonusBasisPoints : 0) +
+                  (actor.MerchantDirectAttackBonusHitsRemaining > 0
+                      ? actor.MerchantDirectAttackDamageBonusBasisPoints : 0));
+            if (actor.MerchantDirectAttackBonusHitsRemaining > 0)
+                actor.MerchantDirectAttackBonusHitsRemaining--;
             if (isB2)
             {
                 if (target.Health * 2 <= target.MaxHealth)
@@ -762,9 +853,17 @@ namespace SeekerAutoChess.Core
                     (10000 + LeifuWhiteTrailDirectDamageBonusBasisPoints) / 10000));
                 whiteTrailArmorReduction = -LeifuWhiteTrailArmorReadDelta;
             }
-            var damage = ApplyB1IncomingDamageModifiers(target, CalculateDamageAfterArmor(directValue,
-                Math.Max(0, target.Armor - actor.ArmorPenetration - focusReduction -
-                    whiteTrailArmorReduction)));
+             var damage = ApplyB1IncomingDamageModifiers(target, CalculateDamageAfterArmor(directValue,
+                 Math.Max(0, target.Armor - actor.ArmorPenetration - focusReduction -
+                     whiteTrailArmorReduction)));
+             var sameColumnReduction = enhancements.SameColumnDirectReductionBasisPoints(target, opponents);
+              if (sameColumnReduction > 0)
+                  damage = Math.Max(1,
+                      (int)((long)damage * (10000 - sameColumnReduction) / 10000));
+            if (target.MerchantDirectDamageReductionExpiresAt > actionTime &&
+                target.MerchantDirectDamageTakenReductionBasisPoints > 0)
+                damage = Math.Max(1, (int)((long)damage *
+                    (10000 - target.MerchantDirectDamageTakenReductionBasisPoints) / 10000));
             if (target.DamageTakenBoostHitsRemaining > 0 && target.DamageTakenPercent > 0)
             {
                 damage = Math.Max(1, (damage * (100 + target.DamageTakenPercent) + 50) / 100);
@@ -797,15 +896,20 @@ namespace SeekerAutoChess.Core
                 schedule);
             EmitYiwenRescue(rescue, target, events, actionTime);
             enhancements.RecordDirectAttack(actor, target);
+            if (CanUseC06Active(actor))
+                RecordC06EligibleFire(allies, opponents, events, actionTime, schedule);
             acted.Add(actor.Id);
             AddNormalActionEnergy(actor);
             AddDirectHitEnergy(target, shieldAbsorbed + healthDamage);
-            ConsumeActionScopedBonuses(actor, allies, events, actionTime, true, true, true);
+            ConsumeActionScopedBonuses(actor, allies, events, actionTime, true,
+                consumeAfterSpringAction, true);
             if (isB2) AdvanceB2Marks(opponents, actor.Id, events, actionTime);
             var effectiveDirectDamage = shieldAbsorbed + healthDamage;
             if (actor.IsPlayer)
             {
-                enhancements.ApplyFire(actor, target, directValue, events, actionTime, opponents);
+                if (enhancements.ApplyFire(actor, target, directValue, events, actionTime,
+                        opponents))
+                    RecordC06EligibleFire(allies, opponents, events, actionTime, schedule);
                 enhancements.ApplyLeech(actor, effectiveDirectDamage, events, actionTime);
             }
             ApplyC06AttachedFire(actor, allies, target, opponents, events, actionTime, schedule);
@@ -902,6 +1006,7 @@ namespace SeekerAutoChess.Core
                 var shield = Math.Max(1, (int)((long)unit.MaxHealth *
                     B1ActiveSkillIntegration.ClosedArmorShieldBasisPoints / 10000));
                 unit.B1ClosedArmorApplied = true;
+                shield = ApplyMerchantShieldGain(unit, shield);
                 unit.Shield += shield;
                 events.Add(new BattleEvent
                 {
@@ -998,6 +1103,7 @@ namespace SeekerAutoChess.Core
                 {
                     var shield = Math.Max(1, (int)((long)lowest.MaxHealth *
                         B2ActiveSkillIntegration.FullRosterShieldBasisPoints / 10000));
+                    shield = ApplyMerchantShieldGain(lowest, shield);
                     lowest.Shield += shield;
                     events.Add(new BattleEvent
                     {
@@ -1073,6 +1179,7 @@ namespace SeekerAutoChess.Core
                 var basisPoints = ReferenceEquals(target, owner)
                     ? E1SelfShieldBasisPoints : E1FrontlineShieldBasisPoints;
                 var shield = Math.Max(1, (int)((long)target.MaxHealth * basisPoints / 10000));
+                shield = ApplyMerchantShieldGain(target, shield);
                 target.Shield += shield;
                 target.E1SteadyLineSourceId = owner.Id;
                 target.E1SteadyLineShieldRemaining += shield;
@@ -1102,8 +1209,9 @@ namespace SeekerAutoChess.Core
                 E2ActiveSkillIntegration.LowHealthBonusPercent);
         }
 
-        private static void ExecuteE3BellReturn(BattleUnitState actor,
-            IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime)
+         private static void ExecuteE3BellReturn(BattleUnitState actor,
+             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime,
+             D1BattleRuntime enhancements)
         {
             if (actor == null || actor.Health <= 0) return;
             var targets = new List<BattleUnitState>();
@@ -1115,8 +1223,9 @@ namespace SeekerAutoChess.Core
             {
                 var target = targets[index];
                 var before = target.Health;
-                var heal = Math.Max(1, (int)((long)Math.Max(1, actor.HealAmount) *
-                    E3ActiveSkillIntegration.HealBasisPoints / 10000));
+                 var heal = enhancements.ApplyActiveHealBonus(actor,
+                     Math.Max(1, (int)((long)Math.Max(1, actor.HealAmount) *
+                         E3ActiveSkillIntegration.HealBasisPoints / 10000)));
                 target.Health = Math.Min(target.MaxHealth, target.Health + heal);
                 target.E3BellReturnActionsRemaining = ReferenceEquals(target, actor) ? 2 : 1;
                 target.E3BellReturnActionBonusBasisPoints = E3ActiveSkillIntegration.NextActionBonusBasisPoints;
@@ -1291,8 +1400,9 @@ namespace SeekerAutoChess.Core
             }
         }
 
-        private static void ExecuteN5DoubleStitch(BattleUnitState actor,
-            IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime)
+         private static void ExecuteN5DoubleStitch(BattleUnitState actor,
+             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime,
+             D1BattleRuntime enhancements)
         {
             var targets = FindLowestHealthTargets(allies, N5ActiveSkillIntegration.MaximumTargets);
             targets.RemoveAll(unit => unit.Health >= unit.MaxHealth);
@@ -1310,8 +1420,9 @@ namespace SeekerAutoChess.Core
             {
                 var target = targets[index];
                 var before = target.Health;
-                var requested = Math.Max(1, (int)((long)Math.Max(1, actor.HealAmount) *
-                    N5ActiveSkillIntegration.HealBasisPoints / 10000));
+                 var requested = enhancements.ApplyActiveHealBonus(actor,
+                     Math.Max(1, (int)((long)Math.Max(1, actor.HealAmount) *
+                         N5ActiveSkillIntegration.HealBasisPoints / 10000)));
                 target.Health = Math.Min(target.MaxHealth, target.Health + requested);
                 events.Add(new BattleEvent
                 {
@@ -1334,6 +1445,7 @@ namespace SeekerAutoChess.Core
                 var basisPoints = ReferenceEquals(target, owner)
                     ? N1SelfShieldBasisPoints : N1RearAllyShieldBasisPoints;
                 var shield = Math.Max(1, (int)((long)target.MaxHealth * basisPoints / 10000));
+                shield = ApplyMerchantShieldGain(target, shield);
                 target.Shield += shield;
                 target.N1HoldGateSourceId = owner.Id;
                 target.N1HoldGateShieldRemaining += shield;
@@ -1356,7 +1468,10 @@ namespace SeekerAutoChess.Core
         private static void ConsumeN1ShieldContribution(BattleUnitState target, int absorbed)
         {
             ConsumeE1ShieldContribution(target, absorbed);
-            if (target == null || absorbed <= 0 || target.N1HoldGateShieldRemaining <= 0) return;
+            if (target == null || absorbed <= 0) return;
+            target.B09OverflowShieldRemaining = Math.Max(0,
+                target.B09OverflowShieldRemaining - absorbed);
+            if (target.N1HoldGateShieldRemaining <= 0) return;
             target.N1HoldGateShieldRemaining = Math.Max(0,
                 target.N1HoldGateShieldRemaining - absorbed);
             if (target.N1HoldGateShieldRemaining == 0)
@@ -1575,10 +1690,16 @@ namespace SeekerAutoChess.Core
             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events,
             int actionTime, IList<ActionScheduleEntry> schedule)
         {
-            RemoveC05Barrier(actor, events, actionTime, "REPLACED");
+            var column = C05ColumnForSlot(actor.Slot);
+            foreach (var owner in allies ?? new List<BattleUnitState>())
+            {
+                if (owner == null || owner.SharedBarrierRemainingCapacity <= 0 ||
+                    owner.SharedBarrierColumn != column) continue;
+                RemoveC05Barrier(owner, events, actionTime, "REPLACED");
+            }
             var capacity = Math.Max(1, (int)((long)actor.MaxHealth *
                 C05BarrierCapacityBasisPoints / 10000));
-            actor.SharedBarrierColumn = C05ColumnForSlot(actor.Slot);
+            actor.SharedBarrierColumn = column;
             actor.SharedBarrierInitialCapacity = capacity;
             actor.SharedBarrierRemainingCapacity = capacity;
             actor.SharedBarrierActionsRemaining = C05BarrierLifetimeActions;
@@ -1609,11 +1730,13 @@ namespace SeekerAutoChess.Core
                 : StringComparer.Ordinal.Compare(left.Id, right.Id));
             foreach (var ally in ordered)
             {
-                ally.NockFireSourceId = source.Id;
-                ally.NockFireActionsRemaining = string.Equals(ally.Id, source.Id,
+                var granted = string.Equals(ally.Id, source.Id,
                     StringComparison.Ordinal)
                     ? C06ActiveSkillIntegration.NockSelfChargeCount
                     : C06ActiveSkillIntegration.AllyChargeCount;
+                if (granted >= ally.NockFireActionsRemaining)
+                    ally.NockFireSourceId = source.Id;
+                ally.NockFireActionsRemaining = Math.Max(ally.NockFireActionsRemaining, granted);
                 events.Add(new BattleEvent
                 {
                     Type = BattleEventType.Status,
@@ -1649,8 +1772,6 @@ namespace SeekerAutoChess.Core
                 SourceEffectId = C06ActiveSkillIntegration.FireChargeStatusId
             });
             if (primaryTarget == null || primaryTarget.Health <= 0) return;
-            var source = FindUnitById(allies, actor.NockFireSourceId);
-            if (!HasC06Passive(source)) return;
             var rawDamage = Math.Max(1, (int)((long)actor.AttackDamage *
                 C06ActiveSkillIntegration.AttachedFireDamageBasisPoints / 10000));
             var healthBefore = primaryTarget.Health;
@@ -1676,9 +1797,33 @@ namespace SeekerAutoChess.Core
                 SourceEffectId = C06ActiveSkillIntegration.ShareFireAbilityId
             });
             ResolveB1AfterDirectDamage(primaryTarget, shieldBefore, healthBefore, events, actionTime);
-            source.NockFireDamageCount++;
-            if (source.NockFireDamageCount % C06ActiveSkillIntegration.ReturnFireTriggerCount == 0)
-                ExecuteC06ReturnFire(source, allies, opponents, events, actionTime, schedule);
+            RecordC06EligibleFire(allies, opponents, events, actionTime, schedule);
+        }
+
+        private static void RecordC06EligibleFire(IEnumerable<BattleUnitState> allies,
+            IEnumerable<BattleUnitState> opponents, ICollection<BattleEvent> events,
+            int actionTime, IList<ActionScheduleEntry> schedule)
+        {
+            var side = new List<BattleUnitState>();
+            BattleUnitState executor = null;
+            var sharedCount = 0;
+            foreach (var ally in allies ?? new List<BattleUnitState>())
+            {
+                if (ally == null) continue;
+                side.Add(ally);
+                sharedCount = Math.Max(sharedCount, Math.Max(0, ally.NockFireDamageCount));
+                if (!HasC06Passive(ally)) continue;
+                if (executor == null || ally.Slot < executor.Slot ||
+                    (ally.Slot == executor.Slot && StringComparer.Ordinal.Compare(ally.Id,
+                        executor.Id) < 0)) executor = ally;
+            }
+            if (executor == null) return;
+            sharedCount++;
+            var trigger = sharedCount >= C06ActiveSkillIntegration.ReturnFireTriggerCount;
+            if (trigger) sharedCount = 0;
+            foreach (var ally in side) ally.NockFireDamageCount = sharedCount;
+            if (trigger)
+                ExecuteC06ReturnFire(executor, side, opponents, events, actionTime, schedule);
         }
 
         private static void ExecuteC06ReturnFire(BattleUnitState source,
@@ -1718,6 +1863,7 @@ namespace SeekerAutoChess.Core
             foreach (var ally in allies ?? new List<BattleUnitState>())
             {
                 if (ally == null || ally.Health <= 0) continue;
+                ally.NockFireSourceId = source.Id;
                 ally.NockReturnFireActionsRemaining = C06ActiveSkillIntegration.ReturnFireActionCount;
                 ally.NockReturnFireDamageBonusBasisPoints =
                     C06ActiveSkillIntegration.ReturnFireDamageBonusBasisPoints;
@@ -1888,6 +2034,7 @@ namespace SeekerAutoChess.Core
             {
                 var shield = Math.Max(1, (int)((long)owner.MaxHealth *
                     C05PersonalShieldBasisPoints / 10000));
+                shield = ApplyMerchantShieldGain(owner, shield);
                 owner.Shield += shield;
                 events.Add(new BattleEvent
                 {
@@ -2167,14 +2314,16 @@ namespace SeekerAutoChess.Core
             }
         }
 
-        private static void ExecuteYiwenReturnBeacon(BattleUnitState actor,
-            IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime)
+         private static void ExecuteYiwenReturnBeacon(BattleUnitState actor,
+             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime,
+             D1BattleRuntime enhancements)
         {
             var target = FindLowestHealth(allies);
             if (target == null) return;
             target.YiwenReturnBeaconSourceId = actor.Id;
             target.YiwenReturnBeaconActionsRemaining = YiwenReturnBeaconActionCount;
-            target.YiwenReturnBeaconHealAmount = Math.Max(0, actor.HealAmount);
+             target.YiwenReturnBeaconHealAmount =
+                 enhancements.ApplyActiveHealBonus(actor, Math.Max(0, actor.HealAmount));
             events.Add(new BattleEvent
             {
                 Type = BattleEventType.Status,
@@ -2189,8 +2338,9 @@ namespace SeekerAutoChess.Core
             });
         }
 
-        private static void ExecuteMilaHiddenSpring(BattleUnitState source,
-            IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime)
+         private static void ExecuteMilaHiddenSpring(BattleUnitState source,
+             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime,
+             D1BattleRuntime enhancements)
         {
             var targets = FindLowestHealthTargets(allies, C04ActiveSkillIntegration.HiddenSpringTargetCount);
             foreach (var target in targets)
@@ -2199,12 +2349,17 @@ namespace SeekerAutoChess.Core
                 target.MilaHiddenSpringSourceId = source.Id;
                 target.MilaHiddenSpringActionsRemaining = C04ActiveSkillIntegration.HiddenSpringActionCount;
                 target.MilaHiddenSpringStoredHeal = 0;
-                target.MilaHiddenSpringSourceHealAmount =
-                    Math.Max(0, (int)((long)source.HealAmount * 80 / 100));
+                 target.MilaHiddenSpringSourceHealAmount = Math.Max(0,
+                     (int)((long)enhancements.ApplyActiveHealBonus(source,
+                         Math.Max(0, source.HealAmount)) * 80 / 100));
                 target.MilaHiddenSpringActionBonusBasisPoints =
                     C04ActiveSkillIntegration.HiddenSpringAttackBonusBasisPoints;
                 target.MilaHiddenSpringSpeedBonusBasisPoints =
                     C04ActiveSkillIntegration.HiddenSpringAttackSpeedBonusBasisPoints;
+                target.MilaHiddenSpringOverflowConversionBasisPoints =
+                    enhancements.B09OverflowConversionBasisPoints;
+                target.MilaHiddenSpringOverflowShieldCapBasisPoints =
+                    enhancements.B09OverflowShieldCapBasisPoints;
                 target.MilaHiddenSpringSourceLegendary = source.Quality == CharacterQuality.Legendary;
                 events.Add(new BattleEvent
                 {
@@ -2256,7 +2411,19 @@ namespace SeekerAutoChess.Core
             var heal = Math.Min(Math.Max(0, target.MaxHealth - target.Health), release);
             target.Health += heal;
             var overflow = Math.Max(0, release - heal);
-            if (overflow > 0) target.Shield += overflow;
+            var overflowShield = 0;
+            if (overflow > 0 && target.MilaHiddenSpringOverflowConversionBasisPoints > 0 &&
+                target.MilaHiddenSpringOverflowShieldCapBasisPoints > 0)
+            {
+                var converted = Math.Max(0, (int)((long)overflow *
+                    target.MilaHiddenSpringOverflowConversionBasisPoints / 10000));
+                var cap = Math.Max(0, (int)((long)target.MaxHealth *
+                    target.MilaHiddenSpringOverflowShieldCapBasisPoints / 10000));
+                var available = Math.Max(0, cap - target.B09OverflowShieldRemaining);
+                overflowShield = Math.Min(converted, available);
+                target.Shield += overflowShield;
+                target.B09OverflowShieldRemaining += overflowShield;
+            }
             var bonus = target.MilaHiddenSpringSourceLegendary
                 ? Math.Min(C04ActiveSkillIntegration.AfterSpringMaximumBasisPoints,
                     (target.MaxHealth <= 0 ? 0 : (stored * 100 / target.MaxHealth) / 10) *
@@ -2293,18 +2460,18 @@ namespace SeekerAutoChess.Core
                     IsSecondary = true,
                     SourceEffectId = C04ActiveSkillIntegration.AfterSpringAbilityId
                 });
-            if (overflow > 0)
+            if (overflowShield > 0)
                 events.Add(new BattleEvent
                 {
                     Type = BattleEventType.Shield,
                     ActorId = sourceId,
                     TargetId = target.Id,
-                    Amount = overflow,
+                    Amount = overflowShield,
                     TargetHealthAfter = target.Health,
                     TargetShieldAfter = target.Shield,
                     ActionTime = actionTime,
                     IsSecondary = true,
-                    SourceEffectId = C04ActiveSkillIntegration.AfterSpringAbilityId
+                    SourceEffectId = "B09"
                 });
             if (healthBefore == target.Health && shieldBefore == target.Shield && bonus <= 0)
                 return;
@@ -2338,6 +2505,8 @@ namespace SeekerAutoChess.Core
             target.MilaHiddenSpringSourceHealAmount = 0;
             target.MilaHiddenSpringActionBonusBasisPoints = 0;
             target.MilaHiddenSpringSpeedBonusBasisPoints = 0;
+            target.MilaHiddenSpringOverflowConversionBasisPoints = 0;
+            target.MilaHiddenSpringOverflowShieldCapBasisPoints = 0;
             target.MilaHiddenSpringSourceLegendary = false;
         }
 
@@ -2467,7 +2636,8 @@ namespace SeekerAutoChess.Core
             List<BattleUnitState> opponents,
             ICollection<BattleEvent> events,
             int actionTime,
-            IList<ActionScheduleEntry> schedule)
+            IList<ActionScheduleEntry> schedule,
+            D1BattleRuntime enhancements)
         {
             var shieldSnapshot = Math.Max(0, actor.Shield);
             var damageSource = shieldSnapshot > 0
@@ -2476,6 +2646,7 @@ namespace SeekerAutoChess.Core
                     (int)((long)actor.MaxHealth * OlinMinimumDamageBasisPoints / 10000))
                 : 0;
             actor.Shield = 0;
+            actor.B09OverflowShieldRemaining = 0;
             events.Add(new BattleEvent
             {
                 Type = BattleEventType.Status, ActorId = actor.Id, TargetId = actor.Id,
@@ -2483,6 +2654,11 @@ namespace SeekerAutoChess.Core
                 ActionTime = actionTime, IsSecondary = true,
                 SourceEffectId = C01ActiveSkillIntegration.OpenDawnAbilityId
             });
+            if (shieldSnapshot > 0)
+            {
+                if (actor.IsPlayer) enhancements.ApplyShieldBreakRepair(actor, events, actionTime);
+                TriggerOlinTide(actor, allies, events, actionTime, schedule);
+            }
 
             var orderedTargets = new List<BattleUnitState>();
             foreach (var target in opponents)
@@ -2562,7 +2738,6 @@ namespace SeekerAutoChess.Core
                     IsSecondary = true, SourceEffectId = C01ActiveSkillIntegration.OpenDawnAbilityId
                 });
             }
-            if (shieldSnapshot > 0) TriggerOlinTide(actor, allies, events, actionTime, schedule);
         }
 
         private static void TriggerOlinTide(
@@ -2602,9 +2777,15 @@ namespace SeekerAutoChess.Core
 
         private static void ConsumeActionScopedBonuses(BattleUnitState actor,
             IEnumerable<BattleUnitState> allies, ICollection<BattleEvent> events, int actionTime,
-            bool consumeReturnBeacon = true, bool consumeAfterSpringAttack = false,
+            bool consumeReturnBeacon = true, bool consumeAfterSpringAction = false,
             bool consumeNockReturnFire = false, bool advanceN1 = true)
         {
+            if (actor.MerchantActiveActionBonusActionsRemaining > 0)
+            {
+                actor.MerchantActiveActionBonusActionsRemaining--;
+                if (actor.MerchantActiveActionBonusActionsRemaining == 0)
+                    actor.MerchantActiveActionBonusBasisPoints = 0;
+            }
             if (actor.B2DoubleLightSpeedPenaltyActionsRemaining > 0)
             {
                 actor.B2DoubleLightSpeedPenaltyActionsRemaining--;
@@ -2669,7 +2850,7 @@ namespace SeekerAutoChess.Core
                     actor.MilaHiddenSpringSpeedBonusBasisPoints = 0;
                 }
             }
-            if (consumeAfterSpringAttack && actor.MilaAfterSpringActionsRemaining > 0)
+            if (consumeAfterSpringAction && actor.MilaAfterSpringActionsRemaining > 0)
             {
                 actor.MilaAfterSpringActionsRemaining--;
                 if (actor.MilaAfterSpringActionsRemaining == 0)
@@ -2902,61 +3083,185 @@ namespace SeekerAutoChess.Core
 
         private sealed class D1BattleRuntime
         {
+            private readonly int runtimeGeneration;
+            private readonly string keystoneId;
             private readonly int attackBasisPoints;
             private readonly int healthBasisPoints;
             private readonly int steelGuardianArmor;
             private readonly int fireBasisPoints;
             private readonly int leechBasisPoints;
             private readonly int shieldRepairBasisPoints;
+            private readonly int b09OverflowConversionBasisPoints;
+            private readonly int b09OverflowShieldCapBasisPoints;
             private readonly int focusArmorReduction;
             private readonly int attackSpeedBasisPoints;
-            private readonly int emergencyHealBasisPoints;
-            private readonly int lowHealthActionBasisPoints;
+             private readonly int emergencyHealBasisPoints;
+             private readonly int lowHealthActionBasisPoints;
+             private readonly int threeProfessionAttackHealthBasisPoints;
+             private readonly int executeDirectDamageBasisPoints;
+             private readonly int sameColumnDirectReductionBasisPoints;
+            private bool threeProfessionActive;
             private readonly HashSet<string> repairedShieldUnits = new HashSet<string>(StringComparer.Ordinal);
             private bool emergencyHealConsumed;
             private string focusLastTargetId;
             private string focusLastActorId;
             private string focusArmedTargetId;
 
-            public D1BattleRuntime(IEnumerable<RoguelikeAcquiredEffect> effects)
+            public D1BattleRuntime(BattleInput input)
             {
-                attackBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B01", 10000);
-                healthBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B02", 10000);
-                steelGuardianArmor = RoguelikeEnhancementRules.SumValue(effects, "B03", 80);
-                fireBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B04", 4000);
-                leechBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B06", 3500);
-                shieldRepairBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B08", 2500);
-                focusArmorReduction = RoguelikeEnhancementRules.SumValue(effects, "B10", 28);
-                attackSpeedBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B13", 3000);
-                emergencyHealBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B14", 10000);
-                lowHealthActionBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B15", 3500);
+                if (input == null) throw new ArgumentNullException(nameof(input));
+                runtimeGeneration = input.PlayerRoguelikeRuntimeGeneration;
+                if (runtimeGeneration != 0 && runtimeGeneration != ChapterOneRoguelikeV11State.RuntimeGeneration)
+                    throw new InvalidOperationException("Unsupported roguelike runtime generation: " +
+                                                        runtimeGeneration);
+                keystoneId = input.PlayerKeystoneId ?? string.Empty;
+                if (runtimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                    !string.IsNullOrEmpty(keystoneId))
+                    ChapterOneRoguelikeV11Rules.GetKeystone(keystoneId);
+                var effects = input.PlayerRoguelikeEffects;
+                if (runtimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration)
+                {
+                    attackBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B01", 10000);
+                    healthBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B02", 10000);
+                    steelGuardianArmor = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B03", 80);
+                    fireBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B04", 4000);
+                    leechBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B06", 3500);
+                    shieldRepairBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B08", 2500);
+                    var b09RarityId = -1;
+                    foreach (var effect in effects ?? new List<RoguelikeAcquiredEffect>())
+                    {
+                        if (effect == null || effect.stackCount <= 0 ||
+                            !string.Equals(effect.effectId, "B09", StringComparison.Ordinal)) continue;
+                        b09RarityId = Math.Max(b09RarityId, Math.Max(0, Math.Min(4,
+                            effect.rarityId)));
+                    }
+                    if (b09RarityId >= 0)
+                    {
+                        var b09 = ChapterOneRoguelikeV11Rules.GetNormal("B09");
+                        b09OverflowConversionBasisPoints = b09.Value((RoguelikeRarity)b09RarityId);
+                        b09OverflowShieldCapBasisPoints =
+                            b09.SecondaryValue((RoguelikeRarity)b09RarityId);
+                    }
+                    focusArmorReduction = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B10", 28);
+                    attackSpeedBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B13", 3000);
+                    emergencyHealBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B14", 10000);
+                     lowHealthActionBasisPoints = ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B15", 3500);
+                     threeProfessionAttackHealthBasisPoints =
+                         ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B16", 10000);
+                     executeDirectDamageBasisPoints =
+                         ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B11", 4000);
+                     sameColumnDirectReductionBasisPoints =
+                         ChapterOneRoguelikeV11Rules.SumNormalValue(effects, "B12", 2500);
+                }
+                else
+                {
+                    attackBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B01", 10000);
+                    healthBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B02", 10000);
+                    steelGuardianArmor = RoguelikeEnhancementRules.SumValue(effects, "B03", 80);
+                    fireBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B04", 4000);
+                    leechBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B06", 3500);
+                    shieldRepairBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B08", 2500);
+                    focusArmorReduction = RoguelikeEnhancementRules.SumValue(effects, "B10", 28);
+                    attackSpeedBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B13", 3000);
+                    emergencyHealBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B14", 10000);
+                    lowHealthActionBasisPoints = RoguelikeEnhancementRules.SumValueBasisPoints(effects, "B15", 3500);
+                }
             }
+
+            public int B09OverflowConversionBasisPoints => b09OverflowConversionBasisPoints;
+
+            public int B09OverflowShieldCapBasisPoints => b09OverflowShieldCapBasisPoints;
 
             public void ApplyBattleStart(IEnumerable<BattleUnitState> players)
             {
+                var roster = new List<BattleUnitState>();
+                foreach (var player in players ?? Array.Empty<BattleUnitState>())
+                    if (player != null) roster.Add(player);
+                threeProfessionActive = HasProfession(roster, "profession.guardian") &&
+                                        HasProfession(roster, "profession.output") &&
+                                        HasProfession(roster, "profession.support");
                 foreach (var unit in players)
                 {
-                    if (attackBasisPoints > 0)
+                    var attackIncrease = attackBasisPoints;
+                    var healthIncrease = healthBasisPoints;
+                    if (threeProfessionActive) attackIncrease += threeProfessionAttackHealthBasisPoints;
+                    if (threeProfessionActive) healthIncrease += threeProfessionAttackHealthBasisPoints;
+                    if (runtimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                        threeProfessionActive && keystoneId == "K09" &&
+                        unit.ProfessionId == "profession.output") attackIncrease += 2000;
+                    if (attackIncrease > 0)
                         unit.AttackDamage = RoguelikeEnhancementRules.ApplyBasisPointIncreaseFloor(
-                            unit.AttackDamage, attackBasisPoints);
-                    if (healthBasisPoints > 0)
+                            unit.AttackDamage, attackIncrease);
+                    if (healthIncrease > 0)
                     {
                         unit.MaxHealth = RoguelikeEnhancementRules.ApplyBasisPointIncreaseFloor(
-                            unit.MaxHealth, healthBasisPoints);
+                            unit.MaxHealth, healthIncrease);
                         unit.Health = unit.MaxHealth;
                     }
                     if (steelGuardianArmor > 0 &&
                         (unit.FactionId == "faction.steel" || unit.ProfessionId == "profession.guardian"))
                         unit.Armor = Math.Min(80, unit.Armor + steelGuardianArmor);
+                    if (runtimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                        threeProfessionActive && keystoneId == "K09" &&
+                        unit.ProfessionId == "profession.guardian")
+                        unit.Armor = Math.Min(80, unit.Armor + 10);
                     if (attackSpeedBasisPoints > 0)
                         unit.AttackSpeedBonusBasisPoints += attackSpeedBasisPoints;
                 }
             }
 
-            public int LowHealthActionBasisPoints(BattleUnitState actor)
+            private static bool HasProfession(IEnumerable<BattleUnitState> units, string professionId)
             {
-                return actor.IsPlayer && actor.Health * 2 <= actor.MaxHealth ? lowHealthActionBasisPoints : 0;
+                foreach (var unit in units)
+                    if (unit.Health > 0 && string.Equals(unit.ProfessionId, professionId,
+                            StringComparison.Ordinal)) return true;
+                return false;
             }
+
+             public int LowHealthActionBasisPoints(BattleUnitState actor)
+             {
+                 return actor.IsPlayer && actor.Health * 2 <= actor.MaxHealth ? lowHealthActionBasisPoints : 0;
+             }
+
+             public int ActiveHealBonusBasisPoints(BattleUnitState actor)
+             {
+                 if (actor == null || !actor.IsPlayer) return 0;
+                 var bonus = actor.Health * 2 <= actor.MaxHealth ? lowHealthActionBasisPoints : 0;
+                 if (runtimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                     threeProfessionActive && keystoneId == "K09" &&
+                     actor.ProfessionId == "profession.support") bonus += 2500;
+                 return bonus;
+             }
+
+             public int ApplyActiveHealBonus(BattleUnitState actor, int requested)
+             {
+                 var normalized = Math.Max(0, requested);
+                 var bonus = ActiveHealBonusBasisPoints(actor);
+                 return bonus <= 0
+                     ? normalized
+                     : Math.Max(1, (int)((long)normalized * (10000 + bonus) / 10000));
+             }
+
+             public int ExecuteDirectDamageBasisPoints(BattleUnitState actor, BattleUnitState target)
+             {
+                 if (runtimeGeneration != ChapterOneRoguelikeV11State.RuntimeGeneration ||
+                     !actor.IsPlayer || actor.ProfessionId != "profession.output" ||
+                     target.Health * 2 > target.MaxHealth) return 0;
+                 return executeDirectDamageBasisPoints;
+             }
+
+             public int SameColumnDirectReductionBasisPoints(BattleUnitState target,
+                 IEnumerable<BattleUnitState> targetAllies)
+             {
+                 if (runtimeGeneration != ChapterOneRoguelikeV11State.RuntimeGeneration ||
+                     !target.IsPlayer || sameColumnDirectReductionBasisPoints <= 0 ||
+                     target.Slot < 3 || target.Slot >= 6) return 0;
+                 var frontSlot = target.Slot % 3;
+                 foreach (var ally in targetAllies ?? Array.Empty<BattleUnitState>())
+                     if (ally != null && ally.Health > 0 && ally.Slot == frontSlot)
+                         return sameColumnDirectReductionBasisPoints;
+                 return 0;
+             }
 
             public int FocusArmorReductionFor(BattleUnitState actor, BattleUnitState target)
             {
@@ -2976,11 +3281,11 @@ namespace SeekerAutoChess.Core
                 focusLastActorId = actor.Id;
             }
 
-            public void ApplyFire(BattleUnitState actor, BattleUnitState target, int directValue,
+            public bool ApplyFire(BattleUnitState actor, BattleUnitState target, int directValue,
                 ICollection<BattleEvent> events, int actionTime,
                 IEnumerable<BattleUnitState> targetAllies)
             {
-                if (fireBasisPoints <= 0 || target.Health <= 0) return;
+                if (fireBasisPoints <= 0 || target.Health <= 0) return false;
                 var raw = Math.Max(1, (int)((long)directValue * fireBasisPoints / 10000));
                 var healthBefore = target.Health;
                 var shieldBefore = target.Shield;
@@ -3000,6 +3305,7 @@ namespace SeekerAutoChess.Core
                 });
                 ResolveB1AfterDirectDamage(target, shieldBefore, healthBefore, events, actionTime);
                 EmitYiwenRescue(rescue, target, events, actionTime);
+                return true;
             }
 
             public void ApplyLeech(BattleUnitState actor, int effectiveDirectDamage,

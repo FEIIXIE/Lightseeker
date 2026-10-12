@@ -16,20 +16,45 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void FormalStoreArtContractKeepsAuthoredModulesAndFrozenNavigation()
+        public void FormalStoreArtContractKeepsCurrentCatalogAtNativeCanvasSizes()
         {
-            Assert.AreEqual("store-e-v1.1.0", StoreFormalArtContract.PackageVersion);
-            Assert.AreEqual(142, StoreFormalArtContract.SideCardWidth);
-            Assert.AreEqual(224, StoreFormalArtContract.SideCardHeight);
-            Assert.AreEqual(154, StoreFormalArtContract.CenterCardWidth);
-            Assert.AreEqual(244, StoreFormalArtContract.CenterCardHeight);
-            Assert.AreEqual(-11f, StoreFormalArtContract.LeftCardAngle);
-            Assert.AreEqual(11f, StoreFormalArtContract.RightCardAngle);
-            Assert.AreEqual(308, StoreFormalArtContract.BaseWidth);
-            Assert.AreEqual(116, StoreFormalArtContract.BaseHeight);
-            Assert.AreEqual(5, StoreFormalArtContract.QualityBadgeResourceIds.Length);
-            Assert.AreEqual(2158f, StoreFormalArtContract.FrozenNavigationTop);
-            Assert.AreEqual(242f, StoreFormalArtContract.FrozenNavigationHeight);
+            Assert.AreEqual("store-page-single-column-continuous-formal-v1.6.0",
+                StoreSingleColumnFormalArtContract.PackageVersion);
+            Assert.AreEqual(912, StoreSingleColumnFormalArtContract.ProductRowWidth);
+            Assert.AreEqual(330, StoreSingleColumnFormalArtContract.ProductRowHeight);
+            Assert.AreEqual(280, StoreSingleColumnFormalArtContract.CharacterPackWidth);
+            Assert.AreEqual(236, StoreSingleColumnFormalArtContract.CharacterPackHeight);
+            Assert.AreEqual(300, StoreSingleColumnFormalArtContract.BasePairWidth);
+            Assert.AreEqual(180, StoreSingleColumnFormalArtContract.BasePairHeight);
+            Assert.AreEqual(3, StoreSingleColumnFormalArtContract.CharacterPackArt.Length);
+            Assert.AreEqual(
+                "ART-UI-STORE-SINGLE-COLUMN-BASEPAIR-MIST-HARBOR-300x180-v1.6.0",
+                StoreSingleColumnFormalArtContract.BasePairMistHarbor);
+            Assert.AreEqual(3286f, StoreSingleColumnFormalArtContract.CurrentCatalogContentHeight);
+            Assert.AreEqual(3, StoreSingleColumnFormalArtContract.BasePairArt.Length);
+            Assert.AreEqual(3, StoreSingleColumnFormalArtContract.BattlefieldArt.Length);
+        }
+
+        [Test]
+        public void PurchasedCosmeticsCanBeValidatedAndOnlyNativeBattlefieldsCanRender()
+        {
+            var owned = new[]
+            {
+                "base.pack.harbor_pair.v1",
+                "battlefield.mist_harbor.v1"
+            };
+            Assert.IsTrue(StoreCosmeticRules.CanEquip(
+                "base.pack.harbor_pair.v1", StoreProductType.BasePack, owned));
+            Assert.IsTrue(StoreCosmeticRules.CanEquip(
+                "battlefield.mist_harbor.v1", StoreProductType.Battlefield, owned));
+            Assert.IsFalse(StoreCosmeticRules.CanEquip(
+                "battlefield.mist_harbor.v1", StoreProductType.BasePack, owned));
+            Assert.IsNull(StoreCosmeticRules.NormalizeEquipped(
+                "battlefield.deeptide_astral.v1", StoreProductType.Battlefield, owned));
+            Assert.IsTrue(StoreCosmeticFormalArtContract.HasNativeRuntimeVisual(
+                "battlefield.mist_harbor.v1"));
+            Assert.IsFalse(StoreCosmeticFormalArtContract.HasNativeRuntimeVisual(
+                "base.pack.harbor_pair.v1"));
         }
 
         [Test]

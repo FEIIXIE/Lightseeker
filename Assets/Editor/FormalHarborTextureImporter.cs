@@ -5,11 +5,11 @@ namespace SeekerAutoChess.EditorTools
 {
     internal sealed class FormalHarborTextureImporter : AssetPostprocessor
     {
-        private const string HarborV110Prefix = "Assets/Resources/Art/Harbor/V110/";
+        private const string HarborPrefix = "Assets/Resources/Art/Harbor/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(HarborV110Prefix, System.StringComparison.Ordinal)) return;
+            if (!assetPath.StartsWith(HarborPrefix, System.StringComparison.Ordinal)) return;
 
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;

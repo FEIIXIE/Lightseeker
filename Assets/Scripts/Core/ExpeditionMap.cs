@@ -54,7 +54,8 @@ namespace SeekerAutoChess.Core
     public sealed class ExpeditionMapGraph
     {
         public const int ChapterLayerCount = 15;
-        public const int MapGenerationVersion = 8;
+        public const int LegacyFiveTypeMapGenerationVersion = 8;
+        public const int MapGenerationVersion = 9;
         public const int FixedAnchorCount = 30;
         public const int MaximumNodesPerLayer = 4;
         public const int MaximumOrdinaryOutDegree = 3;
@@ -63,10 +64,11 @@ namespace SeekerAutoChess.Core
         private readonly Dictionary<string, ExpeditionMapNode> nodesById;
 
         private ExpeditionMapGraph(
-            uint seed, string skeletonId, int contentAttempts,
+            uint seed, int generationVersion, string skeletonId, int contentAttempts,
             List<ExpeditionMapNode> generatedNodes)
         {
             Seed = seed;
+            GenerationVersion = generationVersion;
             SkeletonId = skeletonId;
             ContentAttempts = contentAttempts;
             nodes = generatedNodes;
@@ -75,17 +77,28 @@ namespace SeekerAutoChess.Core
         }
 
         public uint Seed { get; private set; }
+        public int GenerationVersion { get; private set; }
         public string SkeletonId { get; private set; }
         public int ContentAttempts { get; private set; }
         public IReadOnlyList<ExpeditionMapNode> Nodes { get { return nodes; } }
 
         public static ExpeditionMapGraph CreateChapterOne(uint seed)
         {
+            return CreateChapterOne(seed, MapGenerationVersion);
+        }
+
+        public static ExpeditionMapGraph CreateChapterOne(uint seed, int generationVersion)
+        {
             if (seed == 0) seed = 0x51EA2C31u;
+            if (generationVersion != LegacyFiveTypeMapGenerationVersion &&
+                generationVersion != MapGenerationVersion)
+                throw new ArgumentOutOfRangeException(nameof(generationVersion),
+                    "The chapter-one map generation version is unsupported.");
             var rules = ChapterOneMapRules.CreateDefault();
             var generated = new List<ExpeditionMapNode>();
             int contentAttempts;
-            var assignedTypes = CreateNodeTypes(rules, seed, out contentAttempts);
+            var assignedTypes = CreateNodeTypes(
+                rules, seed, generationVersion, out contentAttempts);
             for (var layer = 1; layer <= rules.StageCount; layer++)
             {
                 var column = 0;
@@ -112,7 +125,7 @@ namespace SeekerAutoChess.Core
             }
 
             return new ExpeditionMapGraph(
-                seed, rules.SkeletonId(seed), contentAttempts, generated);
+                seed, generationVersion, rules.SkeletonId(seed), contentAttempts, generated);
         }
 
         public ExpeditionMapNode GetNode(string id)
@@ -154,7 +167,7 @@ namespace SeekerAutoChess.Core
             var errors = new List<string>();
             var start = GetNode("M00");
             var guardian = GetNode("M19");
-            var finalCombat = GetNode("M28");
+            var finalPreparation = GetNode("M28");
             var boss = GetNode("M29");
 
             if (nodes.Count != FixedAnchorCount)
@@ -165,8 +178,15 @@ namespace SeekerAutoChess.Core
                 errors.Add("Stage 15 must contain fixed Boss node M29.");
             if (guardian == null || guardian.Type != ExpeditionNodeType.EliteBattle)
                 errors.Add("M19 must remain the mandatory guardian encounter.");
-            if (finalCombat == null || finalCombat.Type != ExpeditionNodeType.NormalBattle)
-                errors.Add("M28 must remain the fixed final normal battle.");
+            if (GenerationVersion == LegacyFiveTypeMapGenerationVersion)
+            {
+                if (finalPreparation == null ||
+                    finalPreparation.Type != ExpeditionNodeType.NormalBattle)
+                    errors.Add("Legacy M28 must remain the fixed final normal battle.");
+            }
+            else if (finalPreparation == null ||
+                     finalPreparation.Type != ExpeditionNodeType.Supply)
+                errors.Add("M28 must be the fixed Boss preparation supply.");
             if (SkeletonId != "A" && SkeletonId != "B" && SkeletonId != "C" && SkeletonId != "D")
                 errors.Add("Chapter one must use one reviewed A-D route skeleton.");
 
@@ -205,8 +225,16 @@ namespace SeekerAutoChess.Core
             foreach (var node in nodes)
                 if (node.Id != "M00" && incoming[node.Id].Count == 0)
                     errors.Add("Node " + node.Id + " has no incoming route.");
+            if (incoming["M19"].Count != 1 || incoming["M19"][0] != "M18")
+                errors.Add("M19 must have M18 as its only logical predecessor.");
+            if (GetNode("M18").NextNodeIds.Count != 1 ||
+                GetNode("M18").NextNodeIds[0] != "M19")
+                errors.Add("M18 must route directly and exclusively to M19.");
             if (incoming["M29"].Count != 1 || incoming["M29"][0] != "M28")
                 errors.Add("M29 must have M28 as its only logical predecessor.");
+            if (GetNode("M28").NextNodeIds.Count != 1 ||
+                GetNode("M28").NextNodeIds[0] != "M29")
+                errors.Add("M28 must route directly and exclusively to M29.");
 
             var canReachBoss = new HashSet<string>(StringComparer.Ordinal);
             if (boss != null) canReachBoss.Add(boss.Id);
@@ -228,11 +256,15 @@ namespace SeekerAutoChess.Core
 
             ValidateTypeCount(ExpeditionNodeType.NormalBattle, 15, errors);
             ValidateTypeCount(ExpeditionNodeType.EliteBattle, 4, errors);
-            ValidateTypeCount(ExpeditionNodeType.Supply, 0, errors);
-            ValidateTypeCount(ExpeditionNodeType.Event, 2, errors);
+            ValidateTypeCount(ExpeditionNodeType.Supply,
+                GenerationVersion == LegacyFiveTypeMapGenerationVersion ? 0 : 4, errors);
+            ValidateTypeCount(ExpeditionNodeType.Event,
+                GenerationVersion == LegacyFiveTypeMapGenerationVersion ? 2 : 4, errors);
             ValidateTypeCount(ExpeditionNodeType.Shop, 2, errors);
-            ValidateTypeCount(ExpeditionNodeType.Rest, 2, errors);
-            ValidateTypeCount(ExpeditionNodeType.Treasure, 4, errors);
+            ValidateTypeCount(ExpeditionNodeType.Rest,
+                GenerationVersion == LegacyFiveTypeMapGenerationVersion ? 2 : 0, errors);
+            ValidateTypeCount(ExpeditionNodeType.Treasure,
+                GenerationVersion == LegacyFiveTypeMapGenerationVersion ? 4 : 0, errors);
             ValidateTypeCount(ExpeditionNodeType.Boss, 1, errors);
             if (!IsBattleType(GetNode("M01").Type) && !IsBattleType(GetNode("M02").Type))
                 errors.Add("M01 and M02 cannot both be non-combat.");
@@ -245,8 +277,25 @@ namespace SeekerAutoChess.Core
             if (!ContainsTypeInRange(ExpeditionNodeType.Shop, 8, 18) ||
                 !ContainsTypeInRange(ExpeditionNodeType.Shop, 20, 27))
                 errors.Add("Shops must appear on both sides of M19.");
-            if (!IsImprovementType(GetNode("M26").Type) && !IsImprovementType(GetNode("M27").Type))
+            if (GenerationVersion == LegacyFiveTypeMapGenerationVersion &&
+                !IsImprovementType(GetNode("M26").Type) &&
+                !IsImprovementType(GetNode("M27").Type))
                 errors.Add("M26 or M27 must provide an effective improvement.");
+            if (GenerationVersion == MapGenerationVersion)
+            {
+                if (GetNode("M18").Type != ExpeditionNodeType.Supply)
+                    errors.Add("M18 must be the fixed guardian preparation supply.");
+                var forbiddenSupplyAnchors = new[] { 15, 16, 17, 26, 27 };
+                foreach (var anchor in forbiddenSupplyAnchors)
+                    if (GetNode("M" + anchor.ToString("00")).Type == ExpeditionNodeType.Supply)
+                        errors.Add("M" + anchor.ToString("00") +
+                                   " cannot generate a dynamic supply.");
+                foreach (var node in nodes)
+                    foreach (var nextId in node.NextNodeIds)
+                        if (node.Type == ExpeditionNodeType.Event &&
+                            GetNode(nextId).Type == ExpeditionNodeType.Event)
+                            errors.Add("Event nodes cannot connect directly to Event nodes.");
+            }
             ValidateCompletePaths(errors);
 
             return errors;
@@ -398,22 +447,26 @@ namespace SeekerAutoChess.Core
         }
 
         private static Dictionary<string, ExpeditionNodeType> CreateNodeTypes(
-            ChapterOneMapRules rules, uint seed, out int contentAttempts)
+            ChapterOneMapRules rules, uint seed, int generationVersion,
+            out int contentAttempts)
         {
             for (var attempt = 0; attempt < rules.MaximumContentAttempts; attempt++)
             {
-                var result = MakeContentAssignment(rules, seed, attempt);
-                if (!ValidateContentAssignment(rules, result, seed)) continue;
+                var result = generationVersion == LegacyFiveTypeMapGenerationVersion
+                    ? MakeLegacyContentAssignment(rules, seed, attempt)
+                    : MakeThreeTypeContentAssignment(rules, seed, attempt);
+                if (!ValidateContentAssignment(
+                        rules, result, seed, generationVersion)) continue;
                 contentAttempts = attempt + 1;
                 return result;
             }
             contentAttempts = rules.MaximumContentAttempts;
             throw new InvalidOperationException(
-                "E21 content assignment failed after " + rules.MaximumContentAttempts +
+                "Chapter-one content assignment failed after " + rules.MaximumContentAttempts +
                 " deterministic attempts for seed " + seed + ".");
         }
 
-        private static Dictionary<string, ExpeditionNodeType> MakeContentAssignment(
+        private static Dictionary<string, ExpeditionNodeType> MakeLegacyContentAssignment(
             ChapterOneMapRules rules, uint seed, int attempt)
         {
             var salt = unchecked((uint)(attempt + 1) * 0x85ebca6bu);
@@ -454,6 +507,64 @@ namespace SeekerAutoChess.Core
             return result;
         }
 
+        private static Dictionary<string, ExpeditionNodeType> MakeThreeTypeContentAssignment(
+            ChapterOneMapRules rules, uint seed, int attempt)
+        {
+            var salt = unchecked((uint)(attempt + 1) * 0x85ebca6bu);
+            var random = new E21Random(seed, salt);
+            var result = new Dictionary<string, ExpeditionNodeType>(StringComparer.Ordinal)
+            {
+                { "M00", ExpeditionNodeType.NormalBattle },
+                { "M18", ExpeditionNodeType.Supply },
+                { "M19", ExpeditionNodeType.EliteBattle },
+                { "M28", ExpeditionNodeType.Supply },
+                { "M29", ExpeditionNodeType.Boss }
+            };
+            var available = new List<string>();
+            for (var index = 1; index <= 27; index++)
+                if (index != 18 && index != 19)
+                    available.Add("M" + index.ToString("00"));
+
+            AssignPicked(result, available, ExpeditionNodeType.EliteBattle,
+                CandidateIds(available, 8, 17), ref random);
+            AssignPicked(result, available, ExpeditionNodeType.EliteBattle,
+                CandidateIds(available, 20, 27), ref random);
+            var thirdEliteCandidates = CandidateIds(available, 8, 17);
+            thirdEliteCandidates.AddRange(CandidateIds(available, 20, 27));
+            AssignPicked(result, available, ExpeditionNodeType.EliteBattle,
+                thirdEliteCandidates, ref random);
+            AssignPicked(result, available, ExpeditionNodeType.Shop,
+                CandidateIds(available, 8, 17), ref random);
+            AssignPicked(result, available, ExpeditionNodeType.Shop,
+                CandidateIds(available, 20, 27), ref random);
+
+            var supplyCandidates = CandidateIds(available, 1, 27);
+            supplyCandidates.Remove("M15");
+            supplyCandidates.Remove("M16");
+            supplyCandidates.Remove("M17");
+            supplyCandidates.Remove("M26");
+            supplyCandidates.Remove("M27");
+            AssignPicked(result, available, ExpeditionNodeType.Supply,
+                supplyCandidates, ref random);
+            supplyCandidates = CandidateIds(available, 1, 27);
+            supplyCandidates.Remove("M15");
+            supplyCandidates.Remove("M16");
+            supplyCandidates.Remove("M17");
+            supplyCandidates.Remove("M26");
+            supplyCandidates.Remove("M27");
+            AssignPicked(result, available, ExpeditionNodeType.Supply,
+                supplyCandidates, ref random);
+
+            var bag = new List<ExpeditionNodeType>();
+            AddCopies(bag, ExpeditionNodeType.NormalBattle, 14);
+            AddCopies(bag, ExpeditionNodeType.Event, 4);
+            Shuffle(bag, ref random);
+            Shuffle(available, ref random);
+            for (var index = 0; index < available.Count; index++)
+                result[available[index]] = bag[index];
+            return result;
+        }
+
         private static List<string> CandidateIds(
             IEnumerable<string> available, int minimum, int maximum)
         {
@@ -481,10 +592,13 @@ namespace SeekerAutoChess.Core
         private static bool ValidateContentAssignment(
             ChapterOneMapRules rules,
             IReadOnlyDictionary<string, ExpeditionNodeType> types,
-            uint seed)
+            uint seed,
+            int generationVersion)
         {
             if (!IsBattleType(types["M01"]) && !IsBattleType(types["M02"])) return false;
-            if (!IsImprovementType(types["M26"]) && !IsImprovementType(types["M27"])) return false;
+            if (generationVersion == LegacyFiveTypeMapGenerationVersion &&
+                !IsImprovementType(types["M26"]) && !IsImprovementType(types["M27"]))
+                return false;
 
             var predecessors = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             foreach (var rule in rules.Nodes) predecessors[rule.Id] = new List<string>();
@@ -516,6 +630,19 @@ namespace SeekerAutoChess.Core
             }
             if (minimumCombat["M29"] < 8 || globalMaximumNonCombatRun > 2) return false;
             if (minimumCombat["M19"] - 1 < 4) return false;
+
+            if (generationVersion == MapGenerationVersion)
+            {
+                foreach (var encodedEdge in rules.SkeletonEdges(seed))
+                {
+                    var separator = encodedEdge.IndexOf('>');
+                    var sourceId = encodedEdge.Substring(0, separator);
+                    var targetId = encodedEdge.Substring(separator + 1);
+                    if (types[sourceId] == ExpeditionNodeType.Event &&
+                        types[targetId] == ExpeditionNodeType.Event)
+                        return false;
+                }
+            }
 
             var minimumPostGuardCombat = new Dictionary<string, int>(StringComparer.Ordinal)
             {

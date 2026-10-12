@@ -9,6 +9,7 @@ namespace SeekerAutoChess.Prototype.Persistence
     {
         public int saveVersion;
         public int runEconomyRulesVersion;
+        public int qualityRecruitPriceRulesVersion;
         public string runId;
         public int runStateVersion;
         public int coins;
@@ -27,6 +28,11 @@ namespace SeekerAutoChess.Prototype.Persistence
         public RoguelikeChoiceSet pendingRoguelikeChoiceSet;
         public RoguelikeAcquiredEffect[] acquiredRoguelikeEffects;
         public RoguelikeChoiceReceipt[] roguelikeChoiceReceipts;
+        public int roguelikeRuntimeGeneration;
+        public string selectedRoguelikeKeystoneId;
+        public ChapterOneRoguelikeChoiceSetV11 pendingRoguelikeChoiceSetV11;
+        public RoguelikeAcquiredEffect[] acquiredRoguelikeEffectsV11;
+        public ChapterOneRoguelikeSelectionReceipt[] roguelikeChoiceReceiptsV11;
         public int encounterPowerBonus;
         public int encounterReward;
         public bool currentEncounterIsElite;
@@ -40,6 +46,11 @@ namespace SeekerAutoChess.Prototype.Persistence
         public bool expeditionRewardsEnabled;
         public bool expeditionEntryCommitted;
         public int tideCrystalBalance;
+        public int localLampGlowBalance;
+        public int localTideIronBalance;
+        public int localMistLeatherBalance;
+        public int localStarSandBalance;
+        public int localBountyTicketBalance;
         // Legacy v32-and-earlier read compatibility. The material repair economy was retired in v33.
         public int stoneBalance;
         public int lampOilBalance;
@@ -75,8 +86,11 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int expeditionMorale;
         public string nextBattlePreparationId;
         public string[] expeditionBackpackItemIds;
+        public string[] expeditionBackpackItemInstanceIds;
+        public string[] targetedRecruitTickets;
         public string[] resolvedEconomyActionIds;
         public string activeBattleItemId;
+        public string activeBattleItemInstanceId;
         public int activeBattleTargetSlot;
         public string[] lockedEconomyContentKeys;
         public string[] lockedEconomyContentValues;
@@ -91,13 +105,22 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int storeEpicPitySkr;
         public int storeLegendaryPitySkr;
         public string[] ownedBasePackIds;
+        public string equippedBasePackProductId;
+        public string equippedBattlefieldProductId;
         public bool storeOpeningActive;
         public float storeOpeningProgress;
         public string pendingStoreOrderId;
         public string[] pendingStoreInstanceIds;
         public string[] pendingStoreDefinitionIds;
         public int[] pendingStoreQualities;
+        public int[] pendingStoreAptitudeRolls;
+        public bool pendingStoreRevealAlreadyGranted;
+        public string pendingStarterGrantId;
+        public string acknowledgedStarterGrantId;
         public PrototypeEquipmentSaveData[] equipment;
+        public string[] warehouseSlotTokens;
+        public string[] warehouseAcquisitionOrder;
+        public int warehouseSortMode;
         public PrototypeLoadoutSnapshotSaveData[] activeRunLoadouts;
         public PrototypeUnitSaveData[] defenseUnits;
         public int arenaRating;
@@ -170,6 +193,7 @@ namespace SeekerAutoChess.Prototype.Persistence
         public int externalStar;
         public int quality;
         public long acquiredAtUtcTicks;
+        public int aptitudeRoll;
     }
 
     [Serializable]

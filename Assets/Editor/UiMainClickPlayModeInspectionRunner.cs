@@ -375,7 +375,7 @@ namespace SeekerAutoChess.EditorTools
 
         private static void ClearConsole()
         {
-            var type = typeof(Editor).Assembly.GetType("UnityEditor.LogEntries");
+            var type = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.LogEntries");
             var method = type == null ? null : type.GetMethod("Clear", BindingFlags.Static | BindingFlags.Public);
             if (method != null) method.Invoke(null, null);
         }

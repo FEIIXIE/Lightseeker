@@ -44,7 +44,11 @@ namespace SeekerAutoChess.Tests
             AssertContext(AvatarArtContext.PreparationList, 90, 104, 0, 7, 90, 90);
             AssertContext(AvatarArtContext.Recruit, 92, 86, 3, 0, 86, 86);
             AssertContext(AvatarArtContext.DragGhost, 156, 210, 0, 27, 156, 156);
-            AssertContext(AvatarArtContext.Detail, 500, 370, 65, 0, 370, 370);
+            AssertContext(AvatarArtContext.Detail, 440, 326, 57, 0, 326, 326);
+            Assert.That(AvatarArtContract.GetContextSpec(AvatarArtContext.Detail).ResourcesFolder,
+                Is.EqualTo("Art/CharacterDetailC/V100/character-exports/"));
+            Assert.That(AvatarArtContract.GetContextSpec(AvatarArtContext.Detail).ResourceSuffix,
+                Is.EqualTo("-DETAIL-440x326-v1.1.0"));
         }
 
         private static void AssertContext(AvatarArtContext context, int width, int height,
@@ -90,9 +94,13 @@ namespace SeekerAutoChess.Tests
                 }
             }
 
-            var legacyMasters = AssetDatabase.FindAssets("t:Texture2D",
-                new[] { "Assets/Resources/Art/Avatars" });
-            Assert.That(legacyMasters.Length, Is.EqualTo(150),
+            var acceptedDerivatives = AssetDatabase.FindAssets("t:Texture2D",
+                new[]
+                {
+                    "Assets/Resources/Art/Avatars",
+                    "Assets/Resources/Art/CharacterDetailC/V100/character-exports"
+                });
+            Assert.That(acceptedDerivatives.Length, Is.EqualTo(150),
                 "Only the 150 accepted context derivatives may remain in runtime Resources.");
         }
 

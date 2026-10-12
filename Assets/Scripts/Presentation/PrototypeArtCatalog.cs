@@ -14,12 +14,14 @@ namespace SeekerAutoChess.Prototype.Presentation
 
     public static class HarborFormalArtContract
     {
-        public const string PackageVersion = "port-page-a-bounty-tower-v1.1.0";
+        public const string PackageVersion = "port-background-clean-active-zones-v1.0.0";
         public const string ConstructionAlternatePackageVersion =
             "port-page-a-bounty-tower-construction-alt-v1.0.0";
         public const string ResourceRoot = "Art/Harbor/V110/modules/";
+        public const string BackgroundResourceRoot = "Art/Harbor/V120/modules/";
 
-        public const string Background = "ART-UI-HARBOR-A-BACKGROUND-1080x2400-v1.1.0";
+        public const string Background =
+            "ART-UI-HARBOR-A-BACKGROUND-CLEAN-ACTIVE-1080x2400-v1.0.0";
         public const string WideNormal = "ART-UI-HARBOR-A-DESTINATION-WIDE-NORMAL-280x88-v1.1.0";
         public const string WidePressed = "ART-UI-HARBOR-A-DESTINATION-WIDE-PRESSED-280x88-v1.1.0";
         public const string CompactNormal = "ART-UI-HARBOR-A-DESTINATION-COMPACT-NORMAL-260x88-v1.1.0";
@@ -34,22 +36,420 @@ namespace SeekerAutoChess.Prototype.Presentation
 
     public static class BountyTowerAFormalArtContract
     {
-        public const string PackageVersion = "bounty-tower-a-three-pages-v1.0.0";
-        public const string ResourceRoot = "Art/BountyTower/V100/modules/";
+        public const string PackageVersion = "bounty-tower-a-uniform-rank-numbers-v1.3.0";
+        public const string ResourceRoot = "Art/BountyTower/V130/modules/";
 
-        public const string DailyShell = "ART-UI-BOUNTY-A-DAILY-SHELL-1080x2400-v1.0.0";
-        public const string PveShell = "ART-UI-BOUNTY-A-PVE-SHELL-1080x2400-v1.0.0";
-        public const string PvpShell = "ART-UI-BOUNTY-A-PVP-SHELL-1080x2400-v1.0.0";
-        public const string SelectedRankRow = "ART-UI-BOUNTY-A-RANK-ROW-SELECTED-920x64-v1.0.0";
-        public const string EligibilityDivider = "ART-UI-BOUNTY-A-ELIGIBILITY-DIVIDER-920x72-v1.0.0";
-        public const string DifficultyGold = "ART-UI-BOUNTY-A-DIFFICULTY-GOLD-144x44-v1.0.0";
-        public const string DifficultyTeal = "ART-UI-BOUNTY-A-DIFFICULTY-TEAL-144x44-v1.0.0";
-        public const string DifficultyBlue = "ART-UI-BOUNTY-A-DIFFICULTY-BLUE-144x44-v1.0.0";
+        public const string DailyShell = "ART-UI-BOUNTY-A-DAILY-SHELL-1080x2400-v1.3.0";
+        public const string PveShell =
+            "ART-UI-BOUNTY-A-PVE-SHELL-NO-TOP3-MARKERS-1080x2400-v1.3.0";
+        public const string PvpShell =
+            "ART-UI-BOUNTY-A-PVP-SHELL-NO-TOP3-MARKERS-1080x2400-v1.3.0";
+        public const string PveSelectedRankRow =
+            "ART-UI-BOUNTY-A-PVE-RANK-ROW-SELECTED-920x64-v1.3.0";
+        public const string PvpSelectedRankRow =
+            "ART-UI-BOUNTY-A-PVP-RANK-ROW-SELECTED-920x48-v1.3.0";
+        public const string PveEligibilityDivider =
+            "ART-UI-BOUNTY-A-PVE-ELIGIBILITY-DIVIDER-920x72-v1.3.0";
+        public const string PvpEligibilityDivider =
+            "ART-UI-BOUNTY-A-PVP-ELIGIBILITY-DIVIDER-920x72-v1.3.0";
 
         public const int CanvasWidth = 1080;
         public const int CanvasHeight = 2400;
         public const int PoolRightEdge = 1016;
         public const int PvpTabRightEdge = 1016;
+    }
+
+    public static class WarehouseAFormalArtContract
+    {
+        public const string PackageVersion = "warehouse-page-a-five-column-compact-grid-v1.0.0";
+        public const string RuntimeExportPackageVersion = "equipment-lantern-runtime-exports-v1.0.0";
+        public const string ResourceRoot = "Art/WarehouseA/V100/";
+        public const string ModuleRoot = ResourceRoot + "modules/";
+        public const string QualityRoot = ResourceRoot + "quality/";
+        public const string EquipmentRoot = ResourceRoot + "items/equipment/";
+        public const string EquipmentListRoot = ResourceRoot + "items/equipment-list/";
+        public const string EquipmentDetailRoot = ResourceRoot + "items/equipment-detail/";
+        public const string LanternRoot = ResourceRoot + "items/lantern/";
+        public const string LanternListRoot = ResourceRoot + "items/lantern-list/";
+        public const string LanternDetailRoot = ResourceRoot + "items/lantern-detail/";
+
+        public const string Background = "ART-UI-WAREHOUSE-A-BACKGROUND-1080x2400-v1.0.0";
+        public const string TabNormal = "ART-UI-WAREHOUSE-A-CATEGORY-TAB-NORMAL-184x88-v1.0.0";
+        public const string TabSelected = "ART-UI-WAREHOUSE-A-CATEGORY-TAB-SELECTED-184x88-v1.0.0";
+        public const string EmptySlot = "ART-UI-WAREHOUSE-A-EMPTY-SLOT-184x184-v1.0.0";
+        public const string ReturnNormal = "ART-UI-WAREHOUSE-B-RETURN-BUTTON-192x72-v1.0.1";
+        public const string ReturnPressed = "ART-UI-WAREHOUSE-B-RETURN-BUTTON-PRESSED-192x72-v1.0.1";
+        public const string ToolNormal = "ART-UI-WAREHOUSE-B-TOOL-BUTTON-NORMAL-160x72-v1.0.1";
+        public const string ToolPressed = "ART-UI-WAREHOUSE-B-TOOL-BUTTON-PRESSED-160x72-v1.0.1";
+        public const string Scrollbar = "ART-UI-WAREHOUSE-B-SCROLLBAR-32x1740-v1.0.1";
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+        public const int SlotSize = 184;
+        public const int SlotCount = 50;
+        public const int ColumnCount = 5;
+        public const int GridX = 48;
+        public const int GridY = 470;
+        public const int GridStep = 200;
+        public const int ScrollViewportHeight = 1740;
+        public const int ScrollContentHeight = 1984;
+
+        public static string QualityBackground(string qualityId)
+        {
+            return "ART-UI-WAREHOUSE-A-QUALITY-BG-" + qualityId.ToUpperInvariant() +
+                   "-184-v1.0.0";
+        }
+
+        public static string EquipmentAppearance(string templateId)
+        {
+            switch (templateId)
+            {
+                case "equipment.lanternHelm":
+                    return "ART-EQUIP-COMMON-简易铁盔-184x184-v1.0.0";
+                case "equipment.oldVoyageClothes":
+                    return "ART-EQUIP-COMMON-帆布水手外套-184x184-v1.0.0";
+                case "equipment.mossPathShoes":
+                    return "ART-EQUIP-COMMON-防滑水手靴-184x184-v1.0.0";
+                case "equipment.forgeRivetGauntlet":
+                    return "ART-EQUIP-COMMON-加固皮手套-184x184-v1.0.0";
+                case "equipment.lanternHarborBlade":
+                    return "ART-EQUIP-COMMON-旧港铁剑-184x184-v1.0.0";
+                default:
+                    return null;
+            }
+        }
+
+        public static string EquipmentDetailAppearance(string templateId)
+        {
+            switch (templateId)
+            {
+                case "equipment.lanternHelm":
+                    return "ART-EQUIP-COMMON-简易铁盔-220x220-v1.0.0";
+                case "equipment.oldVoyageClothes":
+                    return "ART-EQUIP-COMMON-帆布水手外套-220x220-v1.0.0";
+                case "equipment.mossPathShoes":
+                    return "ART-EQUIP-COMMON-防滑水手靴-220x220-v1.0.0";
+                case "equipment.forgeRivetGauntlet":
+                    return "ART-EQUIP-COMMON-加固皮手套-220x220-v1.0.0";
+                case "equipment.lanternHarborBlade":
+                    return "ART-EQUIP-COMMON-旧港铁剑-220x220-v1.0.0";
+                default:
+                    return null;
+            }
+        }
+
+        public static string EquipmentListAppearance(string templateId)
+        {
+            var warehouseAppearance = EquipmentAppearance(templateId);
+            return string.IsNullOrEmpty(warehouseAppearance)
+                ? null
+                : warehouseAppearance.Replace("-184x184-", "-104x104-");
+        }
+
+        public static string LanternAppearance(string templateId)
+        {
+            switch (HomeLanternModularArtContract.ResolveAppearanceId(templateId))
+            {
+                case "L02": return "ART-LANTERN-EQUIP-L02-防风舱灯-184x184-v1.0.0";
+                case "L03": return "ART-LANTERN-EQUIP-L03-潮蓝巡灯-184x184-v1.0.0";
+                case "L04": return "ART-LANTERN-EQUIP-L04-星盘引航灯-184x184-v1.0.0";
+                case "L05": return "ART-LANTERN-EQUIP-L05-深海棱晶灯-184x184-v1.0.0";
+                case "L06": return "ART-LANTERN-EQUIP-L06-曙潮冠灯-184x184-v1.0.0";
+                default: return "ART-LANTERN-EQUIP-L01-港湾提灯-184x184-v1.0.0";
+            }
+        }
+
+        public static string LanternListAppearance(string templateId)
+        {
+            return LanternAppearanceForSize(templateId, "104x104");
+        }
+
+        public static string LanternDetailAppearance(string templateId)
+        {
+            return LanternAppearanceForSize(templateId, "220x220");
+        }
+
+        private static string LanternAppearanceForSize(string templateId, string size)
+        {
+            var warehouseAppearance = LanternAppearance(templateId);
+            return warehouseAppearance.Replace("-184x184-", "-" + size + "-");
+        }
+    }
+
+    public static class EquipmentDetailFormalArtContract
+    {
+        public const string PackageVersion = "equipment-detail-universal-dual-column-v1.0.1";
+        public const string SharedResourceRoot = "Art/EquipmentDetail/V101/modules/";
+        public const string Info = "ART-UI-EQUIPMENT-DETAIL-INFO-NORMAL-56-v1.0.1";
+        public const string Action = "ART-UI-EQUIPMENT-DETAIL-ACTION-NORMAL-620x112-v1.0.1";
+        public const string ListingPriceInput =
+            "ART-UI-EQUIPMENT-DETAIL-LISTING-PRICE-INPUT-400x84-v1.0.1";
+    }
+
+    public static class EquipmentDetailAFormalArtContract
+    {
+        public const string PackageVersion = "equipment-detail-a-unified-shell-multiscene-v1.0.1";
+        public const string ResourceRoot = "Art/EquipmentDetailA/V101/modules/";
+        public const string ActionShell =
+            "ART-UI-EQUIPMENT-DETAIL-A-ACTION-SHELL-760x650-v1.0.1";
+        public const string ViewShell =
+            "ART-UI-EQUIPMENT-DETAIL-A-VIEW-SHELL-760x570-v1.0.1";
+        public const string BaseRow =
+            "ART-UI-EQUIPMENT-DETAIL-A-BASE-ROW-360x56-v1.0.1";
+        public const string MagicRow =
+            "ART-UI-EQUIPMENT-DETAIL-A-MAGIC-ROW-360x56-v1.0.1";
+        public const string SectionDivider =
+            "ART-UI-EQUIPMENT-DETAIL-A-SECTION-DIVIDER-360x24-v1.0.1";
+
+        public static readonly Rect ActionPanelRect = new Rect(160f, 875f, 760f, 650f);
+        public static readonly Rect ViewPanelRect = new Rect(160f, 915f, 760f, 570f);
+    }
+
+    public static class LanternDetailFormalArtContract
+    {
+        public const string PackageVersion = "lantern-detail-fixed-shell-dual-page-v1.0.0";
+        public const string ResourceRoot = "Art/LanternDetail/V100/modules/";
+        public const string SharedResourceRoot = EquipmentDetailFormalArtContract.SharedResourceRoot;
+        public const string FixedShell =
+            "ART-UI-LANTERN-DETAIL-FIXED-SHELL-982x1580-v1.0.0";
+        public const string TabActive =
+            "ART-UI-LANTERN-DETAIL-TAB-ACTIVE-330x64-v1.0.0";
+        public const string TabInactive =
+            "ART-UI-LANTERN-DETAIL-TAB-INACTIVE-330x64-v1.0.0";
+        public const string AttributesPage =
+            "ART-UI-LANTERN-DETAIL-ATTRIBUTES-PAGE-858x930-v1.0.0";
+        public const string CovenantPage =
+            "ART-UI-LANTERN-DETAIL-COVENANT-PAGE-858x930-v1.0.0";
+        public static readonly Rect PanelRect = new Rect(49f, 410f, 982f, 1580f);
+    }
+
+    public static class LanternDetailAFormalArtContract
+    {
+        public const string PackageVersion = "lantern-detail-a-single-page-covenant-popup-v1.0.6";
+        public const string ResourceRoot = "Art/LanternDetailA/V106/modules/";
+        public const string CompactShell =
+            "ART-UI-LANTERN-DETAIL-A-COMPACT-SHELL-760x980-v1.0.1";
+        public const string CorePanel =
+            "ART-UI-LANTERN-DETAIL-A-CORE-COVENANT-LIGHT-664x112-v1.0.1";
+        public const string CoreEmblem =
+            "ART-UI-LANTERN-DETAIL-A-CORE-TIDE-SHELL-EMBLEM-112-v1.0.1";
+        public const string CovenantSlotNormal =
+            "ART-UI-LANTERN-DETAIL-A-COVENANT-SLOT-NORMAL-320x56-v1.0.1";
+        public const string CovenantSlotDisabled =
+            "ART-UI-LANTERN-DETAIL-A-COVENANT-SLOT-DISABLED-320x56-v1.0.1";
+        public const string InfoNormal =
+            "ART-UI-LANTERN-DETAIL-A-INFO-NORMAL-44-v1.0.6";
+        public const string InfoPressed =
+            "ART-UI-LANTERN-DETAIL-A-INFO-PRESSED-44-v1.0.6";
+        public const string InfoDisabled =
+            "ART-UI-LANTERN-DETAIL-A-INFO-DISABLED-44-v1.0.6";
+        public const string SectionDivider =
+            "ART-UI-LANTERN-DETAIL-A-SECTION-DIVIDER-664x20-v1.0.1";
+        public const string SubsectionDivider =
+            "ART-UI-LANTERN-DETAIL-A-SUBSECTION-DIVIDER-280x20-v1.0.1";
+        public const string VerticalDivider =
+            "ART-UI-LANTERN-DETAIL-A-VERTICAL-DIVIDER-4x280-v1.0.1";
+        public const string CovenantPopupShell =
+            "ART-UI-COVENANT-DETAIL-COMPACT-POPUP-SHELL-560x460-v1.0.1";
+        public const string CovenantPopupDivider =
+            "ART-UI-COVENANT-DETAIL-SECTION-DIVIDER-460x20-v1.0.1";
+        public const string CovenantPopupVerticalDivider =
+            "ART-UI-COVENANT-DETAIL-VERTICAL-DIVIDER-4x120-v1.0.1";
+        public const string StageMedallion =
+            "ART-UI-LANTERN-DETAIL-A-STAGE-MEDALLION-112-v1.0.1";
+
+        public static readonly Rect PanelRect = new Rect(160f, 710f, 760f, 980f);
+    }
+
+    public static class GlobalButtonFormalArtContract
+    {
+        public const string PackageVersion = "global-unified-button-system-v0.1.0";
+        public const string ResourceRoot = "Art/GlobalButtons/V010/modules/";
+        public const string LargeNormal = "ART-UI-GLOBAL-BUTTON-L-NORMAL-280x76-v0.1.0";
+        public const string LargePressed = "ART-UI-GLOBAL-BUTTON-L-PRESSED-280x76-v0.1.0";
+        public const string LargeDisabled = "ART-UI-GLOBAL-BUTTON-L-DISABLED-280x76-v0.1.0";
+        public const string MediumNormal = "ART-UI-GLOBAL-BUTTON-M-NORMAL-220x68-v0.1.0";
+        public const string MediumPressed = "ART-UI-GLOBAL-BUTTON-M-PRESSED-220x68-v0.1.0";
+        public const string MediumDisabled = "ART-UI-GLOBAL-BUTTON-M-DISABLED-220x68-v0.1.0";
+    }
+
+    public static class CommonConfirmFormalArtContract
+    {
+        public const string PackageVersion = "generic-confirm-dialog-and-buttons-v1.0.1";
+        public const string ResourceRoot = "Art/Common/V101/modules/";
+        public const string DialogShell =
+            "ART-UI-COMMON-CONFIRM-DIALOG-SHELL-820x420-v1.0.1";
+        public const string PrimaryNormal =
+            "ART-UI-COMMON-BUTTON-PRIMARY-NORMAL-280x76-v1.0.1";
+        public const string PrimaryPressed =
+            "ART-UI-COMMON-BUTTON-PRIMARY-PRESSED-280x76-v1.0.1";
+        public const string PrimaryDisabled =
+            "ART-UI-COMMON-BUTTON-PRIMARY-DISABLED-280x76-v1.0.1";
+        public const string SecondaryNormal =
+            "ART-UI-COMMON-BUTTON-SECONDARY-NORMAL-280x76-v1.0.1";
+        public const string SecondaryPressed =
+            "ART-UI-COMMON-BUTTON-SECONDARY-PRESSED-280x76-v1.0.1";
+        public const string SecondaryDisabled =
+            "ART-UI-COMMON-BUTTON-SECONDARY-DISABLED-280x76-v1.0.1";
+
+        public static readonly Rect PanelRect = new Rect(130f, 990f, 820f, 420f);
+        public static readonly Rect TitleLocal = new Rect(50f, 24f, 720f, 70f);
+        public static readonly Rect BodyLocal = new Rect(80f, 120f, 660f, 104f);
+        public static readonly Rect SupplementalLocal = new Rect(80f, 224f, 660f, 48f);
+        public static readonly Rect SecondaryButtonLocal = new Rect(90f, 318f, 280f, 76f);
+        public static readonly Rect PrimaryButtonLocal = new Rect(450f, 318f, 280f, 76f);
+        public static readonly Rect SingleButtonLocal = new Rect(270f, 318f, 280f, 76f);
+        public static readonly Rect ButtonTextLocal = new Rect(20f, 10f, 240f, 56f);
+    }
+
+    public static class ProfileFFormalArtContract
+    {
+        public const string PackageVersion = "profile-page-f-three-panel-clean-v1.0.2";
+        public const string ModuleRoot = "Art/Profile/V102F/modules/";
+        public const string ReusedRoot = "Art/Profile/V102F/reused/";
+        public const string AvatarRoot = "Art/Profile/V102F/avatars/";
+
+        public const string FullShell =
+            "ART-UI-PROFILE-F-CLEAN-THREE-PANEL-SHELL-1080x2400-v1.0.2";
+        public const string BackFrame = "frame-back-circle-94";
+        public const string BackGlyph = "action-back-optical-40";
+        public const string SettingsNormal = "ART-UI-PROFILE-E-SETTINGS-NORMAL-72-v1.0.0";
+        public const string SettingsPressed = "ART-UI-PROFILE-E-SETTINGS-PRESSED-72-v1.0.0";
+        public const string SettingsDisabled = "ART-UI-PROFILE-E-SETTINGS-DISABLED-72-v1.0.0";
+        public const string EditNormal = "ART-UI-PROFILE-E-EDIT-NORMAL-64-v1.0.0";
+        public const string EditPressed = "ART-UI-PROFILE-E-EDIT-PRESSED-64-v1.0.0";
+        public const string EditDisabled = "ART-UI-PROFILE-E-EDIT-DISABLED-64-v1.0.0";
+        public const string WalletNormal = "ART-UI-GLOBAL-BUTTON-S-NORMAL-160x64-v0.1.0";
+        public const string WalletPressed = "ART-UI-GLOBAL-BUTTON-S-PRESSED-160x64-v0.1.0";
+        public const string WalletDisabled = "ART-UI-GLOBAL-BUTTON-S-DISABLED-160x64-v0.1.0";
+        public const string SectionPersonal = "ART-UI-PROFILE-F-SECTION-PERSONAL-64-v1.0.2";
+        public const string SectionVoyage = "ART-UI-PROFILE-F-SECTION-VOYAGE-64-v1.0.2";
+        public const string SectionCompetitive = "ART-UI-PROFILE-F-SECTION-COMPETITIVE-64-v1.0.2";
+        public const string FieldUid = "ART-UI-PROFILE-F-FIELD-UID-48-v1.0.2";
+        public const string FieldPower = "ART-UI-PROFILE-F-FIELD-POWER-48-v1.0.2";
+        public const string FieldWallet = "ART-UI-PROFILE-F-FIELD-WALLET-48-v1.0.2";
+        public const string VoyageChapter = "ART-UI-PROFILE-F-VOYAGE-CHAPTER-80x96-v1.0.2";
+        public const string VoyageLighthouse = "ART-UI-PROFILE-F-VOYAGE-LIGHTHOUSE-80x96-v1.0.2";
+        public const string VoyageExpedition = "ART-UI-PROFILE-F-VOYAGE-EXPEDITION-80x96-v1.0.2";
+        public const string VoyageDifficulty = "ART-UI-PROFILE-F-VOYAGE-DIFFICULTY-80x96-v1.0.2";
+        public const string CompetitiveChallenges = "ART-UI-PROFILE-F-COMPETITIVE-CHALLENGES-80x96-v1.0.2";
+        public const string CompetitiveWinRate = "ART-UI-PROFILE-F-COMPETITIVE-WINRATE-80x96-v1.0.2";
+        public const string CompetitiveRank = "ART-UI-PROFILE-F-COMPETITIVE-RANK-80x96-v1.0.2";
+        public const string CompetitiveScore = "ART-UI-PROFILE-F-COMPETITIVE-SCORE-80x96-v1.0.2";
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+    }
+
+    public static class LoginCFormalArtContract
+    {
+        public const string PackageVersion = "login-page-c-formal-v1.0.2";
+        public const string ModuleRoot = "Art/LoginC/V102/modules/";
+        public const string ReusedRoot = "Art/LoginC/V102/reused/";
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+
+        public const string Background = "ART-UI-LOGIN-C-BACKGROUND-1080x2400-v1.0.2";
+        public const string TitleOrnament = "ART-UI-LOGIN-C-TITLE-ORNAMENT-820x420-v1.0.2";
+        public const string SettingsNormal = "ART-UI-PROFILE-E-SETTINGS-NORMAL-72-v1.0.2";
+        public const string SettingsPressed = "ART-UI-PROFILE-E-SETTINGS-PRESSED-72-v1.0.2";
+        public const string SettingsDisabled = "ART-UI-PROFILE-E-SETTINGS-DISABLED-72-v1.0.2";
+        public const string MainNormal = "ART-UI-HOME-THINLINE-CTA-NORMAL-740x132-v1.4.0";
+        public const string MainPressed = "ART-UI-HOME-THINLINE-CTA-PRESSED-740x137-v1.4.0";
+        public const string MainDisabled = "ART-UI-HOME-THINLINE-CTA-DISABLED-740x134-v1.4.0";
+        public const string WalletNormal = "ART-UI-LOGIN-C-WALLET-NORMAL-96-v1.0.2";
+        public const string WalletPressed = "ART-UI-LOGIN-C-WALLET-PRESSED-96-v1.0.2";
+        public const string WalletDisabled = "ART-UI-LOGIN-C-WALLET-DISABLED-96-v1.0.2";
+        public const string GoogleDisabled = "ART-UI-LOGIN-C-GOOGLE-DISABLED-96-v1.0.2";
+        public const string LegalLeft = "ART-UI-LOGIN-C-LEGAL-LINE-LEFT-150x32-v1.0.2";
+        public const string LegalRight = "ART-UI-LOGIN-C-LEGAL-LINE-RIGHT-150x32-v1.0.2";
+        public const string CheckedNormal = "ART-UI-LOGIN-C-CHECKBOX-CHECKED-NORMAL-48-v1.0.2";
+        public const string CheckedPressed = "ART-UI-LOGIN-C-CHECKBOX-CHECKED-PRESSED-48-v1.0.2";
+        public const string CheckedDisabled = "ART-UI-LOGIN-C-CHECKBOX-CHECKED-DISABLED-48-v1.0.2";
+        public const string UncheckedNormal = "ART-UI-LOGIN-C-CHECKBOX-UNCHECKED-NORMAL-48-v1.0.2";
+        public const string UncheckedPressed = "ART-UI-LOGIN-C-CHECKBOX-UNCHECKED-PRESSED-48-v1.0.2";
+        public const string UncheckedDisabled = "ART-UI-LOGIN-C-CHECKBOX-UNCHECKED-DISABLED-48-v1.0.2";
+    }
+
+    public static class SettingsFormalArtContract
+    {
+        public const string PackageVersion = "settings-page-unified-parchment-v1.1.1";
+        public const string ModuleRoot = "Art/Settings/V111/modules/";
+        public const string DimOverlay = "ART-UI-SETTINGS-DIM-OVERLAY-1080x2400-v1.0.0";
+        public const string ModalShell = "ART-UI-SETTINGS-UNIFIED-PARCHMENT-SHELL-960x1560-v1.1.1";
+        public const string SectionDivider = "ART-UI-SETTINGS-SECTION-DIVIDER-820x64-v1.0.0";
+        public const string RowNormal = "ART-UI-SETTINGS-ROW-NORMAL-820x96-v1.0.0";
+        public const string RowPressed = "ART-UI-SETTINGS-ROW-PRESSED-820x96-v1.0.0";
+        public const string RowDisabled = "ART-UI-SETTINGS-ROW-DISABLED-820x96-v1.0.0";
+        public const string CloseNormal = "ART-UI-SETTINGS-CLOSE-NORMAL-72-v1.0.0";
+        public const string ClosePressed = "ART-UI-SETTINGS-CLOSE-PRESSED-72-v1.0.0";
+        public const string CloseDisabled = "ART-UI-SETTINGS-CLOSE-DISABLED-72-v1.0.0";
+        public const string BackNormal = "ART-UI-SETTINGS-BACK-NORMAL-72-v1.0.0";
+        public const string BackPressed = "ART-UI-SETTINGS-BACK-PRESSED-72-v1.0.0";
+        public const string BackDisabled = "ART-UI-SETTINGS-BACK-DISABLED-72-v1.0.0";
+        public const string ChevronNormal = "ART-UI-SETTINGS-CHEVRON-NORMAL-48-v1.0.0";
+        public const string ChevronPressed = "ART-UI-SETTINGS-CHEVRON-PRESSED-48-v1.0.0";
+        public const string ChevronDisabled = "ART-UI-SETTINGS-CHEVRON-DISABLED-48-v1.0.0";
+        public const string ExternalNormal = "ART-UI-SETTINGS-EXTERNAL-NORMAL-48-v1.0.0";
+        public const string ExternalPressed = "ART-UI-SETTINGS-EXTERNAL-PRESSED-48-v1.0.0";
+        public const string ExternalDisabled = "ART-UI-SETTINGS-EXTERNAL-DISABLED-48-v1.0.0";
+        public const string SpeakerNormal = "ART-UI-SETTINGS-SPEAKER-NORMAL-56-v1.0.0";
+        public const string SpeakerPressed = "ART-UI-SETTINGS-SPEAKER-PRESSED-56-v1.0.0";
+        public const string SpeakerDisabled = "ART-UI-SETTINGS-SPEAKER-DISABLED-56-v1.0.0";
+        public const string SpeakerMutedNormal = "ART-UI-SETTINGS-SPEAKER-MUTED-NORMAL-56-v1.0.0";
+        public const string SpeakerMutedPressed = "ART-UI-SETTINGS-SPEAKER-MUTED-PRESSED-56-v1.0.0";
+        public const string SpeakerMutedDisabled = "ART-UI-SETTINGS-SPEAKER-MUTED-DISABLED-56-v1.0.0";
+        public const string ScrollbarTrack = "ART-UI-SETTINGS-SCROLLBAR-TRACK-18x1180-v1.0.0";
+        public const string ScrollbarThumbNormal = "ART-UI-SETTINGS-SCROLLBAR-THUMB-NORMAL-18x220-v1.0.0";
+        public const string ScrollbarThumbPressed = "ART-UI-SETTINGS-SCROLLBAR-THUMB-PRESSED-18x220-v1.0.0";
+        public const string ScrollbarThumbDisabled = "ART-UI-SETTINGS-SCROLLBAR-THUMB-DISABLED-18x220-v1.0.0";
+
+        public static string Slider(int percent, bool pressed)
+        {
+            percent = Math.Max(0, Math.Min(100, percent));
+            percent = (int)Math.Round(percent / 10f) * 10;
+            return "ART-UI-SETTINGS-SLIDER-P" + percent.ToString("000") +
+                   (pressed ? "-PRESSED-360x44-v1.0.0" : "-NORMAL-360x44-v1.0.0");
+        }
+    }
+
+    public static class ExpeditionSettlementFormalArtContract
+    {
+        public const string PackageVersion = "expedition-settlement-clean-formal-v1.0.1";
+        public const string ModuleRoot = "Art/ExpeditionSettlement/V101/modules/";
+        public const string ReusedRoot = "Art/ExpeditionSettlement/V101/reused/";
+        public const string WarehouseThumbnailRoot =
+            "Art/ExpeditionSettlement/V101/warehouse-thumbnails/";
+        public const string MarketThumbnailRoot =
+            "Art/ExpeditionSettlement/V101/market-thumbnails/";
+        public const string Scrim = "ART-UI-MARKET-B-SCRIM-1080x2400-v1.0.0";
+        public const string Shell = "ART-UI-EXPEDITION-SETTLEMENT-CLEAN-SHELL-940x1410-v1.0.0";
+        public const string ButtonNormal = "ART-UI-GLOBAL-BUTTON-2XL-NORMAL-460x96-v0.1.0";
+        public const string ButtonPressed = "ART-UI-GLOBAL-BUTTON-2XL-PRESSED-460x96-v0.1.0";
+        public const string ButtonDisabled = "ART-UI-GLOBAL-BUTTON-2XL-DISABLED-460x96-v0.1.0";
+        public const string Equipment = "ART-UI-WAREHOUSE-A-ITEM-WEAPON-184-v1.0.0";
+        public const string Lantern = "ART-UI-WAREHOUSE-A-ITEM-LANTERN-RARE-184-v1.0.0";
+
+        public static string WarehouseThumbnail(string kind)
+        {
+            switch (kind)
+            {
+                case "tide-crystal": return "ART-UI-ITEM-TIDE-CRYSTAL-PURPLE-184-v1.0.0";
+                case "lamp-glow": return "ART-UI-ITEM-LAMP-GLOW-PURPLE-184-v1.0.0";
+                case "tide-iron": return "ART-UI-ITEM-TIDE-IRON-BLUE-184-v1.0.0";
+                case "mist-leather": return "ART-UI-ITEM-MIST-LEATHER-BLUE-184-v1.0.0";
+                case "star-sand": return "ART-UI-ITEM-STAR-SAND-PURPLE-184-v1.0.0";
+                case "bounty-ticket": return "ART-UI-ITEM-BOUNTY-TICKET-ORANGE-184-v1.0.0";
+                default: return null;
+            }
+        }
+
+        public static string MarketThumbnail(string kind)
+        {
+            var warehouse = WarehouseThumbnail(kind);
+            if (string.IsNullOrEmpty(warehouse)) return null;
+            return warehouse.Replace("ART-UI-ITEM-", "ART-UI-MARKET-ITEM-")
+                .Replace("-184-", "-104-");
+        }
     }
 
     internal enum LayeredBackgroundKind
@@ -90,34 +490,35 @@ namespace SeekerAutoChess.Prototype.Presentation
 
     public static class ArenaFormalArtContract
     {
-        public const string PackageVersion = "arena-page-e-horizontal-detail-v1.0.0";
-        public const string ResourceRoot = "Art/Arena/V100/modules/";
+        public const string PackageVersion = "arena-page-e-unified-v1.0.2";
+        public const string ResourceRoot = "Art/Arena/V102/modules/";
 
-        public const string MapBackground = "ART-UI-ARENA-MAP-BG-1080x2400-v1.0.0";
+        public const string MapBackground = "ART-UI-ARENA-MAP-BG-SOFT-1080x2400-v1.0.2";
         public const string StatusPanel = "ART-UI-ARENA-STATUS-PANEL-1000x190-v1.0.0";
-        public const string MainBoard = "ART-UI-ARENA-MAIN-BOARD-1000x1600-v1.0.0";
-        public const string TopThreeCard = "ART-UI-ARENA-TOP3-CARD-284x440-v1.0.0";
-        public const string RankRow = "ART-UI-ARENA-RANK-ROW-920x104-v1.0.0";
-        public const string PlayerRankRow = "ART-UI-ARENA-RANK-ROW-PLAYER-920x104-v1.0.0";
-        public const string TopThreeButton = "ART-UI-ARENA-BUTTON-TOP3-220x68-v1.0.0";
-        public const string ViewButton = "ART-UI-ARENA-BUTTON-VIEW-190x64-v1.0.0";
-        public const string DefenseButton = "ART-UI-ARENA-BUTTON-DEFENSE-320x90-v1.0.0";
-        public const string ModalButton = "ART-UI-ARENA-BUTTON-MODAL-390x86-v1.0.0";
-        public const string DetailPanel = "ART-UI-ARENA-DETAIL-PANEL-1000x700-v1.0.0";
+        public const string MainBoard = "ART-UI-DECK-A-LIBRARY-PANEL-1000x1600-v1.0.6";
+        public const string RankRow = "ART-UI-SETTINGS-ROW-NORMAL-820x96-v1.0.0";
+        public const string PlayerRankRow = "ART-UI-SETTINGS-ROW-PRESSED-820x96-v1.0.0";
+        public const string DisabledRankRow = "ART-UI-SETTINGS-ROW-DISABLED-820x96-v1.0.0";
+        public const string DimOverlay = "ART-UI-SETTINGS-DIM-OVERLAY-1080x2400-v1.0.0";
+        public const string OpponentPickerShell = "ART-UI-SETTINGS-MODAL-SHELL-960x1560-v1.0.0";
+        public const string CloseNormal = "ART-UI-SETTINGS-CLOSE-NORMAL-72-v1.0.0";
+        public const string ClosePressed = "ART-UI-SETTINGS-CLOSE-PRESSED-72-v1.0.0";
+        public const string CloseDisabled = "ART-UI-SETTINGS-CLOSE-DISABLED-72-v1.0.0";
+        public const string ChevronNormal = "ART-UI-SETTINGS-CHEVRON-NORMAL-48-v1.0.0";
+        public const string ChevronPressed = "ART-UI-SETTINGS-CHEVRON-PRESSED-48-v1.0.0";
+        public const string ChevronDisabled = "ART-UI-SETTINGS-CHEVRON-DISABLED-48-v1.0.0";
+        public const string ButtonMNormal = "ART-UI-GLOBAL-BUTTON-M-NORMAL-220x68-v0.1.0";
+        public const string ButtonMPressed = "ART-UI-GLOBAL-BUTTON-M-PRESSED-220x68-v0.1.0";
+        public const string ButtonMDisabled = "ART-UI-GLOBAL-BUTTON-M-DISABLED-220x68-v0.1.0";
+        public const string ButtonXlNormal = "ART-UI-GLOBAL-BUTTON-XL-NORMAL-390x86-v0.1.0";
+        public const string ButtonXlPressed = "ART-UI-GLOBAL-BUTTON-XL-PRESSED-390x86-v0.1.0";
+        public const string ButtonXlDisabled = "ART-UI-GLOBAL-BUTTON-XL-DISABLED-390x86-v0.1.0";
+        public const string ModalButton = ButtonXlNormal;
         public const string DefenderSlot = "ART-UI-ARENA-DEFENDER-SLOT-134x210-v1.0.0";
-
-        public const string AnchorCrest = "ART-UI-ARENA-CREST-ANCHOR-180-v1.0.0";
-        public const string LighthouseCrest = "ART-UI-ARENA-CREST-LIGHTHOUSE-180-v1.0.0";
-        public const string TridentCrest = "ART-UI-ARENA-CREST-TRIDENT-180-v1.0.0";
         public const string TrophyIcon = "ART-UI-ARENA-ICON-TROPHY-64-v1.0.0";
         public const string SwordsIcon = "ART-UI-ARENA-ICON-SWORDS-64-v1.0.0";
         public const string ClockIcon = "ART-UI-ARENA-ICON-CLOCK-64-v1.0.0";
         public const string ShieldIcon = "ART-UI-ARENA-ICON-SHIELD-64-v1.0.0";
-
-        public static readonly string[] TopThreeCrests =
-        {
-            AnchorCrest, LighthouseCrest, TridentCrest
-        };
 
         public static readonly string[] PublicDefenders =
         {
@@ -218,55 +619,48 @@ namespace SeekerAutoChess.Prototype.Presentation
 
     public static class CharacterDetailCFormalArtContract
     {
-        public const string PackageVersion = "character-detail-equipment-c-v1.0.0";
+        public const string PackageVersion = "character-detail-equipment-c-v1.1.0";
         public const string ResourceRoot = "Art/CharacterDetailC/V100/";
         public const string CharacterRoot = ResourceRoot + "character-exports/";
-        public const string EquipmentRoot = ResourceRoot + "equipment-exports/";
         public const string IconRoot = ResourceRoot + "icons/";
         public const string ModuleRoot = ResourceRoot + "modules/";
 
-        public const string BodySlot = "ART-UI-CHARDETAIL-C-EQUIP-BODY-SLOT-104-v1.0.0";
-        public const string FeetSlot = "ART-UI-CHARDETAIL-C-EQUIP-FEET-SLOT-104-v1.0.0";
-        public const string HandsSlot = "ART-UI-CHARDETAIL-C-EQUIP-HANDS-SLOT-104-v1.0.0";
-        public const string HeadSlot = "ART-UI-CHARDETAIL-C-EQUIP-HEAD-SLOT-104-v1.0.0";
-        public const string WeaponSlot = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-SLOT-104-v1.0.0";
-        public const string WeaponCarousel = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-CAROUSEL-150x180-v1.0.0";
-        public const string WeaponSummary = "ART-UI-CHARDETAIL-C-EQUIP-WEAPON-SUMMARY-72-v1.0.0";
         public const string StatHealth = "ART-UI-CHARDETAIL-C-STAT-HEALTH-48-v1.0.0";
         public const string StatAttack = "ART-UI-CHARDETAIL-C-STAT-ATTACK-48-v1.0.0";
         public const string StatArmor = "ART-UI-CHARDETAIL-C-STAT-ARMOR-48-v1.0.0";
         public const string StatSpeed = "ART-UI-CHARDETAIL-C-STAT-SPEED-48-v1.0.0";
-        public const string AttributeCompare = "ART-UI-CHARDETAIL-C-ATTRIBUTE-COMPARE-220x100-v1.0.0";
-        public const string ButtonDisabled = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-DISABLED-390x86-v1.0.1";
-        public const string ButtonNormal = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-NORMAL-390x86-v1.0.0";
-        public const string ButtonPressed = "ART-UI-CHARDETAIL-C-BUTTON-PRIMARY-PRESSED-390x86-v1.0.0";
-        public const string ArrowLeft = "ART-UI-CHARDETAIL-C-CAROUSEL-ARROW-LEFT-64-v1.0.0";
-        public const string ArrowRight = "ART-UI-CHARDETAIL-C-CAROUSEL-ARROW-RIGHT-64-v1.0.0";
-        public const string CarouselEmpty = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-EMPTY-190x280-v1.0.0";
-        public const string CarouselNormal = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-NORMAL-190x280-v1.0.0";
-        public const string CarouselSelected = "ART-UI-CHARDETAIL-C-CAROUSEL-CARD-SELECTED-190x280-v1.0.0";
-        public const string CharacterViewport = "ART-UI-CHARDETAIL-C-CHARACTER-VIEWPORT-520x370-v1.0.0";
-        public const string EquipmentPanel = "ART-UI-CHARDETAIL-C-EQUIPMENT-PANEL-1032x1280-v1.0.0";
-        public const string EquipmentPanelFront = "ART-UI-CHARDETAIL-C-EQUIPMENT-PANEL-FRONT-1032x1280-v1.0.0";
-        public const string SlotNormal = "ART-UI-CHARDETAIL-C-EQUIPMENT-SLOT-NORMAL-140-v1.0.0";
-        public const string SlotSelected = "ART-UI-CHARDETAIL-C-EQUIPMENT-SLOT-SELECTED-140-v1.0.0";
-        public const string HeroPanel = "ART-UI-CHARDETAIL-C-HERO-PANEL-1032x620-v1.0.0";
-        public const string PageDotActive = "ART-UI-CHARDETAIL-C-PAGE-DOT-ACTIVE-16-v1.0.0";
-        public const string PageDotInactive = "ART-UI-CHARDETAIL-C-PAGE-DOT-INACTIVE-16-v1.0.0";
-        public const string SelectionSummary = "ART-UI-CHARDETAIL-C-SELECTION-SUMMARY-912x100-v1.0.0";
-        public const string StatArea = "ART-UI-CHARDETAIL-C-STAT-AREA-388x370-v1.0.0";
+        public const string CharacterViewport = "ART-UI-CHARDETAIL-C-CHARACTER-VIEWPORT-520x370-v1.1.0";
+    }
 
-        public static string SlotIcon(EquipmentSlot slot)
-        {
-            switch (slot)
-            {
-                case EquipmentSlot.Head: return HeadSlot;
-                case EquipmentSlot.Body: return BodySlot;
-                case EquipmentSlot.Weapon: return WeaponSlot;
-                case EquipmentSlot.Hands: return HandsSlot;
-                default: return FeetSlot;
-            }
-        }
+    public static class CharacterDetailBFormalArtContract
+    {
+        public const string PackageVersion = "character-detail-deck-edit-b-v1.0.4";
+        public const string ResourceRoot = "Art/CharacterDetailB/V104/";
+        public const string ModuleRoot = ResourceRoot + "modules/";
+        public const string DividerRoot = ResourceRoot + "dividers/";
+        public const string EquipmentSupportRoot = ResourceRoot + "equipment/";
+
+        public const string WideSafePanel =
+            "ART-UI-CHARDETAIL-B-WIDE-SAFE-PANEL-1060x1900-v1.0.4";
+        public const string SectionDivider =
+            "ART-UI-LANTERN-DETAIL-A-SECTION-DIVIDER-664x20-v1.0.1";
+        public const string VerticalDivider =
+            "ART-UI-COVENANT-DETAIL-VERTICAL-DIVIDER-4x120-v1.0.1";
+
+        public const int CanvasWidth = 1080;
+        public const int CanvasHeight = 2400;
+        public const int PanelX = 10;
+        public const int PanelY = 180;
+        public const int PanelWidth = 1060;
+        public const int PanelHeight = 1900;
+    }
+
+    public static class HomeLeftCompleteFormalArtContract
+    {
+        public const string PackageVersion = "home-left-complete-v1.1.0";
+        public const string ResourceRoot = "Art/HomeLeft/V110/modules/";
+        public const string CompleteComponent =
+            "ART-UI-HOME-LEFT-COMPLETE-170x981-v1.1.0";
     }
 
     internal static class PrototypeArtResourceIds
@@ -286,12 +680,6 @@ namespace SeekerAutoChess.Prototype.Presentation
         public const string HomeLighthouseLitOverlay =
             "modules/ART-UI-HOME-THINLINE-LIT-OVERLAY-1080x2400-v1.4.0";
 
-        public const string HomeLighthousePlayerMedallion =
-            "modules/ART-UI-HOME-THINLINE-PLAYER-AVATAR-122-v1.4.0";
-        public const string HomeLighthousePlayerNameLine =
-            "modules/ART-UI-HOME-THINLINE-PROFILE-LINE-275x63-v1.4.0";
-        public const string HomeLighthousePlayerPowerBadge =
-            "modules/ART-UI-HOME-THINLINE-POWER-ICON-32-v1.4.0";
         public const string HomeLighthouseEnergyGlyph =
             "modules/ART-UI-HOME-THINLINE-ENERGY-46x68-v1.4.0";
         public const string HomeLighthouseResourceSeparator =
@@ -300,10 +688,6 @@ namespace SeekerAutoChess.Prototype.Presentation
             "modules/ART-UI-HOME-THINLINE-SKR-62-v1.4.0";
         public const string HomeLighthouseTideCrystal =
             "modules/ART-UI-HOME-THINLINE-TIDE-64-v1.4.0";
-        public const string HomeLighthouseAffairs =
-            "modules/ART-UI-HOME-THINLINE-AFFAIRS-86-v1.4.0";
-        public const string HomeLighthouseWarehouse =
-            "modules/ART-UI-HOME-THINLINE-WAREHOUSE-86-v1.4.0";
         public const string HomeLighthouseChapterOrnament =
             "modules/ART-UI-HOME-THINLINE-CHAPTER-ORNAMENT-790x160-v1.4.0";
         public const string HomeLighthouseLanternPanel =
@@ -575,6 +959,8 @@ namespace SeekerAutoChess.Prototype.Presentation
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private readonly Dictionary<string, Texture2D> bountyTowerUiTextures =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Texture2D> warehouseUiTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private readonly Dictionary<string, Texture2D> expeditionUiV46Textures =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
 
@@ -787,13 +1173,62 @@ namespace SeekerAutoChess.Prototype.Presentation
             return texture;
         }
 
+        public Texture2D GetHomeLeftCompleteTexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var cacheKey = HomeLeftCompleteFormalArtContract.ResourceRoot + resourceId;
+            Texture2D texture;
+            if (homeUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            homeUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetEquipmentDetailATexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var cacheKey = EquipmentDetailAFormalArtContract.ResourceRoot + resourceId;
+            Texture2D texture;
+            if (warehouseUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            warehouseUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
         public Texture2D GetStoreETexture(string resourceId)
         {
             if (string.IsNullOrEmpty(resourceId)) return null;
+            return GetStoreTexture(StoreFormalArtContract.ResourceRoot, resourceId);
+        }
+
+        public Texture2D GetStoreSingleColumnTexture(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            return GetStoreTexture(StoreSingleColumnFormalArtContract.ResourceRoot, resourceId);
+        }
+
+        public Texture2D GetStoreCosmeticTexture(string resourceId, bool battlefield)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            return GetStoreTexture(battlefield
+                ? StoreCosmeticFormalArtContract.BattlefieldResourceRoot
+                : StoreCosmeticFormalArtContract.BaseResourceRoot, resourceId);
+        }
+
+        public Texture2D GetStoreCosmeticWarehouseThumbnail(string resourceId)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            return GetStoreTexture(StoreCosmeticFormalArtContract.WarehouseThumbnailResourceRoot,
+                resourceId);
+        }
+
+        private Texture2D GetStoreTexture(string root, string resourceId)
+        {
+            var cacheKey = root + resourceId;
             Texture2D texture;
-            if (storeUiTextures.TryGetValue(resourceId, out texture)) return texture;
-            texture = Resources.Load<Texture2D>(StoreFormalArtContract.ResourceRoot + resourceId);
-            storeUiTextures[resourceId] = texture;
+            if (storeUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            storeUiTextures[cacheKey] = texture;
             return texture;
         }
 
@@ -810,10 +1245,15 @@ namespace SeekerAutoChess.Prototype.Presentation
         public Texture2D GetHarborTexture(string resourceId)
         {
             if (string.IsNullOrEmpty(resourceId)) return null;
+            var resourceRoot = string.Equals(resourceId, HarborFormalArtContract.Background,
+                StringComparison.Ordinal)
+                ? HarborFormalArtContract.BackgroundResourceRoot
+                : HarborFormalArtContract.ResourceRoot;
+            var cacheKey = resourceRoot + resourceId;
             Texture2D texture;
-            if (harborUiTextures.TryGetValue(resourceId, out texture)) return texture;
-            texture = Resources.Load<Texture2D>(HarborFormalArtContract.ResourceRoot + resourceId);
-            harborUiTextures[resourceId] = texture;
+            if (harborUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            harborUiTextures[cacheKey] = texture;
             return texture;
         }
 
@@ -824,6 +1264,32 @@ namespace SeekerAutoChess.Prototype.Presentation
             if (bountyTowerUiTextures.TryGetValue(resourceId, out texture)) return texture;
             texture = Resources.Load<Texture2D>(BountyTowerAFormalArtContract.ResourceRoot + resourceId);
             bountyTowerUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetWarehouseTexture(string resourceId, string group)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var root = WarehouseAFormalArtContract.ModuleRoot;
+            if (string.Equals(group, "quality", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.QualityRoot;
+            else if (string.Equals(group, "equipment", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.EquipmentRoot;
+            else if (string.Equals(group, "equipment-list", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.EquipmentListRoot;
+            else if (string.Equals(group, "equipment-detail", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.EquipmentDetailRoot;
+            else if (string.Equals(group, "lantern", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.LanternRoot;
+            else if (string.Equals(group, "lantern-list", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.LanternListRoot;
+            else if (string.Equals(group, "lantern-detail", StringComparison.Ordinal))
+                root = WarehouseAFormalArtContract.LanternDetailRoot;
+            var cacheKey = root + resourceId;
+            Texture2D texture;
+            if (warehouseUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            warehouseUiTextures[cacheKey] = texture;
             return texture;
         }
 
@@ -870,10 +1336,24 @@ namespace SeekerAutoChess.Prototype.Presentation
             var root = CharacterDetailCFormalArtContract.ModuleRoot;
             if (string.Equals(group, "character", StringComparison.Ordinal))
                 root = CharacterDetailCFormalArtContract.CharacterRoot;
-            else if (string.Equals(group, "equipment", StringComparison.Ordinal))
-                root = CharacterDetailCFormalArtContract.EquipmentRoot;
             else if (string.Equals(group, "icon", StringComparison.Ordinal))
                 root = CharacterDetailCFormalArtContract.IconRoot;
+            var cacheKey = root + resourceId;
+            Texture2D texture;
+            if (deckUiTextures.TryGetValue(cacheKey, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(cacheKey);
+            deckUiTextures[cacheKey] = texture;
+            return texture;
+        }
+
+        public Texture2D GetCharacterDetailBTexture(string resourceId, string group)
+        {
+            if (string.IsNullOrEmpty(resourceId)) return null;
+            var root = CharacterDetailBFormalArtContract.ModuleRoot;
+            if (string.Equals(group, "divider", StringComparison.Ordinal))
+                root = CharacterDetailBFormalArtContract.DividerRoot;
+            else if (string.Equals(group, "equipment", StringComparison.Ordinal))
+                root = CharacterDetailBFormalArtContract.EquipmentSupportRoot;
             var cacheKey = root + resourceId;
             Texture2D texture;
             if (deckUiTextures.TryGetValue(cacheKey, out texture)) return texture;
@@ -885,6 +1365,27 @@ namespace SeekerAutoChess.Prototype.Presentation
         public Texture2D GetLanternCircularTexture(string templateId, LanternQuality quality)
         {
             var resourceId = LanternArtContract.ResourceId(templateId, quality);
+            Texture2D texture;
+            if (homeUiTextures.TryGetValue(resourceId, out texture)) return texture;
+            texture = Resources.Load<Texture2D>(resourceId);
+            homeUiTextures[resourceId] = texture;
+            return texture;
+        }
+
+        public Texture2D GetHomeLanternQualityBackground(LanternQuality quality)
+        {
+            return GetHomeLanternModularTexture(
+                HomeLanternModularArtContract.QualityBackgroundResourceId(quality));
+        }
+
+        public Texture2D GetHomeLanternPattern(string appearanceId)
+        {
+            return GetHomeLanternModularTexture(
+                HomeLanternModularArtContract.PatternResourceId(appearanceId));
+        }
+
+        private Texture2D GetHomeLanternModularTexture(string resourceId)
+        {
             Texture2D texture;
             if (homeUiTextures.TryGetValue(resourceId, out texture)) return texture;
             texture = Resources.Load<Texture2D>(resourceId);
@@ -1309,25 +1810,25 @@ namespace SeekerAutoChess.Prototype.Presentation
         public const float ReferenceHeight = 1870f;
 
         public static readonly Rect Canvas = new Rect(0f, 0f, ReferenceWidth, ReferenceHeight);
-        public static readonly Rect SharedLargeShell = new Rect(16f, 430f, 809f, 1425f);
+        public static readonly Rect SharedLargeShell = new Rect(16f, 430f, 809f, 1194f);
         public static readonly Rect HeaderRibbon = new Rect(0f, 270f, 841f, 280f);
         public static readonly Rect HeaderEmblem = new Rect(332.5f, 322f, 176f, 176f);
         public static readonly Rect Title = new Rect(120f, 492f, 601f, 60f);
         public static readonly Rect Description = new Rect(90f, 620f, 661f, 108f);
         public static readonly Rect[] OptionCards =
         {
-            new Rect(42f, 735f, 757f, 333f),
-            new Rect(42f, 1085f, 757f, 333f),
-            new Rect(42f, 1435f, 757f, 333f)
+            new Rect(42f, 760f, 757f, 230f),
+            new Rect(42f, 1008f, 757f, 230f),
+            new Rect(42f, 1256f, 757f, 230f)
         };
-        public static readonly Rect FooterHint = new Rect(120f, 1780f, 601f, 52f);
+        public static readonly Rect FooterHint = new Rect(120f, 1518f, 601f, 52f);
+        public static readonly Rect ShopCompleteButton = new Rect(321.5f, 1518f, 198f, 86f);
 
-        public static readonly Rect IconPlateLocal = new Rect(20f, 74f, 184f, 184f);
-        public static readonly Rect PatternLocal = new Rect(44f, 98f, 136f, 136f);
-        public static readonly Rect ForegroundIconLocal = new Rect(50f, 104f, 124f, 124f);
-        public static readonly Rect CopyGroupLocal = new Rect(214f, 36f, 304f, 261f);
-        public static readonly Rect PrimaryButtonLocal = new Rect(520f, 128f, 178f, 76f);
-        public static readonly Vector4 OptionCardBorder = new Vector4(52f, 44f, 52f, 44f);
+        public static readonly Rect IconPlateLocal = new Rect(20f, 23f, 184f, 184f);
+        public static readonly Rect PatternLocal = new Rect(44f, 47f, 136f, 136f);
+        public static readonly Rect ForegroundIconLocal = new Rect(50f, 53f, 124f, 124f);
+        public static readonly Rect CopyGroupLocal = new Rect(224f, 40f, 294f, 150f);
+        public static readonly Rect PrimaryButtonLocal = new Rect(519f, 72f, 198f, 86f);
 
         public const string HeaderRibbonResource =
             "runtime/event-family/header/1x/event-family-header-ribbon-shell-841x280-v12.6.1";
@@ -1489,8 +1990,8 @@ namespace SeekerAutoChess.Prototype.Presentation
         };
 
         public static readonly Rect HeaderShip = new Rect(47f, 329f, 96f, 108f);
-        public static readonly Rect HeaderTitle = new Rect(150f, 344f, 570f, 52f);
-        public static readonly Rect HeaderSubtitle = new Rect(150f, 404f, 570f, 40f);
+        public static readonly Rect HeaderTitle = new Rect(150f, 334f, 600f, 64f);
+        public static readonly Rect HeaderSubtitle = new Rect(150f, 402f, 600f, 44f);
         public static readonly Rect MapViewport = new Rect(49f, 521f, 743f, 984f);
 
         public static readonly float[] LegendCentersX = { 129f, 275f, 421f, 567f, 713f };

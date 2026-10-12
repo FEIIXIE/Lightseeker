@@ -27,6 +27,93 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
+        public void HomeModularArtContractCoversSixAppearancesAndFiveIndependentQualities()
+        {
+            Assert.That(HomeLanternModularArtContract.PackageVersion,
+                Is.EqualTo("home-lantern-modular-combination-v1.1.0"));
+            Assert.That(HomeLanternModularArtContract.QualityBackgroundRoot,
+                Does.Contain("HomeLanternModular/V110/"));
+            Assert.That(HomeLanternModularArtContract.PatternRoot,
+                Does.Contain("HomeLanternModular/V110/"));
+            var resourceIds = new HashSet<string>();
+            foreach (LanternQuality quality in Enum.GetValues(typeof(LanternQuality)))
+            {
+                var qualityResourceId =
+                    HomeLanternModularArtContract.QualityBackgroundResourceId(quality);
+                Assert.That(qualityResourceId, Does.Contain("-" +
+                    quality.ToString().ToUpperInvariant() + "-142-v1.1.0"));
+
+                for (var appearanceIndex = 1; appearanceIndex <= 6; appearanceIndex++)
+                {
+                    var appearanceId = "L" + appearanceIndex.ToString("00");
+                    Assert.That(HomeLanternModularArtContract.IsValidAppearanceId(appearanceId),
+                        Is.True);
+                    Assert.That(HomeLanternModularArtContract.PatternResourceId(appearanceId),
+                        Does.EndWith(appearanceId + "-142-v1.1.0"));
+                    resourceIds.Add(qualityResourceId + "+" +
+                                    HomeLanternModularArtContract.PatternResourceId(appearanceId));
+                }
+            }
+
+            Assert.That(resourceIds.Count, Is.EqualTo(30));
+            Assert.That(HomeLanternModularArtContract.ResolveAppearanceId(
+                LanternArtContract.BreakwaterTemplateId), Is.EqualTo("L01"));
+            Assert.That(HomeLanternModularArtContract.ResolveAppearanceId(
+                LanternArtContract.LayeredShellTemplateId), Is.EqualTo("L02"));
+            Assert.That(HomeLanternModularArtContract.ResolveAppearanceId(
+                LanternArtContract.TideEchoTemplateId), Is.EqualTo("L03"));
+
+            for (var appearanceIndex = 1;
+                 appearanceIndex <= HomeLanternModularArtContract.AppearanceCount;
+                 appearanceIndex++)
+            {
+                var appearanceId = "L" + appearanceIndex.ToString("00");
+                Assert.That(HomeLanternModularArtContract.ResolveAppearanceId(
+                    HomeLanternModularArtContract.TemplateIdForAppearanceId(appearanceId)),
+                    Is.EqualTo(appearanceId));
+            }
+        }
+
+        [Test]
+        public void GeneratedLanternsUseAllSixAppearancesAndPersistValidQualityRolls()
+        {
+            var appearances = new HashSet<string>();
+            foreach (LanternQuality quality in Enum.GetValues(typeof(LanternQuality)))
+            {
+                for (var roll = 0; roll < 120; roll++)
+                {
+                    var seed = "settlement:" + quality + ":" + roll;
+                    var first = FirstChapterLanternEconomyRules.CreateGeneratedInstance(
+                        "generated." + quality + "." + roll, quality, seed,
+                        "receipt." + quality + "." + roll);
+                    var replay = FirstChapterLanternEconomyRules.CreateGeneratedInstance(
+                        "generated." + quality + "." + roll, quality, seed,
+                        "receipt." + quality + "." + roll);
+
+                    Assert.That(FirstChapterLanternEconomyRules.MatchesConfirmedQualityContract(first),
+                        Is.True, seed);
+                    Assert.That(replay.TemplateId, Is.EqualTo(first.TemplateId), seed);
+                    Assert.That(replay.BaseFlameValue, Is.EqualTo(first.BaseFlameValue), seed);
+                    Assert.That(replay.ModifierRolls.Count, Is.EqualTo(first.ModifierRolls.Count), seed);
+                    for (var modifierIndex = 0;
+                         modifierIndex < first.ModifierRolls.Count;
+                         modifierIndex++)
+                    {
+                        Assert.That(replay.ModifierRolls[modifierIndex].ModifierId,
+                            Is.EqualTo(first.ModifierRolls[modifierIndex].ModifierId), seed);
+                        Assert.That(replay.ModifierRolls[modifierIndex].Value,
+                            Is.EqualTo(first.ModifierRolls[modifierIndex].Value), seed);
+                    }
+                    appearances.Add(HomeLanternModularArtContract.ResolveAppearanceId(
+                        first.TemplateId));
+                }
+            }
+
+            Assert.That(appearances.Count,
+                Is.EqualTo(HomeLanternModularArtContract.AppearanceCount));
+        }
+
+        [Test]
         public void QualityContractHasExactlyFiveOrderedTiers()
         {
             Assert.That((int)LanternQuality.Common, Is.EqualTo(0));
@@ -249,12 +336,12 @@ namespace SeekerAutoChess.Tests.EditMode
             var lantern = inventory.Get(FirstChapterLanternFixtures.FirstClearInstanceId);
             Assert.That(lantern.TemplateId, Is.EqualTo("lantern.guard_tide.ch1"));
             Assert.That(lantern.Quality, Is.EqualTo(LanternQuality.Common));
-            Assert.That(lantern.BaseFlameStatId, Is.EqualTo("maxHealthBps"));
+            Assert.That(lantern.BaseFlameStatId, Is.EqualTo("team.max_health_bps"));
             Assert.That(lantern.BaseFlameValue, Is.EqualTo(1300));
             Assert.That(lantern.ContractStage, Is.EqualTo(0));
             Assert.That(lantern.CoreEffectId, Is.EqualTo("lantern.core.tide_shell.initial"));
             Assert.That(lantern.ModifierRolls.Count, Is.EqualTo(1));
-            Assert.That(lantern.ModifierRolls[0].ModifierId, Is.EqualTo("lantern.modifier.armor"));
+            Assert.That(lantern.ModifierRolls[0].ModifierId, Is.EqualTo("armor_flat"));
             Assert.That(lantern.ModifierRolls[0].Value, Is.EqualTo(3));
         }
 
@@ -269,7 +356,7 @@ namespace SeekerAutoChess.Tests.EditMode
 
             Assert.That(snapshot.IsNone, Is.False);
             Assert.That(snapshot.LanternInstanceId, Is.EqualTo("LGT-C-000001"));
-            Assert.That(snapshot.BaseFlameStatId, Is.EqualTo("maxHealthBps"));
+            Assert.That(snapshot.BaseFlameStatId, Is.EqualTo("team.max_health_bps"));
             Assert.That(snapshot.BaseFlameValue, Is.EqualTo(1300));
             Assert.That(snapshot.ContractStage, Is.EqualTo(0));
             Assert.That(snapshot.ModifierRolls[0].Value, Is.EqualTo(3));
@@ -319,7 +406,7 @@ namespace SeekerAutoChess.Tests.EditMode
                 FirstChapterLanternEconomyRules.CreateConfirmedRepresentative(LanternQuality.Legendary));
             Assert.That(LanternCombatStatRules.ApplyMaximumHealth(100, legendary), Is.EqualTo(142));
             Assert.That(LanternCombatStatRules.ApplyHealingAmount(100, legendary), Is.EqualTo(110));
-            Assert.That(LanternCombatStatRules.ApplyAttackSpeed(10000, legendary), Is.EqualTo(10600));
+            Assert.That(LanternCombatStatRules.ApplyAttackSpeed(10000, legendary), Is.EqualTo(11000));
         }
 
         [Test]

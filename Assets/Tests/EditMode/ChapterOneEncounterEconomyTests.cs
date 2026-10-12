@@ -34,19 +34,18 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void FixedNodes_UseGuardianFinalNormalAndBossContracts()
+        public void FixedNodes_UseGuardianSuppliesAndBossContracts()
         {
             var map = ExpeditionMapGraph.CreateChapterOne(991u);
             var guardian = ChapterOneEncounterRules.Generate(map.Seed, map.GetNode("M19"), false);
-            var finalNormal = ChapterOneEncounterRules.Generate(map.Seed, map.GetNode("M28"), false);
             var boss = ChapterOneEncounterRules.Generate(map.Seed, map.GetNode("M29"), false);
 
             Assert.That(guardian.IsElite, Is.True);
             Assert.That(guardian.CoinReward, Is.EqualTo(8));
             Assert.That(guardian.Units.Count, Is.EqualTo(4));
             Assert.That(guardian.Units.Count(unit => unit.RunLevel == 2), Is.EqualTo(2));
-            Assert.That(finalNormal.IsElite, Is.False);
-            Assert.That(finalNormal.CoinReward, Is.EqualTo(6));
+            Assert.That(map.GetNode("M18").Type, Is.EqualTo(ExpeditionNodeType.Supply));
+            Assert.That(map.GetNode("M28").Type, Is.EqualTo(ExpeditionNodeType.Supply));
             Assert.That(boss.IsBoss, Is.True);
             Assert.That(boss.CoinReward, Is.Zero);
             Assert.That(boss.Units.Count, Is.EqualTo(4));
@@ -54,9 +53,10 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void M28FixedContract_TakesPriorityOverFirstBattleProtection()
+        public void LegacyM28FixedCombat_RemainsRecoverableForVersion8Runs()
         {
-            var map = ExpeditionMapGraph.CreateChapterOne(5u);
+            var map = ExpeditionMapGraph.CreateChapterOne(
+                5u, ExpeditionMapGraph.LegacyFiveTypeMapGenerationVersion);
             var encounter = ChapterOneEncounterRules.Generate(map.Seed, map.GetNode("M28"), true);
 
             Assert.That(encounter.CoinReward, Is.EqualTo(6));
@@ -147,12 +147,15 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void SpecializedShop_HasFourDistinctItemsAndNoRecruitmentEntries()
+        public void Merchant_HasOneDistinctOfferFromEachCategory()
         {
             var offers = ChapterOneExpeditionEconomy.GenerateShopItemIds(42u, "M14", 70f, 1);
-            Assert.That(offers.Length, Is.EqualTo(4));
-            Assert.That(offers.Distinct().Count(), Is.EqualTo(4));
+            Assert.That(offers.Length, Is.EqualTo(3));
+            Assert.That(offers.Distinct().Count(), Is.EqualTo(3));
             Assert.That(offers.All(id => id.StartsWith("I")), Is.True);
+            Assert.That(offers.Count(id => id == "I01" || id == "I02" || id == "I03"), Is.EqualTo(1));
+            Assert.That(offers.Count(id => id == "I04" || id == "I05" || id == "I06"), Is.EqualTo(1));
+            Assert.That(offers.Count(id => id == "I07" || id == "I08" || id == "I09"), Is.EqualTo(1));
         }
 
         [Test]
@@ -194,18 +197,15 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void EarlySpecializedShop_CanOfferRallyHornOnlyWhenMoraleAllowsIt()
+        public void MerchantInventory_IsIndependentOfMoraleAndAlwaysComplete()
         {
-            var sawRallyHorn = false;
             for (uint seed = 1; seed <= 200; seed++)
             {
-                var eligible = ChapterOneExpeditionEconomy.GenerateShopItemIds(seed, "M06", 30f, 1);
-                sawRallyHorn |= eligible.Contains("I06");
-
+                var lowMorale = ChapterOneExpeditionEconomy.GenerateShopItemIds(seed, "M06", 30f, 1);
                 var fullMorale = ChapterOneExpeditionEconomy.GenerateShopItemIds(seed, "M06", 30f, 2);
-                Assert.That(fullMorale, Does.Not.Contain("I06"));
+                Assert.That(fullMorale, Is.EqualTo(lowMorale));
+                Assert.That(fullMorale.Length, Is.EqualTo(3));
             }
-            Assert.That(sawRallyHorn, Is.True);
         }
 
         [Test]
@@ -238,6 +238,56 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
+        public void CurrentRecruitPrices_IgnoreQualityAndCapturedV1RunsRemainCompatible()
+        {
+            var qualities = new[]
+            {
+                CharacterQuality.Common,
+                CharacterQuality.Uncommon,
+                CharacterQuality.Rare,
+                CharacterQuality.Epic,
+                CharacterQuality.Legendary
+            };
+            var ordinaryLevelOne = new[] { 3, 4, 5, 6, 7 };
+            var coreLevelOne = new[] { 5, 6, 8, 9, 11 };
+            for (var index = 0; index < qualities.Length; index++)
+            {
+                for (var level = 1; level <= 3; level++)
+                {
+                    var multiplier = level == 1 ? 1 : level == 2 ? 3 : 9;
+                    Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                            3, qualities[index], level),
+                        Is.EqualTo(3 * multiplier));
+                    Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                            5, qualities[index], level),
+                        Is.EqualTo(5 * multiplier));
+                    Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                            3, qualities[index], level,
+                            QualityRecruitPriceRules.QualityScaledRulesVersion),
+                        Is.EqualTo(ordinaryLevelOne[index] * multiplier));
+                    Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                            5, qualities[index], level,
+                            QualityRecruitPriceRules.QualityScaledRulesVersion),
+                        Is.EqualTo(coreLevelOne[index] * multiplier));
+                }
+            }
+        }
+
+        [Test]
+        public void LegacyRecruitPrices_RemainQualityAgnosticForOldRuns()
+        {
+            foreach (CharacterQuality quality in System.Enum.GetValues(typeof(CharacterQuality)))
+            {
+                Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                        3, quality, 2, QualityRecruitPriceRules.LegacyRulesVersion),
+                    Is.EqualTo(9));
+                Assert.That(QualityRecruitPriceRules.QuoteListedPrice(
+                        5, quality, 3, QualityRecruitPriceRules.LegacyRulesVersion),
+                    Is.EqualTo(45));
+            }
+        }
+
+        [Test]
         public void BackpackAndBoundBattleItem_RestoreWithoutOverflowOrDuplication()
         {
             var state = new ExpeditionEconomyState();
@@ -256,7 +306,7 @@ namespace SeekerAutoChess.Tests.EditMode
 
             Assert.That(restored.Backpack, Is.EqualTo(new[] { "I01", "I03" }));
             Assert.That(restored.ActiveBattleItemId, Is.EqualTo("I02"));
-            Assert.That(restored.ActiveBattleTargetSlot, Is.EqualTo(4));
+            Assert.That(restored.ActiveBattleTargetSlot, Is.EqualTo(-1));
             Assert.That(restored.FirstManualRecruitRerollUsed, Is.True);
             Assert.That(restored.RecruitRerollVouchers, Is.EqualTo(1));
             Assert.That(restored.Morale, Is.EqualTo(1));
