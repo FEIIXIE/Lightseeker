@@ -1,12 +1,12 @@
-# 寻灯者｜Unity 工程源代码快照
+# Lightseeker | Unity Project Source Snapshot
 
-文档版本：`v0.4`
-快照版本：`v0.43.413`
-状态：`PRIVATE_REPOSITORY_SNAPSHOT / SIGNED_CANDIDATE_VALIDATED`
+Document version: `v0.5`  
+Snapshot version: `v0.43.413`  
+Status: `PRIVATE_REPOSITORY_SNAPSHOT / SIGNED_CANDIDATE_VALIDATED`
 
-## 内容范围
+## Repository Contents
 
-本快照保留 Unity 项目重建所需内容：
+This snapshot contains the files required to restore and rebuild the Unity project:
 
 - `Assets/`
 - `Packages/`
@@ -14,36 +14,38 @@
 - `Documentation/`
 - `.vsconfig`
 
-不提交 `Library/`、`Temp/`、`Logs/`、`obj/`、`UserSettings/`、APK/AAB、签名材料、本地生成项目文件、内部协作工具或候选资源归档。
+The repository intentionally excludes `Library/`, `Temp/`, `Logs/`, `obj/`, `UserSettings/`, APK/AAB packages, signing materials, locally generated project files, internal collaboration tools, and candidate-asset archives.
 
-## 验证基线
+## Validated Baseline
 
-- Unity：`2022.3.62f3c1`
-- 工程版本：`v0.43.413`
-- Android bundle version：`0.43.413`
-- Android version code：`651`
-- 核心烟测：`65/65 PASS`
-- Windows PowerShell 5.1 构建包装器验证：`PASS`
-- Android ARM64 非调试签名候选包构建与证书检查：`PASS`（APK 不进入源码仓库）
+- Unity: `2022.3.62f3c1`
+- Project version: `v0.43.413`
+- Android bundle version: `0.43.413`
+- Android version code: `651`
+- Core smoke tests: `65/65 PASS`
+- Windows PowerShell 5.1 build-wrapper validation: `PASS`
+- Android ARM64 non-debuggable signed candidate build and certificate checks: `PASS` (the APK is not stored in this source repository)
 
-## 打开方式
+## Opening the Project
 
-1. 安装 Unity `2022.3.62f3c1`；
-2. 在 Unity Hub 中选择仓库根目录；
-3. 等待 Unity 重新生成本地缓存；
-4. 不要提交 Unity 自动生成的缓存、构建产物或本机用户设置。
+1. Install Unity `2022.3.62f3c1`.
+2. In Unity Hub, select the repository root directory.
+3. Allow Unity to regenerate its local caches.
+4. Do not commit Unity-generated caches, build artifacts, or machine-specific user settings.
 
-## 安全与第三方资源
+## Security and Third-Party Assets
 
-- 仓库中不应包含 API Key、钱包助记词、私钥、Android Keystore 或本机绝对路径。
-- 第三方字体与音频记录见 `Documentation/主程-第三方运行时资源来源与许可-公开说明-v1.0.md`。
-- 当前仓库按私有开发仓库管理；改为公开仓库前必须重新执行隐私、许可和二进制资源分发审计。
+- This repository must not contain API keys, wallet seed phrases, private keys, Android keystores, or machine-specific absolute paths.
+- Attribution and licensing records for third-party fonts and audio are available in the [third-party runtime asset attribution and licensing notice](Documentation/主程-第三方运行时资源来源与许可-公开说明-v1.0.md).
+- This repository is currently maintained as a private development repository. A fresh privacy, licensing, and binary-distribution audit is required before making it public.
 
-## 版本记录
+## Document History
 
-| 版本 | 日期 | 变更 |
+| Version | Date | Change |
 |---|---|---|
-| v0.1 | 2026-09-28 | 创建脱敏的 v0.43.96 早期源代码快照说明。 |
-| v0.2 | 2026-09-28 | 增加 Unity 版本、打开方式、缓存排除和第三方署名提示。 |
-| v0.3 | 2026-10-01 | 更新为 v0.43.184 私有仓库验证基线，补充当前测试结果与第三方资源说明。 |
-| v0.4 | 2026-10-12 | 更新为 v0.43.413 赛前候选源码快照，记录 Android 651、核心烟测和签名候选包验证结果。 |
+| v0.1 | 2026-09-28 | Created the sanitized source-snapshot notes for the early v0.43.96 build. |
+| v0.2 | 2026-09-28 | Added the Unity version, project-opening instructions, cache exclusions, and third-party attribution guidance. |
+| v0.3 | 2026-10-01 | Updated the private repository baseline to v0.43.184 and recorded the applicable validation and third-party resource information. |
+| v0.4 | 2026-10-12 | Updated the pre-final source snapshot to v0.43.413 and recorded Android 651, core smoke-test, and signed-candidate validation results. |
+| v0.5 | 2026-10-12 | Rewrote the repository overview in English for international competition reviewers; no game or build output changed. |
+
