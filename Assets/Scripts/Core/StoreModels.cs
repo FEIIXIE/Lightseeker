@@ -15,7 +15,8 @@ namespace SeekerAutoChess.Core
     public enum StoreProductType
     {
         CharacterPack = 0,
-        BasePack = 1
+        BasePack = 1,
+        Battlefield = 2
     }
 
     /// <summary>
@@ -32,34 +33,10 @@ namespace SeekerAutoChess.Core
             "ART-UI-STORE-E-BACKGROUND-VEIL-1080x2400-v1.1.0";
         public const string BalancePanelResourceId =
             "ART-UI-STORE-E-BALANCE-PANEL-240x96-v1.1.0";
-        public const string DefenderBaseResourceId =
-            "ART-UI-STORE-E-BASE-DEFENDER-DISPLAY-308x116-v1.1.0";
-        public const string EnemyBaseResourceId =
-            "ART-UI-STORE-E-BASE-ENEMY-DISPLAY-308x116-v1.1.0";
         public const string CenterCardBackResourceId =
             "ART-UI-STORE-E-CARDBACK-CENTER-154x244-v1.1.0";
         public const string SideCardBackResourceId =
             "ART-UI-STORE-E-CARDBACK-SIDE-142x224-v1.1.0";
-        public const string HeaderBadgeResourceId =
-            "ART-UI-STORE-E-HEADER-BADGE-228x48-v1.1.0";
-        public const string HeaderDividerResourceId =
-            "ART-UI-STORE-E-HEADER-DIVIDER-964x2-v1.1.0";
-        public const string InstructionPanelResourceId =
-            "ART-UI-STORE-E-INSTRUCTION-PANEL-912x234-v1.1.0";
-        public const string DefenderLabelResourceId =
-            "ART-UI-STORE-E-LABEL-DEFENDER-108x40-v1.1.0";
-        public const string EnemyLabelResourceId =
-            "ART-UI-STORE-E-LABEL-ENEMY-108x40-v1.1.0";
-        public const string MainBoardResourceId =
-            "ART-UI-STORE-E-MAIN-BOARD-988x1814-v1.1.0";
-        public const string PityStripResourceId =
-            "ART-UI-STORE-E-PITY-STRIP-624x76-v1.1.0";
-        public const string ProductCardResourceId =
-            "ART-UI-STORE-E-PRODUCT-CARD-442x634-v1.1.0";
-        public const string TallProductCardResourceId =
-            "ART-UI-STORE-E-PRODUCT-CARD-TALL-442x654-v1.1.0";
-        public const string PurchaseButtonResourceId =
-            "ART-UI-STORE-E-PURCHASE-BUTTON-322x62-v1.1.0";
         public const string SkrBadgeResourceId =
             "ART-UI-STORE-E-SKR-BADGE-58x62-v1.1.0";
 
@@ -79,13 +56,170 @@ namespace SeekerAutoChess.Core
         public const float LeftCardAngle = -11f;
         public const float RightCardAngle = 11f;
 
-        public const int BaseWidth = 308;
-        public const int BaseHeight = 116;
-        public const float DefenderBaseAngle = -7f;
-        public const float EnemyBaseAngle = 8f;
-
         public const float FrozenNavigationTop = 2158f;
         public const float FrozenNavigationHeight = 242f;
+    }
+
+    /// <summary>
+    /// Native-size runtime contract for the accepted Store single-column v1.6.0 package.
+    /// Only products backed by StoreCatalog may be rendered as purchasable entries.
+    /// The remaining accepted art stays outside the build until its product contract exists.
+    /// </summary>
+    public static class StoreSingleColumnFormalArtContract
+    {
+        public const string PackageVersion = "store-page-single-column-continuous-formal-v1.6.0";
+        public const string ResourceRoot = "Art/Store/V160/modules/";
+        public const string ProductRow =
+            "ART-UI-STORE-SINGLE-COLUMN-PRODUCT-ROW-912x330-v1.6.0";
+        public const string CardPackChuhang =
+            "ART-UI-STORE-SINGLE-COLUMN-CARDPACK-CHUHANG-280x236-v1.6.0";
+        public const string CardPackZhuchao =
+            "ART-UI-STORE-SINGLE-COLUMN-CARDPACK-ZHUCHAO-280x236-v1.6.0";
+        public const string CardPackGuihang =
+            "ART-UI-STORE-SINGLE-COLUMN-CARDPACK-GUIHANG-280x236-v1.6.0";
+        public const string BasePairMistHarbor =
+            "ART-UI-STORE-SINGLE-COLUMN-BASEPAIR-MIST-HARBOR-300x180-v1.6.0";
+        public const string BasePairLighthouseWhite =
+            "ART-UI-STORE-SINGLE-COLUMN-BASEPAIR-LIGHTHOUSE-WHITE-300x180-v1.6.0";
+        public const string BasePairDeeptideAstral =
+            "ART-UI-STORE-SINGLE-COLUMN-BASEPAIR-DEEPTIDE-ASTRAL-300x180-v1.6.0";
+        public const string BattlefieldMistHarbor =
+            "ART-UI-STORE-SINGLE-COLUMN-BATTLEFIELD-MIST-HARBOR-TABLETOP-300x220-v1.6.0";
+        public const string BattlefieldLighthouseCourtyard =
+            "ART-UI-STORE-SINGLE-COLUMN-BATTLEFIELD-LIGHTHOUSE-COURTYARD-TABLETOP-300x220-v1.6.0";
+        public const string BattlefieldDeeptideAstral =
+            "ART-UI-STORE-SINGLE-COLUMN-BATTLEFIELD-DEEPTIDE-ASTRAL-TABLETOP-300x220-v1.6.0";
+
+        public const int ProductRowWidth = 912;
+        public const int ProductRowHeight = 330;
+        public const int CharacterPackWidth = 280;
+        public const int CharacterPackHeight = 236;
+        public const int BasePairWidth = 300;
+        public const int BasePairHeight = 180;
+        public const int BattlefieldWidth = 300;
+        public const int BattlefieldHeight = 220;
+
+        public static readonly string[] CharacterPackArt =
+        {
+            CardPackChuhang,
+            CardPackZhuchao,
+            CardPackGuihang
+        };
+
+        public static readonly string[] BasePairArt =
+        {
+            BasePairMistHarbor,
+            BasePairLighthouseWhite,
+            BasePairDeeptideAstral
+        };
+
+        public static readonly string[] BattlefieldArt =
+        {
+            BattlefieldMistHarbor,
+            BattlefieldLighthouseCourtyard,
+            BattlefieldDeeptideAstral
+        };
+
+        public const float ViewportX = 76f;
+        public const float ViewportY = 190f;
+        public const float ViewportWidth = 928f;
+        public const float ViewportHeight = 1968f;
+        public const float CurrentCatalogContentHeight = 3286f;
+    }
+
+    /// <summary>
+    /// Runtime bindings for the accepted Store v1.7.0 cosmetic originals. Product
+    /// thumbnails and playable art are intentionally separate: the former may only
+    /// be used in store/warehouse UI, while the latter is the actual equipped skin.
+    /// </summary>
+    public static class StoreCosmeticFormalArtContract
+    {
+        public const string PackageVersion = "store-page-single-column-continuous-formal-v1.7.0";
+        public const string BattlefieldPackageVersion = "store-battlefield-safe-area-v1.8.0";
+        public const string BattlefieldResourceRoot = "Art/Battlefields/V180/";
+        public const string BaseResourceRoot = "Art/Store/V170/bases/";
+        public const string WarehouseThumbnailResourceRoot = "Art/Store/V170/warehouse-thumbnails/";
+
+        public const int BattlefieldWidth = 1080;
+        public const int BattlefieldHeight = 2400;
+        public const int BaseWidth = 192;
+        public const int BaseHeight = 72;
+        public const int BaseFootAnchorX = 96;
+        public const int BaseFootAnchorY = 31;
+        public const int WarehouseThumbnailWidth = 184;
+        public const int WarehouseThumbnailHeight = 184;
+
+        public static string BattlefieldResourceId(string productId)
+        {
+            switch (productId)
+            {
+                case "battlefield.mist_harbor.v1":
+                    return "ART-BATTLE-RUNTIME-MIST-HARBOR-1080x2400-v1.8.0";
+                case "battlefield.lighthouse_courtyard.v1":
+                    return "ART-BATTLE-RUNTIME-LIGHTHOUSE-COURTYARD-1080x2400-v1.8.0";
+                case "battlefield.deeptide_astral.v1":
+                    return "ART-BATTLE-RUNTIME-DEEPTIDE-ASTRAL-1080x2400-v1.8.0";
+                default:
+                    return null;
+            }
+        }
+
+        public static string BaseResourceId(string productId, bool defender)
+        {
+            var side = defender ? "DEFENDER" : "ENEMY";
+            switch (productId)
+            {
+                case "base.pack.harbor_pair.v1":
+                    return "ART-BASE-RUNTIME-MIST-HARBOR-" + side + "-192x72-v1.7.0";
+                case "base.pack.lighthouse_white.v1":
+                    return "ART-BASE-RUNTIME-LIGHTHOUSE-WHITE-" + side + "-192x72-v1.7.0";
+                case "base.pack.deeptide_astral.v1":
+                    return "ART-BASE-RUNTIME-DEEPTIDE-ASTRAL-" + side + "-192x72-v1.7.0";
+                default:
+                    return null;
+            }
+        }
+
+        public static string WarehouseThumbnailResourceId(string productId)
+        {
+            switch (productId)
+            {
+                case "base.pack.harbor_pair.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BASE-MIST-HARBOR-184x184-v1.7.0";
+                case "base.pack.lighthouse_white.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BASE-LIGHTHOUSE-WHITE-184x184-v1.7.0";
+                case "base.pack.deeptide_astral.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BASE-DEEPTIDE-ASTRAL-184x184-v1.7.0";
+                case "battlefield.mist_harbor.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BATTLEFIELD-MIST-HARBOR-184x184-v1.7.0";
+                case "battlefield.lighthouse_courtyard.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BATTLEFIELD-LIGHTHOUSE-COURTYARD-184x184-v1.7.0";
+                case "battlefield.deeptide_astral.v1":
+                    return "ART-UI-WAREHOUSE-A-COSMETIC-BATTLEFIELD-DEEPTIDE-ASTRAL-184x184-v1.7.0";
+                default:
+                    return null;
+            }
+        }
+
+        public static string ThumbnailResourceId(string productId)
+        {
+            switch (productId)
+            {
+                case "base.pack.harbor_pair.v1": return StoreSingleColumnFormalArtContract.BasePairArt[0];
+                case "base.pack.lighthouse_white.v1": return StoreSingleColumnFormalArtContract.BasePairArt[1];
+                case "base.pack.deeptide_astral.v1": return StoreSingleColumnFormalArtContract.BasePairArt[2];
+                case "battlefield.mist_harbor.v1": return StoreSingleColumnFormalArtContract.BattlefieldArt[0];
+                case "battlefield.lighthouse_courtyard.v1": return StoreSingleColumnFormalArtContract.BattlefieldArt[1];
+                case "battlefield.deeptide_astral.v1": return StoreSingleColumnFormalArtContract.BattlefieldArt[2];
+                default: return null;
+            }
+        }
+
+        public static bool HasNativeRuntimeVisual(string productId)
+        {
+            return !string.IsNullOrEmpty(BattlefieldResourceId(productId)) ||
+                   !string.IsNullOrEmpty(BaseResourceId(productId, true));
+        }
     }
 
     public sealed class StoreProductDefinition
@@ -96,6 +230,7 @@ namespace SeekerAutoChess.Core
         public string DisplayNameKey { get; }
         public int PriceSkr { get; }
         public string[] BaseSkinIds { get; }
+        public bool IsPurchasable => PriceSkr > 0;
 
         public StoreProductDefinition(
             string productId,
@@ -128,7 +263,17 @@ namespace SeekerAutoChess.Core
                 CharacterPackTier.Orange, "store.pack.orange", 500),
             new StoreProductDefinition(BasePackProductId, StoreProductType.BasePack,
                 CharacterPackTier.White, "store.basePack.harbor", 100,
-                new[] { PieceBasePresentationContract.DefaultSkinId, PieceBasePresentationContract.DefaultSkinId })
+                new[] { PieceBasePresentationContract.DefaultSkinId, PieceBasePresentationContract.DefaultSkinId }),
+            new StoreProductDefinition("base.pack.lighthouse_white.v1", StoreProductType.BasePack,
+                CharacterPackTier.White, "store.basePack.lighthouse", 100),
+            new StoreProductDefinition("base.pack.deeptide_astral.v1", StoreProductType.BasePack,
+                CharacterPackTier.White, "store.basePack.deeptide", 100),
+            new StoreProductDefinition("battlefield.mist_harbor.v1", StoreProductType.Battlefield,
+                CharacterPackTier.White, "store.battlefield.mistHarbor", 100),
+            new StoreProductDefinition("battlefield.lighthouse_courtyard.v1", StoreProductType.Battlefield,
+                CharacterPackTier.White, "store.battlefield.lighthouse", 100),
+            new StoreProductDefinition("battlefield.deeptide_astral.v1", StoreProductType.Battlefield,
+                CharacterPackTier.White, "store.battlefield.deeptide", 100)
         };
 
         public static IReadOnlyList<StoreProductDefinition> Products => products;
@@ -138,6 +283,39 @@ namespace SeekerAutoChess.Core
             for (var i = 0; i < products.Length; i++)
                 if (products[i].ProductId == productId) return products[i];
             throw new KeyNotFoundException("Unknown store product: " + productId);
+        }
+
+        public static bool TryGet(string productId, out StoreProductDefinition product)
+        {
+            for (var i = 0; i < products.Length; i++)
+            {
+                if (!string.Equals(products[i].ProductId, productId, StringComparison.Ordinal)) continue;
+                product = products[i];
+                return true;
+            }
+            product = null;
+            return false;
+        }
+    }
+
+    public static class StoreCosmeticRules
+    {
+        public static bool CanEquip(string productId, StoreProductType expectedType,
+            IEnumerable<string> ownedProductIds)
+        {
+            if (string.IsNullOrEmpty(productId) || ownedProductIds == null) return false;
+            StoreProductDefinition product;
+            if (!StoreCatalog.TryGet(productId, out product) || product.ProductType != expectedType)
+                return false;
+            foreach (var ownedId in ownedProductIds)
+                if (string.Equals(productId, ownedId, StringComparison.Ordinal)) return true;
+            return false;
+        }
+
+        public static string NormalizeEquipped(string productId, StoreProductType expectedType,
+            IEnumerable<string> ownedProductIds)
+        {
+            return CanEquip(productId, expectedType, ownedProductIds) ? productId : null;
         }
     }
 

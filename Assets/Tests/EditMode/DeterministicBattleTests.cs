@@ -54,6 +54,14 @@ namespace SeekerAutoChess.Tests
                 Is.EqualTo(expectedDamage));
         }
 
+        [TestCase(9, 20, 7)]
+        [TestCase(2, 25, 2)]
+        public void DamageRoundingUsesSixTenthsThreshold(int damage, int armor, int expected)
+        {
+            Assert.That(DeterministicBattle.CalculateDamageAfterArmor(damage, armor),
+                Is.EqualTo(expected));
+        }
+
         [Test]
         public void SpeedTiersCreateDistinctActionFrequencies()
         {
@@ -308,6 +316,141 @@ namespace SeekerAutoChess.Tests
         }
 
         [Test]
+        public void OpenDawnShieldBreakResolvesB08BeforeLegendaryTide()
+        {
+            var input = ActiveOlinInput(CharacterQuality.Legendary, 200);
+            input.PlayerUnits[0].Health = 500;
+            input.PlayerRoguelikeRuntimeGeneration = ChapterOneRoguelikeV11State.RuntimeGeneration;
+            input.PlayerRoguelikeEffects.Add(Effect("B08", RoguelikeRarity.Common));
+
+            var result = DeterministicBattle.Run(input);
+            var activeTime = FirstOpenDawnTime(result);
+            var breakIndex = result.Events.FindIndex(item => item.ActionTime == activeTime &&
+                item.SourceEffectId == C01ActiveSkillIntegration.OpenDawnAbilityId &&
+                item.Type == BattleEventType.Status);
+            var repairIndex = result.Events.FindIndex(item => item.ActionTime == activeTime &&
+                item.SourceEffectId == "B08" && item.Type == BattleEventType.Heal);
+            var tideIndex = result.Events.FindIndex(item => item.ActionTime == activeTime &&
+                item.SourceEffectId == C01ActiveSkillIntegration.TideAbilityId);
+
+            Assert.That(breakIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(repairIndex, Is.GreaterThan(breakIndex));
+            Assert.That(tideIndex, Is.GreaterThan(repairIndex));
+            Assert.That(result.Events.Count(item => item.ActionTime == activeTime &&
+                item.SourceEffectId == "B08"), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void HiddenSpringOverflowRequiresB09AndUsesNewIndependentCap()
+        {
+            var without = MilaOverflowInput(false);
+            var with = MilaOverflowInput(true);
+
+            var withoutResult = DeterministicBattle.Run(without);
+            var withResult = DeterministicBattle.Run(with);
+
+            Assert.That(withoutResult.Events.Any(item => item.SourceEffectId == "B09"), Is.False);
+            var b09Shield = withResult.Events.First(item => item.SourceEffectId == "B09" &&
+                item.Type == BattleEventType.Shield);
+            Assert.That(b09Shield.Amount, Is.EqualTo(120));
+            Assert.That(b09Shield.TargetShieldAfter, Is.EqualTo(120));
+        }
+
+        [Test]
+        public void AfterSpringBoostsHealingAndConsumesAHealersActiveAction()
+        {
+            var input = new BattleInput { Seed = 20261008u };
+            input.PlayerUnits.Add(new BattleUnitState
+            {
+                Id = "after-spring-healer", IsPlayer = true, Slot = 0,
+                Health = 1000, MaxHealth = 1000, HealAmount = 100, IsHealer = true,
+                MilaAfterSpringActionBonusBasisPoints = 4000,
+                MilaAfterSpringActionsRemaining = 3,
+                MilaAfterSpringSourceId = "mila",
+                SpeedTier = CombatSpeedTier.Fast
+            });
+            input.PlayerUnits.Add(new BattleUnitState
+            {
+                Id = "injured", IsPlayer = true, Slot = 1,
+                Health = 100, MaxHealth = 1000, AttackDamage = 1,
+                SpeedTier = CombatSpeedTier.Slow
+            });
+            input.EnemyUnits.Add(TrainingEnemy("enemy", 0));
+
+            var result = DeterministicBattle.Run(input);
+            var firstHeal = result.Events.First(item => item.Type == BattleEventType.Heal &&
+                item.ActorId == "after-spring-healer");
+
+            Assert.That(firstHeal.Amount, Is.EqualTo(140));
+            Assert.That(result.Events.Any(item => item.SourceEffectId ==
+                C04ActiveSkillIntegration.AfterSpringAbilityId && item.Amount < 0), Is.True);
+        }
+
+        [Test]
+        public void NewSameColumnBrunBarrierSilentlyReplacesTheOldOwner()
+        {
+            var input = new BattleInput { Seed = 20261008u };
+            input.PlayerUnits.Add(Brun("brun-front", 0, CombatSpeedTier.Fast));
+            input.PlayerUnits.Add(Brun("brun-rear", 3, CombatSpeedTier.Standard));
+            input.EnemyUnits.Add(PassiveHealer("enemy", 0));
+
+            var result = DeterministicBattle.Run(input);
+            var owners = result.PlayerUnits.Where(item =>
+                item.SharedBarrierRemainingCapacity > 0 && item.SharedBarrierColumn == 0).ToList();
+
+            Assert.That(owners.Count, Is.LessThanOrEqualTo(1));
+            Assert.That(result.Events.Any(item => item.SourceEffectId ==
+                C05ActiveSkillIntegration.BarrierStatusId + ":REPLACED"), Is.True);
+        }
+
+        [Test]
+        public void EpicNockShareFireWorksAndRefreshNeverLowersCharges()
+        {
+            var input = new BattleInput { Seed = 20261008u };
+            input.PlayerUnits.Add(Nock("epic-nock", 0, CharacterQuality.Epic, 100));
+            input.PlayerUnits.Add(new BattleUnitState
+            {
+                Id = "ally", IsPlayer = true, Slot = 1,
+                Health = 1000, MaxHealth = 1000, AttackDamage = 100,
+                NockFireActionsRemaining = 3, NockFireSourceId = "old-source",
+                SpeedTier = CombatSpeedTier.Slow
+            });
+            input.EnemyUnits.Add(TrainingEnemy("enemy", 0));
+
+            var result = DeterministicBattle.Run(input);
+            var refresh = result.Events.First(item => item.SourceEffectId ==
+                C06ActiveSkillIntegration.ShareFireAbilityId && item.Type == BattleEventType.Status &&
+                item.TargetId == "ally");
+
+            Assert.That(refresh.Amount, Is.EqualTo(3));
+            Assert.That(result.Events.Any(item => item.SourceEffectId ==
+                C06ActiveSkillIntegration.ShareFireAbilityId && item.Type == BattleEventType.Attack &&
+                item.ActorId == "ally"), Is.True);
+        }
+
+        [Test]
+        public void ReturnFireCountsTeamSharedNockAndB04FireAndUsesFrontmostLegendaryNock()
+        {
+            var input = new BattleInput
+            {
+                Seed = 20261008u,
+                PlayerRoguelikeRuntimeGeneration = ChapterOneRoguelikeV11State.RuntimeGeneration
+            };
+            input.PlayerRoguelikeEffects.Add(Effect("B04", RoguelikeRarity.Common));
+            input.PlayerUnits.Add(Nock("front-nock", 0, CharacterQuality.Legendary, 0));
+            input.PlayerUnits.Add(Nock("rear-nock", 1, CharacterQuality.Legendary, 0));
+            input.EnemyUnits.Add(TrainingEnemy("enemy", 0));
+
+            var result = DeterministicBattle.Run(input);
+            var returnFire = result.Events.First(item => item.SourceEffectId ==
+                C06ActiveSkillIntegration.ReturnFireAbilityId && item.Type == BattleEventType.Attack);
+
+            Assert.That(returnFire.ActorId, Is.EqualTo("front-nock"));
+            Assert.That(result.PlayerUnits.Select(item => item.NockFireDamageCount).Distinct().Count(),
+                Is.EqualTo(1));
+        }
+
+        [Test]
         public void EpicOlinNeverTriggersLegendaryTide()
         {
             var result = DeterministicBattle.Run(ActiveOlinInput(CharacterQuality.Epic, 200));
@@ -396,6 +539,61 @@ namespace SeekerAutoChess.Tests
                 Id = id, IsPlayer = false, Slot = slot,
                 Health = 50000, MaxHealth = 100000, AttackDamage = 1, HealAmount = 1,
                 IsHealer = true, SpeedTier = CombatSpeedTier.Slow
+            };
+        }
+
+        private static BattleInput MilaOverflowInput(bool withB09)
+        {
+            var input = new BattleInput
+            {
+                Seed = 20261008u,
+                PlayerRoguelikeRuntimeGeneration = ChapterOneRoguelikeV11State.RuntimeGeneration
+            };
+            input.PlayerUnits.Add(new BattleUnitState
+            {
+                Id = "mila", DefinitionId = "unit.archer", Quality = CharacterQuality.Epic,
+                IsPlayer = true, Slot = 0, Health = 1000, MaxHealth = 1000,
+                AttackDamage = 1, HealAmount = 1000, Energy = 100,
+                SpeedTier = CombatSpeedTier.Fast
+            });
+            input.PlayerUnits.Add(new BattleUnitState
+            {
+                Id = "mila-target", IsPlayer = true, Slot = 1,
+                Health = 900, MaxHealth = 1000, AttackDamage = 1,
+                SpeedTier = CombatSpeedTier.Fast
+            });
+            input.EnemyUnits.Add(TrainingEnemy("enemy", 0));
+            if (withB09) input.PlayerRoguelikeEffects.Add(Effect("B09", RoguelikeRarity.Common));
+            return input;
+        }
+
+        private static BattleUnitState Brun(string id, int slot, CombatSpeedTier speedTier)
+        {
+            return new BattleUnitState
+            {
+                Id = id, DefinitionId = "unit.starblade", Quality = CharacterQuality.Epic,
+                IsPlayer = true, Slot = slot, Health = 1000, MaxHealth = 1000,
+                AttackDamage = 1, Energy = 100, SpeedTier = speedTier
+            };
+        }
+
+        private static BattleUnitState Nock(string id, int slot, CharacterQuality quality, int energy)
+        {
+            return new BattleUnitState
+            {
+                Id = id, DefinitionId = "unit.starpriest", Quality = quality,
+                IsPlayer = true, Slot = slot, Health = 1000, MaxHealth = 1000,
+                AttackDamage = 100, Energy = energy, SpeedTier = CombatSpeedTier.Fast
+            };
+        }
+
+        private static RoguelikeAcquiredEffect Effect(string id, RoguelikeRarity rarity)
+        {
+            return new RoguelikeAcquiredEffect
+            {
+                effectId = id,
+                rarityId = (int)rarity,
+                stackCount = 1
             };
         }
 

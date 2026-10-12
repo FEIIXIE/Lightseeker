@@ -22,10 +22,11 @@ namespace SeekerAutoChess.Prototype
         private const float ContentWidth = ContentRight - ContentLeft;
         private const float HeaderButtonWidth = 145f;
         private const float HeaderButtonGap = 10f;
-        private const string ClientVersion = "0.43.247";
+        private const string ClientVersion = "0.43.413"; // Visible build identity; keep synchronized.
+        private const bool LanternWorkshopReleased = false;
         private const string ClientVersionLabel = "v" + ClientVersion;
-        // Switch to Formal to restore the accepted v1.1.0 blacksmith and lantern entrances.
-        // Both variants use the same six immutable, manifest-verified source modules.
+        // The product-selected alternate keeps blacksmith and lantern workshop disabled on the
+        // accepted gray construction plaque. Both variants use the same five destination modules.
         private const HarborPageVariant ActiveHarborPageVariant =
             HarborPageVariant.ConstructionAlternate;
         private const float BattleUnitBaseAlignmentDropPercent = 0.05f;
@@ -39,7 +40,7 @@ namespace SeekerAutoChess.Prototype
             new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> diagnosticQualityOverrides =
             new Dictionary<string, string>(StringComparer.Ordinal);
-        private const int RunEconomyRulesVersion = 1;
+        private const int RunEconomyRulesVersion = 2;
         private const int RoguelikeRulesVersion = RoguelikeEnhancementRules.RulesVersion;
         private const int AttackSpeedRulesVersion = 1;
         private const int FinalRound = ExpeditionMapGraph.ChapterLayerCount;
@@ -49,18 +50,20 @@ namespace SeekerAutoChess.Prototype
         private const int MaximumDeckSize = 6;
         private const int BenchCapacity = 6;
         private const int ShopRefreshCost = 2;
-        private const int EquipmentDetailFontSize = 22;
         private const string DeckChangeRulesVersion = "deck-loadout.v1";
-        private static readonly Rect WarehouseEquipmentDetailPanel = new Rect(215f, 350f, 650f, 1110f);
-        // v38 adds exact micro-SKR market accounting, listings, receipts and shop leases.
-        private const int SaveSchemaVersion = 39;
+        private static readonly Rect WarehouseEquipmentDetailPanel =
+            EquipmentDetailAFormalArtContract.ViewPanelRect;
+        private static readonly Rect WarehouseLanternDetailPanel = LanternDetailAFormalArtContract.PanelRect;
+        // v46 migrates ten-life local runs to the five-life contract while preserving losses taken.
+        private const int SaveSchemaVersion = 48;
+        private const int FiveLifeSaveSchemaVersion = 46;
         private const int MinimumCompatibleSaveVersion = 5;
         private const string SaveKey = "seeker-auto-chess.prototype.run.v1";
         private const string LanguagePreferenceKey = "seeker-auto-chess.preference.language.v1";
         private const string ArenaChallengeTestResetPreferenceKey =
             "seeker-auto-chess.test.arena-challenge-reset.v0.43.232";
         private const string MarketAcceptanceGrantPreferenceKey =
-            "seeker-auto-chess.test.market-acceptance-grant.v0.43.246-r2";
+            "seeker-auto-chess.test.market-acceptance-grant.v0.43.281";
         private static readonly Dictionary<Color, Texture2D> TextureCache = new Dictionary<Color, Texture2D>();
         private static Texture2D groundShadowTexture;
         private Font sourceHanSerifRegularFont;
@@ -105,8 +108,15 @@ namespace SeekerAutoChess.Prototype
         private bool[] shopOfferSold = new bool[ShopOfferCount];
         private int shopRefreshSerial;
         private string runId = string.Empty;
+        private int currentRunEconomyRulesVersion = RunEconomyRulesVersion;
+        private int qualityRecruitPriceRulesVersion = QualityRecruitPriceRules.CurrentRulesVersion;
         private readonly RunEconomyActionLedger runEconomyActions = new RunEconomyActionLedger();
         private readonly RoguelikeBuildState roguelikeBuild = new RoguelikeBuildState();
+        private readonly ChapterOneRoguelikeV11State roguelikeBuildV11 =
+            new ChapterOneRoguelikeV11State();
+        private int currentRoguelikeRuntimeGeneration =
+            ChapterOneRoguelikeV11State.RuntimeGeneration;
+        private string pendingP09FirstOptionId;
         private ChapterOneEncounter currentEncounter;
         private ExpeditionEconomyState expeditionEconomy = new ExpeditionEconomyState();
         private ExpeditionFlow expeditionFlow = new ExpeditionFlow();
@@ -191,7 +201,7 @@ namespace SeekerAutoChess.Prototype
         private LayeredExpeditionMapRenderer expeditionMapRenderer;
         private GameLanguage language;
         private int coins = 10;
-        private int health = 10;
+        private int health = ChapterOneExpeditionLifeRules.InitialLife;
         private int round = 1;
         private int selectedRunSlot = -1;
         private bool preparationShopOpen;
@@ -226,7 +236,14 @@ namespace SeekerAutoChess.Prototype
         private int storePurchaseSerial;
         private int storeEpicPitySkr;
         private int storeLegendaryPitySkr;
+        private Vector2 storeCatalogScroll;
+        private bool storeCatalogPointerHeld;
+        private bool storeCatalogPointerDragging;
+        private Vector2 storeCatalogPointerDown;
+        private Vector2 storeCatalogPointerLast;
         private readonly List<string> ownedBasePackIds = new List<string>();
+        private string equippedBasePackProductId;
+        private string equippedBattlefieldProductId;
         private readonly IWalletSignatureGateway walletSignatureGateway =
             new LocalSkrWalletSignatureGateway();
         private string storeStatusMessage = "store.status.ready";
@@ -242,12 +259,15 @@ namespace SeekerAutoChess.Prototype
         private string[] pendingStoreInstanceIds = new string[0];
         private string[] pendingStoreDefinitionIds = new string[0];
         private int[] pendingStoreQualities = new int[0];
+        private int[] pendingStoreAptitudeRolls = new int[0];
+        private bool pendingStoreRevealAlreadyGranted;
+        private string pendingStarterGrantId;
+        private string acknowledgedStarterGrantId;
         private bool currentExpeditionRewardsEnabled = true;
         private bool expeditionEntryCommitted;
         private int tideCrystalBalance;
         private int nextLocalEquipmentSerial = 1;
         private ScreenView currentView = ScreenView.Home;
-        private string homeNoticeKey = "home.notice.default";
         private float homeLanternUnlockHintUntil;
         private bool deckEditing;
         private bool characterDetailOpen;
@@ -268,6 +288,20 @@ namespace SeekerAutoChess.Prototype
         private bool deckCollectionPointerDragging;
         private Vector2 detailEquipmentScroll;
         private Vector2 warehouseEquipmentScroll;
+        private Vector2 warehousePointerDown;
+        private Vector2 warehousePointerLast;
+        private bool warehousePointerHeld;
+        private bool warehousePointerDragging;
+        private readonly string[] warehouseSlotTokens =
+            new string[WarehouseStorageRules.InitialCapacity];
+        private readonly List<string> warehouseAcquisitionOrder = new List<string>();
+        private WarehouseSortMode warehouseSortMode = WarehouseSortMode.Time;
+        private int warehouseDragSourceSlot = -1;
+        private string warehouseDraggedToken;
+        private Vector2 warehouseItemPointerDown;
+        private Vector2 warehouseItemPointerLast;
+        private bool warehouseItemPointerHeld;
+        private bool warehouseItemPointerDragging;
         private Vector2 creditsScroll;
         private Vector2 expeditionMapScroll;
         private string expeditionMapScrollAnchorNodeId;
@@ -295,6 +329,10 @@ namespace SeekerAutoChess.Prototype
         private string warehouseEquipmentDetailId;
         private bool warehouseLanternDetailOpen;
         private string warehouseLanternDetailId;
+        private bool warehouseCosmeticDetailOpen;
+        private string warehouseCosmeticDetailProductId;
+        private bool lanternDetailCovenantPage;
+        private int warehouseLanternStagePopup = -1;
         private LanternChangeAction pendingLanternChangeAction;
         private string pendingLanternChangeInstanceId;
         private string deckEditorMessageKey = "deck.editorHint";
@@ -309,6 +347,11 @@ namespace SeekerAutoChess.Prototype
         private ArenaOpponentProfile[] arenaOpponents = new ArenaOpponentProfile[0];
         private int selectedArenaOpponentIndex = -1;
         private Vector2 arenaRankingScroll;
+        private bool arenaRankingScrollInitialized;
+        private bool arenaRankingPointerHeld;
+        private bool arenaRankingPointerDragging;
+        private Vector2 arenaRankingPointerLast;
+        private int arenaRankingContentCount;
         private int arenaRating = ArenaPrototypeRules.TemporaryInitialRating;
         private int arenaChallengesRemaining = ArenaPrototypeRules.DailyChallengeLimit;
         private string arenaChallengeDayKey;
@@ -379,6 +422,8 @@ namespace SeekerAutoChess.Prototype
             preparationShopOpen = expeditionFlow.CanPrepare;
             if (storeOpeningActive) BeginStoreRevealPreparation(false);
             TryStartHarborEvidenceCapture();
+            TryConfigureMainnetInviteRuntime();
+            TryAttachWalletLanDiagnostic();
         }
 
         private void TryStartHarborEvidenceCapture()
@@ -445,15 +490,19 @@ namespace SeekerAutoChess.Prototype
         private void OnApplicationPause(bool paused)
         {
             if (paused) SaveGame();
+            else UpdateWalletServerSessionLifecycle(true);
         }
 
         private void OnApplicationQuit()
         {
+            ShutdownWalletServerRuntime();
+            CancelBountyTowerRefresh();
             if (!SkillDiagnosticActive && !harborEvidenceCaptureActive) SaveGame();
         }
 
         private void Update()
         {
+            UpdateWalletServerSessionLifecycle();
             if (homeBackgroundMusicPlayer == null)
                 homeBackgroundMusicPlayer = HomeBackgroundMusicPlayer.CreateOrGet(uiAudioRouter.Mixer);
             var arenaResultShowing = currentView == ScreenView.Arena &&
@@ -548,13 +597,13 @@ namespace SeekerAutoChess.Prototype
             if (characterCatalog == null) characterCatalog = CharacterCatalog.CreatePrototype();
             if (playerCollection == null) playerCollection = PlayerCollection.CreatePrototype(characterCatalog);
             if (equipmentCatalog == null) equipmentCatalog = EquipmentCatalog.CreatePrototype();
-            if (equipmentInventory == null) equipmentInventory = EquipmentInventory.CreatePrototype(equipmentCatalog);
+            if (equipmentInventory == null)
+                equipmentInventory = new EquipmentInventory(
+                    equipmentCatalog, Array.Empty<EquipmentInstanceState>());
             if (expeditionRewards == null) expeditionRewards = new ExpeditionRewardLedger();
             if (expeditionEconomy == null) expeditionEconomy = new ExpeditionEconomyState();
             if (chapterOneLighthouse == null) chapterOneLighthouse = new ChapterLighthouseProgressState();
             if (lanternInventory == null) lanternInventory = new LanternInventory();
-            FirstChapterLanternFixtures.EnsureFirstClearCommon(lanternInventory);
-            EnsureDevelopmentLanternQualitySet();
             EnsureMarketState();
             if (expeditionLanternSnapshot == null)
                 expeditionLanternSnapshot = LanternSnapshot.None(LanternLegacyMigrationResult.LegacyNoneRulesVersion);
@@ -625,8 +674,14 @@ namespace SeekerAutoChess.Prototype
             enemyUnits.Clear();
             var node = expeditionMap == null ? null : expeditionMap.GetNode(currentMapNodeId);
             if (node == null || !IsBattleNode(node.Type)) return;
-            currentEncounter = ChapterOneEncounterRules.Generate(
-                expeditionMapSeed, node, !HasCompletedNormalBattle());
+            currentEncounter = expeditionRewardSnapshot != null &&
+                string.Equals(expeditionRewardSnapshot.RulesVersion,
+                    ChapterOneDifficultyRules.RulesVersion, StringComparison.Ordinal)
+                ? ChapterOneDifficultyRules.GenerateEncounter(
+                    expeditionMapSeed, node, expeditionRewardSnapshot.DifficultyId,
+                    CompletedBattleCount(), CurrentEncounterTableVersion())
+                : ChapterOneEncounterRules.Generate(
+                    expeditionMapSeed, node, !HasCompletedNormalBattle());
             if (b1SkillDiagnosticActive || b2SkillDiagnosticActive)
             {
                 var bossId = b1SkillDiagnosticActive ? "enemy.b1.heavy" : "enemy.b2.hunter";
@@ -669,11 +724,24 @@ namespace SeekerAutoChess.Prototype
                 "legacy.local.run-reward.v1");
         }
 
+        private static ExpeditionRunRewardSnapshot CreateCurrentLocalD0RewardSnapshot()
+        {
+            var rewardVersion = ChapterOneDifficultyRules.RewardTableVersion;
+            return new ExpeditionRunRewardSnapshot(
+                "D0", "local-prototype-no-authority", "none",
+                new ExpeditionRewardTableReference("chapter01.full-clear.currency", rewardVersion),
+                new ExpeditionRewardTableReference("chapter01.full-clear.equipment", rewardVersion),
+                new ExpeditionRewardTableReference("chapter01.full-clear.lantern", rewardVersion),
+                ChapterOneDifficultyRules.RulesVersion);
+        }
+
         private void CaptureCurrentRunContracts()
         {
+            currentRunEconomyRulesVersion = RunEconomyRulesVersion;
+            qualityRecruitPriceRulesVersion = QualityRecruitPriceRules.CurrentRulesVersion;
             expeditionLanternSnapshot = lanternInventory.CreateActiveSnapshot(
                 LanternLegacyMigrationResult.LegacyNoneRulesVersion);
-            expeditionRewardSnapshot = CreateLegacyLocalRewardSnapshot();
+            expeditionRewardSnapshot = CreateCurrentLocalD0RewardSnapshot();
         }
 
         private bool HasCompletedNormalBattle()
@@ -685,6 +753,18 @@ namespace SeekerAutoChess.Prototype
                 if (node != null && node.Type == ExpeditionNodeType.NormalBattle) return true;
             }
             return false;
+        }
+
+        private int CompletedBattleCount()
+        {
+            if (expeditionMap == null || expeditionRewards == null) return 0;
+            var count = 0;
+            foreach (var nodeId in expeditionRewards.CompletedNodeIds)
+            {
+                var node = expeditionMap.GetNode(nodeId);
+                if (node != null && IsBattleNode(node.Type)) count++;
+            }
+            return count;
         }
 
         private void OnGUI()
@@ -719,6 +799,13 @@ namespace SeekerAutoChess.Prototype
             GUI.matrix = rootMatrix;
             var previousBackgroundColor = GUI.backgroundColor;
 
+            if (ShouldDrawMainnetInviteLogin)
+            {
+                DrawLoginFormalScreen();
+                DrawBuildVersionOverlay(0f);
+                GUI.backgroundColor = previousBackgroundColor;
+                return;
+            }
             DrawBackground();
             if (spatialG2GrayboxActive)
             {
@@ -734,13 +821,29 @@ namespace SeekerAutoChess.Prototype
                 GUI.backgroundColor = previousBackgroundColor;
                 return;
             }
+            if (currentView == ScreenView.Profile && !battlePresentationActive)
+            {
+                // Profile E owns its complete 1080 x 2400 source canvas. On shorter
+                // devices the page scrolls vertically instead of scaling or cropping
+                // any accepted art module.
+                DrawProfileFormalScreen();
+                DrawBuildVersionOverlay(0f);
+                GUI.backgroundColor = previousBackgroundColor;
+                return;
+            }
             if (currentView == ScreenView.Home && !battlePresentationActive)
             {
                 // The approved home is a pixel-locked 1080 x 2400 composition. Its
                 // environment layers and native-size modules share the same canvas and
                 // deliberately do not inherit the older 9:16 safe-area translation.
+                var badgePopupOpen = firstLightseekerBadgePopupOpen;
+                var tutorialOpen = IsGameplayTutorialOpen && !badgePopupOpen;
+                GUI.enabled = !tutorialOpen && !badgePopupOpen;
                 DrawHomeScreen();
                 DrawMainNavigation();
+                GUI.enabled = true;
+                if (badgePopupOpen) DrawFirstLightseekerBadgePopup();
+                else if (tutorialOpen) DrawGameplayTutorialOverlay();
                 DrawBuildVersionOverlay(layoutSafeTop);
                 GUI.backgroundColor = previousBackgroundColor;
                 return;
@@ -807,7 +910,58 @@ namespace SeekerAutoChess.Prototype
                 GUI.backgroundColor = previousBackgroundColor;
                 return;
             }
+            if (currentView == ScreenView.Warehouse && !battlePresentationActive)
+            {
+                if (lanternWorkshopMode)
+                {
+                    DrawLanternWorkshopScreen();
+                    DrawBuildVersionOverlay(0f);
+                    GUI.backgroundColor = previousBackgroundColor;
+                    return;
+                }
+                // Warehouse A is authored on the complete locked 1080 x 2400 canvas.
+                // It owns its return control and deliberately does not use the legacy header.
+                if (warehouseEquipmentDetailOpen || warehouseLanternDetailOpen ||
+                    warehouseCosmeticDetailOpen || firstLightseekerBadgeDetailOpen)
+                {
+                    GUI.enabled = false;
+                    DrawWarehouseScreen();
+                    GUI.enabled = true;
+                    DrawMarketTextureFormal(new Rect(0f, 0f, 1080f, 2400f),
+                        MarketFormalModuleRoot, "ART-UI-MARKET-B-SCRIM-1080x2400-v1.0.0");
+                    if (firstLightseekerBadgeDetailOpen)
+                        DrawFirstLightseekerBadgeDetail();
+                    else
+                    {
+                        if (pendingLanternChangeAction == LanternChangeAction.None &&
+                            DrawWarehouseEquipmentDetailBackdrop(warehouseLanternDetailOpen
+                                ? WarehouseLanternDetailPanel : CurrentWarehouseEquipmentDetailPanel())) return;
+                        if (warehouseLanternDetailOpen) DrawWarehouseLanternDetailScreen();
+                        else if (warehouseCosmeticDetailOpen) DrawWarehouseCosmeticDetailScreen();
+                        else DrawWarehouseEquipmentDetailScreen();
+                    }
+                }
+                else DrawWarehouseScreen();
+                DrawBuildVersionOverlay(0f);
+                GUI.backgroundColor = previousBackgroundColor;
+                return;
+            }
             GUI.matrix = rootMatrix * Matrix4x4.Translate(new Vector3(0f, layoutSafeTop, 0f));
+            if (currentView == ScreenView.Expedition && expeditionFlow != null &&
+                expeditionFlow.IsComplete && !battlePresentationActive)
+            {
+                // Keep the final battlefield as the result backdrop, then return to the
+                // locked 1080x2400 root canvas so the accepted settlement shell is not
+                // shifted down a second time by the Android safe-area transform.
+                GUI.enabled = false;
+                DrawBattleScreen(1f);
+                GUI.enabled = true;
+                GUI.matrix = rootMatrix;
+                DrawExpeditionResultScreen();
+                DrawBuildVersionOverlay(0f);
+                GUI.backgroundColor = previousBackgroundColor;
+                return;
+            }
             if (currentView == ScreenView.Arena && arenaPageState == ArenaPageState.Result)
             {
                 // Result A must preserve the exact final live battlefield rather than
@@ -868,12 +1022,102 @@ namespace SeekerAutoChess.Prototype
             GUI.contentColor = previousContentColor;
         }
 
+        // Returns -1 while open, 0 for the secondary action and 1 for the primary action.
+        private int DrawCommonConfirmDialog(string title, string body, string supplemental,
+            string secondaryLabel, string primaryLabel, bool primaryEnabled = true)
+        {
+            var panel = CommonConfirmFormalArtContract.PanelRect;
+            DrawMarketTextureFormal(new Rect(0f, 0f, 1080f, 2400f), MarketFormalModuleRoot,
+                "ART-UI-MARKET-B-SCRIM-1080x2400-v1.0.0");
+            DrawMarketModalInputShieldFormal(panel);
+            DrawMarketTextureFormal(panel, CommonConfirmFormalArtContract.ResourceRoot,
+                CommonConfirmFormalArtContract.DialogShell);
+
+            var titleArea = CommonConfirmLocalRect(panel, CommonConfirmFormalArtContract.TitleLocal);
+            var bodyArea = CommonConfirmLocalRect(panel, CommonConfirmFormalArtContract.BodyLocal);
+            var supplementalArea = CommonConfirmLocalRect(panel,
+                CommonConfirmFormalArtContract.SupplementalLocal);
+            GUI.Label(titleArea, title, CommonConfirmTextStyle(title, titleArea,
+                38, 28, MarketInk, true, false));
+            GUI.Label(bodyArea, body, CommonConfirmTextStyle(body, bodyArea,
+                28, 21, MarketInk, false, true));
+            if (!string.IsNullOrEmpty(supplemental))
+                GUI.Label(supplementalArea, supplemental,
+                    CommonConfirmTextStyle(supplemental, supplementalArea,
+                        23, 18, MarketMuted, false, false));
+
+            if (string.IsNullOrEmpty(secondaryLabel))
+            {
+                var single = CommonConfirmLocalRect(panel,
+                    CommonConfirmFormalArtContract.SingleButtonLocal);
+                return DrawCommonConfirmButton(single, primaryLabel, true, primaryEnabled) ? 1 : -1;
+            }
+
+            var secondary = CommonConfirmLocalRect(panel,
+                CommonConfirmFormalArtContract.SecondaryButtonLocal);
+            var primary = CommonConfirmLocalRect(panel,
+                CommonConfirmFormalArtContract.PrimaryButtonLocal);
+            if (DrawCommonConfirmButton(secondary, secondaryLabel, false, true)) return 0;
+            return DrawCommonConfirmButton(primary, primaryLabel, true, primaryEnabled) ? 1 : -1;
+        }
+
+        private bool DrawCommonConfirmButton(Rect area, string label, bool primary, bool enabled)
+        {
+            var pressed = enabled && area.Contains(Event.current.mousePosition) && Input.GetMouseButton(0);
+            var resourceId = primary
+                ? !enabled ? CommonConfirmFormalArtContract.PrimaryDisabled :
+                    pressed ? CommonConfirmFormalArtContract.PrimaryPressed :
+                    CommonConfirmFormalArtContract.PrimaryNormal
+                : !enabled ? CommonConfirmFormalArtContract.SecondaryDisabled :
+                    pressed ? CommonConfirmFormalArtContract.SecondaryPressed :
+                    CommonConfirmFormalArtContract.SecondaryNormal;
+            DrawMarketTextureFormal(area, CommonConfirmFormalArtContract.ResourceRoot, resourceId);
+            var textArea = new Rect(area.x + CommonConfirmFormalArtContract.ButtonTextLocal.x,
+                area.y + CommonConfirmFormalArtContract.ButtonTextLocal.y,
+                CommonConfirmFormalArtContract.ButtonTextLocal.width,
+                CommonConfirmFormalArtContract.ButtonTextLocal.height);
+            var color = enabled ? primary ? MarketIvory : MarketInk : MarketMuted;
+            GUI.Label(textArea, label, CommonConfirmTextStyle(label, textArea,
+                32, 20, color, true, false));
+            return enabled && GUI.Button(area, GUIContent.none, GUIStyle.none);
+        }
+
+        private GUIStyle CommonConfirmTextStyle(string text, Rect area, int preferredSize,
+            int minimumSize, Color color, bool bold, bool wordWrap)
+        {
+            var content = new GUIContent(text ?? string.Empty);
+            for (var size = preferredSize; size >= minimumSize; size--)
+            {
+                var candidate = Style(size, color, TextAnchor.MiddleCenter,
+                    bold ? FontStyle.Bold : FontStyle.Normal);
+                candidate.wordWrap = wordWrap;
+                candidate.clipping = TextClipping.Clip;
+                var height = candidate.CalcHeight(content, area.width);
+                var width = wordWrap ? area.width : candidate.CalcSize(content).x;
+                if (width <= area.width && height <= area.height) return candidate;
+            }
+            var fallback = Style(minimumSize, color, TextAnchor.MiddleCenter,
+                bold ? FontStyle.Bold : FontStyle.Normal);
+            fallback.wordWrap = wordWrap;
+            fallback.clipping = TextClipping.Clip;
+            return fallback;
+        }
+
+        private static Rect CommonConfirmLocalRect(Rect panel, Rect local)
+        {
+            return new Rect(panel.x + local.x, panel.y + local.y, local.width, local.height);
+        }
+
         private void DrawStandardInterface()
         {
             if (currentView == ScreenView.Home)
             {
+                var previousEnabled = GUI.enabled;
+                GUI.enabled = previousEnabled && !firstLightseekerBadgePopupOpen;
                 DrawHomeScreen();
                 DrawMainNavigation();
+                GUI.enabled = previousEnabled;
+                DrawFirstLightseekerBadgePopup();
                 return;
             }
             // E46 owns the complete 841-pixel page, including its top controls. Route
@@ -935,18 +1179,25 @@ namespace SeekerAutoChess.Prototype
             }
             if (currentView == ScreenView.Warehouse)
             {
-                if (warehouseEquipmentDetailOpen || warehouseLanternDetailOpen)
+                if (warehouseEquipmentDetailOpen || warehouseLanternDetailOpen ||
+                    warehouseCosmeticDetailOpen || firstLightseekerBadgeDetailOpen)
                 {
                     GUI.enabled = false;
                     DrawWarehouseScreen();
                     GUI.enabled = true;
-                    GUI.color = new Color(0.01f, 0.025f, 0.035f, 0.58f);
-                    GUI.DrawTexture(new Rect(0f, 135f, DesignWidth, layoutContentHeight - 135f), Texture2D.whiteTexture);
-                    GUI.color = Color.white;
-                    if (pendingLanternChangeAction == LanternChangeAction.None &&
-                        DrawWarehouseEquipmentDetailBackdrop(WarehouseEquipmentDetailPanel)) return;
-                    if (warehouseLanternDetailOpen) DrawWarehouseLanternDetailScreen();
-                    else DrawWarehouseEquipmentDetailScreen();
+                    DrawMarketTextureFormal(new Rect(0f, 0f, 1080f, 2400f),
+                        MarketFormalModuleRoot, "ART-UI-MARKET-B-SCRIM-1080x2400-v1.0.0");
+                    if (firstLightseekerBadgeDetailOpen)
+                        DrawFirstLightseekerBadgeDetail();
+                    else
+                    {
+                        if (pendingLanternChangeAction == LanternChangeAction.None &&
+                            DrawWarehouseEquipmentDetailBackdrop(warehouseLanternDetailOpen
+                                ? WarehouseLanternDetailPanel : CurrentWarehouseEquipmentDetailPanel())) return;
+                        if (warehouseLanternDetailOpen) DrawWarehouseLanternDetailScreen();
+                        else if (warehouseCosmeticDetailOpen) DrawWarehouseCosmeticDetailScreen();
+                        else DrawWarehouseEquipmentDetailScreen();
+                    }
                 }
                 else DrawWarehouseScreen();
                 return;
@@ -985,16 +1236,16 @@ namespace SeekerAutoChess.Prototype
                 DrawHomeLighthouseCanvas(PrototypeArtResourceIds.HomeLighthouseBackground, false);
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseTowerUnlit,
                     HomeLighthouseV140Layout.TowerModule);
-                if (chapterOneLighthouse.IsLit)
+                if (chapterOneLighthouse.IsLit ||
+                    (lanternInventory != null &&
+                     !string.IsNullOrEmpty(lanternInventory.ActiveLanternInstanceId)))
                     DrawHomeLighthouseCanvas(PrototypeArtResourceIds.HomeLighthouseLitOverlay, true);
 
                 // z=30 chapter ornament.
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseChapterOrnament,
                     HomeLighthouseV140Layout.ChapterOrnamentModule);
 
-                // z=40..42 HUD modules. The separator is intentionally instanced three times.
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthousePlayerNameLine,
-                    HomeLighthouseV140Layout.PlayerNameLineModule);
+                // z=40..42 HUD modules. The accepted left rail is one indivisible native-size asset.
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseEnergyGlyph,
                     HomeLighthouseV140Layout.EnergyGlyphModule);
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseSkrBadge,
@@ -1005,22 +1256,13 @@ namespace SeekerAutoChess.Prototype
                     HomeLighthouseV140Layout.ResourceSeparatorOneModule);
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseResourceSeparator,
                     HomeLighthouseV140Layout.ResourceSeparatorTwoModule);
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseResourceSeparator,
-                    HomeLighthouseV140Layout.ResourceSeparatorThreeModule);
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthousePlayerMedallion,
-                    HomeLighthouseV140Layout.PlayerMedallionModule);
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseAffairs,
-                    HomeLighthouseV140Layout.AffairsModule);
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseWarehouse,
-                    HomeLighthouseV140Layout.WarehouseModule);
-                DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthousePlayerPowerBadge,
-                    HomeLighthouseV140Layout.PlayerPowerBadgeModule);
+                DrawHomeLeftCompleteModule();
 
                 // z=45 lantern content is state-driven. When no lantern is equipped, the
                 // approved panel cutout remains transparent and shows only the page background.
                 var activeHomeLantern = GetActiveHomeLantern();
                 if (activeHomeLantern != null)
-                    DrawLanternCircularComponent(activeHomeLantern,
+                    DrawHomeLanternModularComponent(activeHomeLantern,
                         HomeLighthouseRect(HomeLighthouseV140Layout.LanternMedallionModule), "home");
                 DrawHomeLighthouseModule(PrototypeArtResourceIds.HomeLighthouseLanternPanel,
                     HomeLighthouseV140Layout.LanternPanelModule);
@@ -1034,8 +1276,10 @@ namespace SeekerAutoChess.Prototype
             {
                 // The interactive preparation slots are drawn from the same coordinates
                 // as combat. Do not also paint the legacy baked deployment markers.
-                battlefieldRenderer.Draw(new Rect(0f, 0f, DesignWidth, layoutCanvasHeight),
-                    battlePresentationActive ? battleSceneOpacity : 1f, 0f);
+                var opacity = battlePresentationActive ? battleSceneOpacity : 1f;
+                if (!DrawEquippedBattlefieldSkin(opacity))
+                    battlefieldRenderer.Draw(new Rect(0f, 0f, DesignWidth, layoutCanvasHeight),
+                        opacity, 0f);
             }
             GUI.color = Color.white;
         }
@@ -1047,6 +1291,35 @@ namespace SeekerAutoChess.Prototype
                 return currentView == ScreenView.Expedition && !battlePresentationActive &&
                        expeditionFlow != null && expeditionFlow.CanPrepare;
             }
+        }
+
+        private bool DrawEquippedBattlefieldSkin(float opacity)
+        {
+            Texture2D texture;
+            if (!TryGetEquippedBattlefieldTexture(out texture)) return false;
+            var area = new Rect(0f, 0f, StoreCosmeticFormalArtContract.BattlefieldWidth,
+                StoreCosmeticFormalArtContract.BattlefieldHeight);
+            var previousColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(opacity));
+            GUI.DrawTexture(area, texture, ScaleMode.StretchToFill, true);
+            GUI.color = previousColor;
+            return true;
+        }
+
+        private bool TryGetEquippedBattlefieldTexture(out Texture2D texture)
+        {
+            var resourceId = StoreCosmeticFormalArtContract.BattlefieldResourceId(
+                equippedBattlefieldProductId);
+            texture = string.IsNullOrEmpty(resourceId)
+                ? null
+                : artCatalog.GetStoreCosmeticTexture(resourceId, true);
+            if (texture != null &&
+                texture.width == StoreCosmeticFormalArtContract.BattlefieldWidth &&
+                texture.height == StoreCosmeticFormalArtContract.BattlefieldHeight) return true;
+            if (!string.IsNullOrEmpty(resourceId))
+                Debug.LogError("Rejected missing or resized equipped battlefield: " + resourceId);
+            texture = null;
+            return false;
         }
 
         private bool IsArenaFormationScreen
@@ -1107,7 +1380,7 @@ namespace SeekerAutoChess.Prototype
 
         private static ExpeditionNodeType EffectiveNodeType(ExpeditionNodeType type)
         {
-            return type == ExpeditionNodeType.Supply ? ExpeditionNodeType.Treasure : type;
+            return type;
         }
 
         private bool IsExpeditionUiTrialPage
@@ -1584,14 +1857,13 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
 
-            DrawBattleTargetFrame(area, combatUnit);
             GUI.color = WithOpacity(new Color(0f, 0f, 0f, 0.45f), opacity);
             GUI.DrawTexture(new Rect(area.x + 10f, area.y + 12f, area.width, area.height), Texture2D.whiteTexture);
             GUI.color = WithOpacity(cardColor, opacity);
             GUI.DrawTexture(area, Texture2D.whiteTexture);
             GUI.color = Color.white;
             DrawBattleUnitHud(combatUnit, area.center.x, area.y, area.width, opacity,
-                PieceBaseBottomY(area.yMax - 5f, area.width));
+                PieceBaseBottomY(area.yMax - 5f, area.width, combatUnit.IsPlayer));
         }
 
         private Sprite ResolveFormalBattleAnimationSprite(
@@ -1658,8 +1930,6 @@ namespace SeekerAutoChess.Prototype
                                    artDefinition.VisualYOffsetRelativeToUnitHeight;
             textureCanvasRect.y += textureCanvasRect.height * BattleUnitBaseAlignmentDropPercent;
             var visibleRect = artDefinition.GetVisibleContentRect(textureCanvasRect, flipX);
-            DrawBattleTargetFrame(new Rect(visibleRect.x - 7f, visibleRect.y - 7f,
-                visibleRect.width + 14f, visibleRect.height + 14f), combatUnit);
 
             var footY = animatedSlotRect.yMax - 5f;
             DrawGroundShadow(FormationGroundShadowRect(
@@ -1683,7 +1953,7 @@ namespace SeekerAutoChess.Prototype
                     new Vector2(animatedSlotRect.center.x, animatedSlotRect.yMax - 5f));
             }
             DrawPieceBase(new Vector2(animatedSlotRect.center.x, footY), opacity,
-                visibleRect.width);
+                visibleRect.width, combatUnit.IsPlayer);
             var characterMatrix = GUI.matrix;
             GUI.matrix = oldMatrix;
             DrawBattleFeedbackForUnit(combatUnit.Id);
@@ -1697,7 +1967,7 @@ namespace SeekerAutoChess.Prototype
 
             DrawBattleUnitHud(combatUnit, animatedSlotRect.center.x, visibleRect.y,
                 visibleRect.width, opacity,
-                PieceBaseBottomY(footY, visibleRect.width));
+                PieceBaseBottomY(footY, visibleRect.width, combatUnit.IsPlayer));
         }
 
         private static void DrawStaticBattleSprite(Rect canvasRect, Sprite sprite, bool flipX)
@@ -1722,8 +1992,24 @@ namespace SeekerAutoChess.Prototype
             Vector2 footPosition,
             float opacity,
             float visibleCharacterWidth,
+            bool defender,
             string baseSkinId = PieceBasePresentationContract.DefaultSkinId)
         {
+            Texture2D equippedTexture;
+            if (TryGetEquippedBaseTexture(defender, out equippedTexture))
+            {
+                var equippedArea = new Rect(
+                    footPosition.x - StoreCosmeticFormalArtContract.BaseFootAnchorX,
+                    footPosition.y - StoreCosmeticFormalArtContract.BaseFootAnchorY,
+                    StoreCosmeticFormalArtContract.BaseWidth,
+                    StoreCosmeticFormalArtContract.BaseHeight);
+                var equippedColor = GUI.color;
+                GUI.color = WithOpacity(Color.white, opacity);
+                GUI.DrawTexture(equippedArea, equippedTexture, ScaleMode.StretchToFill, true);
+                GUI.color = equippedColor;
+                return;
+            }
+
             PieceBaseSkinDefinition baseDefinition;
             Sprite baseSprite;
             if (!artCatalog.TryGetPieceBase(baseSkinId, out baseDefinition, out baseSprite)) return;
@@ -1742,11 +2028,27 @@ namespace SeekerAutoChess.Prototype
             GUI.color = oldColor;
         }
 
-        private static float PieceBaseBottomY(
-            float footY, float visibleCharacterWidth)
+        private float PieceBaseBottomY(
+            float footY, float visibleCharacterWidth, bool defender)
         {
+            Texture2D equippedTexture;
+            if (TryGetEquippedBaseTexture(defender, out equippedTexture))
+                return footY + StoreCosmeticFormalArtContract.BaseHeight -
+                       StoreCosmeticFormalArtContract.BaseFootAnchorY;
             return footY + PieceBasePresentationContract.DisplayHeightForVisibleCharacterWidth(
                 visibleCharacterWidth) * (1f - PieceBasePresentationContract.FootAnchorTopNormalizedY);
+        }
+
+        private bool TryGetEquippedBaseTexture(bool defender, out Texture2D texture)
+        {
+            texture = null;
+            var resourceId = StoreCosmeticFormalArtContract.BaseResourceId(
+                equippedBasePackProductId, defender);
+            if (string.IsNullOrEmpty(resourceId)) return false;
+            texture = artCatalog.GetStoreCosmeticTexture(resourceId, false);
+            return texture != null &&
+                   texture.width == StoreCosmeticFormalArtContract.BaseWidth &&
+                   texture.height == StoreCosmeticFormalArtContract.BaseHeight;
         }
 
         private void DrawBattleUnitHud(
@@ -1928,7 +2230,8 @@ namespace SeekerAutoChess.Prototype
                 var backKey = currentView == ScreenView.Defense ? "arena.back" :
                     currentView == ScreenView.Deck ? "character.backToDeck" :
                     currentView == ScreenView.Warehouse &&
-                    (warehouseEquipmentDetailOpen || warehouseLanternDetailOpen)
+                    (warehouseEquipmentDetailOpen || warehouseLanternDetailOpen ||
+                     warehouseCosmeticDetailOpen || firstLightseekerBadgeDetailOpen)
                         ? "equipment.backToWarehouse" : "home.back";
                 var backArea = expeditionHeader
                     ? HeaderButtonArea(2)
@@ -1969,6 +2272,15 @@ namespace SeekerAutoChess.Prototype
                         }
                         warehouseLanternDetailOpen = false;
                         warehouseLanternDetailId = null;
+                    }
+                    else if (currentView == ScreenView.Warehouse && warehouseCosmeticDetailOpen)
+                    {
+                        warehouseCosmeticDetailOpen = false;
+                        warehouseCosmeticDetailProductId = null;
+                    }
+                    else if (currentView == ScreenView.Warehouse && firstLightseekerBadgeDetailOpen)
+                    {
+                        firstLightseekerBadgeDetailOpen = false;
                     }
                     else currentView = currentView == ScreenView.Defense ? ScreenView.Arena : ScreenView.Home;
                     confirmAbandon = false;
@@ -2307,25 +2619,50 @@ namespace SeekerAutoChess.Prototype
                     ? "home.restartExpedition"
                     : hasProgress ? "home.continueExpedition" : "home.startExpedition";
             var actionRect = HomeLighthouseRect(HomeLighthouseV140Layout.ExpeditionButton);
+            var entryEnabled = GUI.enabled && !formalExpeditionEntryInProgress;
             var pointerDown = Event.current != null && Event.current.type == EventType.MouseDown &&
-                              actionRect.Contains(Event.current.mousePosition);
-            var actionResource = GUI.enabled
+                              actionRect.Contains(Event.current.mousePosition) && entryEnabled;
+            var actionResource = entryEnabled
                 ? pointerDown
                     ? PrototypeArtResourceIds.HomeLighthouseExpeditionPressed
                     : PrototypeArtResourceIds.HomeLighthouseExpeditionNormal
                 : PrototypeArtResourceIds.HomeLighthouseExpeditionDisabled;
-            var actionModule = GUI.enabled
+            var actionModule = entryEnabled
                 ? pointerDown
                     ? HomeLighthouseV140Layout.ExpeditionPressedModule
                     : HomeLighthouseV140Layout.ExpeditionNormalModule
                 : HomeLighthouseV140Layout.ExpeditionDisabledModule;
             DrawHomeLighthouseModule(actionResource, actionModule);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.ExpeditionLabel, T(startKey) + "  ›", 42,
+            var expeditionLabelKey = !string.IsNullOrWhiteSpace(formalExpeditionEntryStatusKey) &&
+                                     Time.realtimeSinceStartup < formalExpeditionEntryStatusExpiresAt
+                ? formalExpeditionEntryStatusKey
+                : startKey;
+            if (expeditionLabelKey == startKey) formalExpeditionEntryStatusKey = null;
+            DrawHomeLighthouseText(HomeLighthouseV140Layout.ExpeditionLabel,
+                T(expeditionLabelKey) + "  ›", 42,
                 HomeLighthouseGold, TextAnchor.MiddleCenter, true, false);
+            var previousEnabled = GUI.enabled;
+            GUI.enabled = entryEnabled;
             var startPressed = GUI.Button(actionRect, GUIContent.none, GUIStyle.none);
+            GUI.enabled = previousEnabled;
             if (startPressed)
             {
                 PlayUiClick(UiAudioCueIds.Confirm, "home-expedition-entry");
+                if (CompetitionDemoMode)
+                {
+                    BeginCompetitionDemoExpeditionFromHome(startsNewRun);
+                    return;
+                }
+                if (UsesServerAuthoritativeExpedition)
+                {
+                    BeginOrRecoverFormalD0FromHomeAsync();
+                    return;
+                }
+                if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                        UsesServerAuthoritativeExpedition))
+                {
+                    return;
+                }
                 if (startsNewRun) RestartRun();
                 homeTopMenu = 0;
                 currentView = ScreenView.Expedition;
@@ -2336,6 +2673,7 @@ namespace SeekerAutoChess.Prototype
                 PlayUiClick(UiAudioCueIds.Tap, "home-chapter-leaderboard");
                 homeTopMenu = 0;
                 currentView = ScreenView.Leaderboard;
+                RequestBountyTowerRefreshIfNeeded(false);
             }
             HandleHomeChapterPointer(HomeLighthouseRect(HomeLighthouseV140Layout.IslandInteraction));
 
@@ -2366,6 +2704,34 @@ namespace SeekerAutoChess.Prototype
             };
             style.normal.textColor = color;
             GUI.Label(HomeLighthouseRect(reference), new GUIContent(text), style);
+        }
+
+        private void DrawHomeLighthouseFittedText(ReferenceUiRect reference, string text,
+            int preferredFontSize, int minimumFontSize, Color color, TextAnchor alignment,
+            bool emphasized, bool wordWrap)
+        {
+            var area = HomeLighthouseRect(reference);
+            var content = new GUIContent(text ?? string.Empty);
+            GUIStyle fitted = null;
+            for (var size = preferredFontSize; size >= minimumFontSize; size--)
+            {
+                var candidate = new GUIStyle(GUI.skin.label)
+                {
+                    font = HomeV38SerifFont(text, emphasized),
+                    fontSize = size,
+                    fontStyle = FontStyle.Normal,
+                    alignment = alignment,
+                    clipping = TextClipping.Clip,
+                    wordWrap = wordWrap,
+                    richText = false
+                };
+                candidate.normal.textColor = color;
+                var requiredHeight = candidate.CalcHeight(content, area.width);
+                var requiredWidth = wordWrap ? area.width : candidate.CalcSize(content).x;
+                fitted = candidate;
+                if (requiredWidth <= area.width && requiredHeight <= area.height) break;
+            }
+            GUI.Label(area, content, fitted);
         }
 
         private Font HomeV38SerifFont(string text, bool emphasized)
@@ -2466,33 +2832,50 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawHomeDynamicHud()
         {
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.PlayerName, T("home.playerName"), 34,
-                HomeLighthouseGold, TextAnchor.MiddleLeft, true, false);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.PlayerPower,
-                string.Format(T("home.pvpPower"), CurrentPvpDeckPower()), 23,
-                HomeLighthouseGold, TextAnchor.MiddleLeft, false, false);
-
             DrawHomeLighthouseText(HomeLighthouseV140Layout.EnergyValue, expeditionEnergy.ToString(), 23,
                 HomeLighthouseGold, TextAnchor.MiddleCenter, false, false);
             DrawHomeLighthouseText(HomeLighthouseV140Layout.SkrValue, WalletBalanceText(), 23,
                 HomeLighthouseGold, TextAnchor.MiddleCenter, false, false);
             DrawHomeLighthouseText(HomeLighthouseV140Layout.TideValue, tideCrystalBalance.ToString(), 23,
                 HomeLighthouseGold, TextAnchor.MiddleCenter, false, false);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.AffairsLabel, T("home.affairs"), 24,
-                HomeLighthouseGold, TextAnchor.MiddleCenter, false, false);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.WarehouseLabel, T("home.warehouse"), 24,
-                HomeLighthouseGold, TextAnchor.MiddleCenter, false, false);
+            if (GUI.Button(HomeLighthouseRect(HomeLighthouseV140Layout.ProfileClick),
+                    GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Tap, "home-profile-entry");
+                homeTopMenu = 0;
+                profileScroll = Vector2.zero;
+                profileSettingsOpen = false;
+                currentView = ScreenView.Profile;
+            }
 
-            if (GUI.Button(HomeLighthouseRect(HomeLighthouseV140Layout.Affairs), GUIContent.none, GUIStyle.none))
+            if (GUI.Button(HomeLighthouseRect(HomeLighthouseV140Layout.AffairsClick),
+                    GUIContent.none, GUIStyle.none))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "home-affairs-menu");
                 homeTopMenu = homeTopMenu == 1 ? 0 : 1;
             }
-            if (GUI.Button(HomeLighthouseRect(HomeLighthouseV140Layout.Warehouse), GUIContent.none, GUIStyle.none))
+            if (GUI.Button(HomeLighthouseRect(HomeLighthouseV140Layout.WarehouseClick),
+                    GUIContent.none, GUIStyle.none))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "home-warehouse-entry");
                 OpenWarehouse();
             }
+        }
+
+        private void DrawHomeLeftCompleteModule()
+        {
+            var placement = HomeLighthouseV140Layout.LeftCompleteModule;
+            var texture = artCatalog.GetHomeLeftCompleteTexture(
+                HomeLeftCompleteFormalArtContract.CompleteComponent);
+            if (texture == null) return;
+            if (texture.width != (int)placement.Width || texture.height != (int)placement.Height)
+            {
+                Debug.LogError("Rejected resized formal-home-left module: " + texture.width + "x" +
+                               texture.height + " expected " + placement.Width + "x" + placement.Height);
+                return;
+            }
+            GUI.color = Color.white;
+            GUI.DrawTexture(HomeLighthouseRect(placement), texture, ScaleMode.StretchToFill, true);
         }
 
         private void DrawHomeLighthouseCanvas(string resourceId, bool alphaBlend, float yOffset = 0f)
@@ -2558,6 +2941,44 @@ namespace SeekerAutoChess.Prototype
                 ScaleMode.StretchToFill, true);
         }
 
+        private void DrawHomeLanternModularComponent(
+            LanternInstanceState instance, Rect area, string context)
+        {
+            if (instance == null) return;
+            if (Mathf.RoundToInt(area.width) != HomeLanternModularArtContract.NativeSize ||
+                Mathf.RoundToInt(area.height) != HomeLanternModularArtContract.NativeSize)
+            {
+                Debug.LogError("Rejected non-native modular home lantern target in " + context + ": " +
+                               area.width + "x" + area.height + " expected " +
+                               HomeLanternModularArtContract.NativeSize + "x" +
+                               HomeLanternModularArtContract.NativeSize);
+                return;
+            }
+
+            var appearanceId = HomeLanternModularArtContract.ResolveAppearanceId(instance.TemplateId);
+            var qualityBackground = artCatalog.GetHomeLanternQualityBackground(instance.Quality);
+            var pattern = artCatalog.GetHomeLanternPattern(appearanceId);
+            if (!IsNativeHomeLanternLayer(qualityBackground) || !IsNativeHomeLanternLayer(pattern))
+            {
+                Debug.LogError("Missing or resized modular home lantern layer in " + context + ": " +
+                               instance.Quality + "/" + appearanceId);
+                return;
+            }
+
+            var drawArea = new Rect(area.x, area.y,
+                HomeLanternModularArtContract.NativeSize, HomeLanternModularArtContract.NativeSize);
+            GUI.color = Color.white;
+            GUI.DrawTexture(drawArea, qualityBackground, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(drawArea, pattern, ScaleMode.StretchToFill, true);
+        }
+
+        private static bool IsNativeHomeLanternLayer(Texture2D texture)
+        {
+            return texture != null &&
+                   texture.width == HomeLanternModularArtContract.NativeSize &&
+                   texture.height == HomeLanternModularArtContract.NativeSize;
+        }
+
         private void DrawHomeLanternPanel()
         {
             var canLight = chapterOneLighthouse.CanLight;
@@ -2583,11 +3004,11 @@ namespace SeekerAutoChess.Prototype
             DrawHomeLighthouseText(HomeLighthouseV140Layout.LanternLabel,
                 T("home.lantern.current"), 22, HomeLighthouseSecondary,
                 TextAnchor.MiddleLeft, false, false);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.LanternName, lanternName, 32,
-                HomeLighthouseDeep, TextAnchor.MiddleLeft, true, false);
-            DrawHomeLighthouseText(HomeLighthouseV140Layout.LanternDetails,
-                coreEffect, 24,
-                HomeLighthouseSecondary, TextAnchor.MiddleLeft, false, false);
+            DrawHomeLighthouseFittedText(HomeLighthouseV140Layout.LanternName, lanternName,
+                32, 18, HomeLighthouseDeep, TextAnchor.MiddleLeft, true, false);
+            DrawHomeLighthouseFittedText(HomeLighthouseV140Layout.LanternDetails,
+                coreEffect, 22, 17,
+                HomeLighthouseSecondary, TextAnchor.UpperLeft, false, true);
 
             DrawHomeLighthouseText(HomeLighthouseV140Layout.LanternChange, T("home.lantern.change"), 24,
                 HomeLighthouseGold, TextAnchor.MiddleCenter, true, false);
@@ -2604,7 +3025,6 @@ namespace SeekerAutoChess.Prototype
                 if (bossUnlockRequired)
                 {
                     homeLanternUnlockHintUntil = Time.unscaledTime + 3f;
-                    homeNoticeKey = "home.lantern.unlockHint";
                 }
                 else
                 {
@@ -2630,11 +3050,9 @@ namespace SeekerAutoChess.Prototype
         {
             if (chapterOneLighthouse.IsLit)
             {
-                homeNoticeKey = "home.notice.nextIslandPlaceholder";
                 return;
             }
             if (!canLight || !chapterOneLighthouse.TryLight()) return;
-            homeNoticeKey = "home.notice.lighthouseLit";
             SaveGame();
         }
 
@@ -2687,6 +3105,9 @@ namespace SeekerAutoChess.Prototype
             warehouseEquipmentDetailId = null;
             warehouseLanternDetailOpen = false;
             warehouseLanternDetailId = null;
+            warehouseCosmeticDetailOpen = false;
+            warehouseCosmeticDetailProductId = null;
+            firstLightseekerBadgeDetailOpen = false;
             CloseLanternChangeConfirmation();
             homeTopMenu = 0;
             currentView = ScreenView.Warehouse;
@@ -2694,73 +3115,30 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawHomeTopMenu()
         {
-            var panelHeight = homeTopMenu == 3 ? 304f : homeTopMenu == 1 ? 236f : 168f;
-            var panel = new Rect(690f, Mathf.Max(278f, layoutContentHeight * 0.122f), 334f, panelHeight);
-            GUI.color = new Color(0.035f, 0.10f, 0.12f, 0.94f);
-            GUI.DrawTexture(panel, Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            if (homeTopMenu == 3)
+            var texture = HomeHandbookPopover();
+            if (texture == null || texture.width != 1024 || texture.height != 1536)
             {
-                if (GUI.Button(new Rect(panel.x + 18f, panel.y + 24f, 294f, 52f), T("language"),
-                        ButtonStyle(UiButtonSemantic.Secondary, 16)))
-                {
-                    PlayUiClick(UiAudioCueIds.Tap, "settings-language");
-                    language = language == GameLanguage.ChineseSimplified
-                        ? GameLanguage.English
-                        : GameLanguage.ChineseSimplified;
-                    SaveLanguagePreference();
-                }
-                if (GUI.Button(new Rect(panel.x + 18f, panel.y + 92f, 294f, 52f), T("home.audio"),
-                        ButtonStyle(UiButtonSemantic.Secondary, 16)))
-                {
-                    PlayUiClick(UiAudioCueIds.Tap, "settings-audio");
-                    homeNoticeKey = "home.notice.audio";
-                    homeTopMenu = 0;
-                }
-                if (GUI.Button(new Rect(panel.x + 18f, panel.y + 160f, 294f, 52f), T("home.credits"),
-                        ButtonStyle(UiButtonSemantic.Secondary, 16)))
-                {
-                    PlayUiClick(UiAudioCueIds.Settings, "open-credits");
-                    creditsScroll = Vector2.zero;
-                    homeTopMenu = 0;
-                    currentView = ScreenView.Credits;
-                }
-                if (Debug.isDebugBuild || Application.isEditor)
-                {
-                    GUI.Label(new Rect(panel.x + 18f, panel.y + 226f, 294f, 50f), T("buildVersion"),
-                        Style(12, new Color(0.72f, 0.82f, 0.84f), TextAnchor.MiddleCenter));
-                }
+                Debug.LogError("Accepted home handbook popover is missing or resized.");
                 return;
             }
+            GUI.DrawTexture(new Rect(28f, 0f, 1024f, 1536f), texture, ScaleMode.StretchToFill, true);
+            DrawHomeLighthouseText(new ReferenceUiRect(350f, 348f, 380f, 58f),
+                language == Localization.GameLanguage.ChineseSimplified ? "航海手册" : "SAILING HANDBOOK",
+                32, new Color(231f / 255f, 213f / 255f, 166f / 255f), TextAnchor.MiddleCenter, true);
+            DrawHomeLighthouseText(new ReferenceUiRect(405f, 436f, 300f, 96f),
+                T("home.daily"), 29, new Color(183f / 255f, 198f / 255f, 205f / 255f),
+                TextAnchor.MiddleCenter, false);
+            DrawHomeLighthouseText(new ReferenceUiRect(405f, 582f, 300f, 96f),
+                T("home.events"), 29, new Color(183f / 255f, 198f / 255f, 205f / 255f),
+                TextAnchor.MiddleCenter, false);
+            DrawHomeLighthouseText(new ReferenceUiRect(405f, 728f, 300f, 96f),
+                language == Localization.GameLanguage.ChineseSimplified ? "玩法教程" : "GAMEPLAY TUTORIAL",
+                31, new Color(28f / 255f, 67f / 255f, 84f / 255f), TextAnchor.MiddleCenter, true);
 
-            var firstKey = homeTopMenu == 1 ? "home.daily" : "home.warehouse";
-            var secondKey = homeTopMenu == 1 ? "home.events" : "home.market";
-            if (GUI.Button(new Rect(panel.x + 18f, panel.y + 24f, 294f, 52f), T(firstKey),
-                    ButtonStyle(UiButtonSemantic.Secondary, 16)))
+            if (GUI.Button(new Rect(271f, 704f, 536f, 120f), GUIContent.none, GUIStyle.none))
             {
-                PlayUiClick(UiAudioCueIds.Tap, "home-top-menu-primary");
-                if (homeTopMenu == 1)
-                {
-                    homeNoticeKey = "home.notice.daily";
-                    homeTopMenu = 0;
-                }
-                else
-                {
-                    OpenWarehouse();
-                }
-            }
-            if (GUI.Button(new Rect(panel.x + 18f, panel.y + 92f, 294f, 52f), T(secondKey),
-                    ButtonStyle(homeTopMenu == 1 ? UiButtonSemantic.Secondary : UiButtonSemantic.Reward, 16)))
-            {
-                PlayUiClick(UiAudioCueIds.Tap, "home-top-menu-secondary");
-                homeNoticeKey = homeTopMenu == 1 ? "home.notice.events" : "home.notice.market";
-                homeTopMenu = 0;
-            }
-            if (homeTopMenu == 1 && GUI.Button(new Rect(panel.x + 18f, panel.y + 160f, 294f, 52f),
-                    T("home.settings"), ButtonStyle(UiButtonSemantic.Secondary, 16)))
-            {
-                PlayUiClick(UiAudioCueIds.Tap, "home-settings-entry");
-                homeTopMenu = 3;
+                PlayUiClick(UiAudioCueIds.Tap, "home-handbook-tutorial");
+                OpenGameplayTutorialFromHandbook();
             }
         }
 
@@ -2889,12 +3267,14 @@ namespace SeekerAutoChess.Prototype
         {
             if (expeditionFlow.IsComplete) return false;
             if (expeditionEntryCommitted) return true;
-            var isUntouchedMapStart = round == 1 && coins == 10 && health == 10 &&
+            var isUntouchedMapStart = round == 1 && coins == 10 &&
+                                      health == ChapterOneExpeditionLifeRules.InitialLife &&
                                       runRoster.TotalCount == 0 &&
                                       expeditionFlow.Phase == ExpeditionPhase.Route &&
                                       string.Equals(currentMapNodeId, "M00", StringComparison.Ordinal);
             if (isUntouchedMapStart) return false;
-            return round > 1 || coins != 10 || health != 10 || runRoster.TotalCount > 0 ||
+            return round > 1 || coins != 10 ||
+                   health != ChapterOneExpeditionLifeRules.InitialLife || runRoster.TotalCount > 0 ||
                    expeditionFlow.Phase != ExpeditionPhase.Preparation;
         }
 
@@ -3013,12 +3393,17 @@ namespace SeekerAutoChess.Prototype
                 !alternate, "harbor.blacksmith",
                 alternate ? "harbor.construction" : "harbor.blacksmithDescription", false, 1,
                 alternate);
+            var lanternWorkshopConstruction =
+                alternate || !LanternWorkshopReleased;
             DrawHarborDestination(alternate
-                    ? new Rect(676f, 817f, 260f, 78f)
-                    : new Rect(676f, 812f, 260f, 88f),
-                !alternate, "harbor.lanternWorkshop",
-                alternate ? "harbor.construction" : "harbor.lanternWorkshopDescription", false, 3,
-                alternate);
+                     ? new Rect(676f, 817f, 260f, 78f)
+                     : new Rect(676f, 812f, 260f, 88f),
+                !lanternWorkshopConstruction,
+                "harbor.lanternWorkshop",
+                lanternWorkshopConstruction
+                    ? "harbor.construction"
+                    : "harbor.lanternWorkshopDescription",
+                false, 3, lanternWorkshopConstruction);
 
             DrawHarborDestination(new Rect(114f, 1030f, 260f, 78f), false,
                 "harbor.construction", "harbor.unavailable", false, 4, true);
@@ -3058,8 +3443,20 @@ namespace SeekerAutoChess.Prototype
             if (!enabled || !GUI.Button(area, GUIContent.none, GUIStyle.none)) return;
             PlayUiClick(UiAudioCueIds.Tap, opensBountyTower ? "harbor-bounty-tower" : "harbor-feature-select");
             selectedHarborFeatureIndex = featureIndex;
-            if (opensBountyTower) currentView = ScreenView.Leaderboard;
+            if (opensBountyTower)
+            {
+                currentView = ScreenView.Leaderboard;
+                RequestBountyTowerRefreshIfNeeded(false);
+            }
             else if (featureIndex == 0) currentView = ScreenView.Market;
+            else if (featureIndex == 3)
+            {
+                lanternWorkshopMode = true;
+                lanternWorkshopSelectedInstanceId = null;
+                lanternWorkshopPendingOptionId = null;
+                currentView = ScreenView.Warehouse;
+                RequestLanternWorkshopRefresh();
+            }
         }
 
         private void DrawHarborModule(string resourceId, Rect area, int expectedWidth, int expectedHeight)
@@ -3088,138 +3485,189 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawStoreScreen(bool interactive)
         {
-            // Store E v1.1.0 is assembled from complete native-size modules. The preview
-            // remains outside Resources and is used only for screenshot comparison.
+            // Render the complete accepted v1.6.0 catalog. Products whose economy
+            // contract is still pending remain visible but cannot be purchased.
             DrawHomeLighthouseCanvas(PrototypeArtResourceIds.HomeLighthouseBackground, false);
-            DrawStoreModule(StoreFormalArtContract.BackgroundVeilResourceId,
-                new Rect(0f, 0f, 1080f, 2400f), 1080, 2400);
-            DrawStoreModule(StoreFormalArtContract.HeaderBadgeResourceId,
-                new Rect(52f, 36f, 228f, 48f), 228, 48);
-            DrawStoreText(new Rect(54f, 38f, 224f, 44f), T("store.statusBadge"), 17,
-                new Color32(231, 208, 146, 255), TextAnchor.MiddleCenter, true);
-
-            DrawStoreText(new Rect(54f, 92f, 420f, 72f), T("store.title"), 52,
+            DrawStoreText(new Rect(72f, 42f, 420f, 72f), T("store.title"), 52,
                 new Color32(244, 231, 195, 255), TextAnchor.MiddleLeft, true);
-            DrawStoreText(new Rect(58f, 160f, 640f, 42f), T("store.subtitle.formal"), 21,
+            DrawStoreText(new Rect(76f, 112f, 650f, 42f), T("store.subtitle.formal"), 21,
                 new Color32(201, 218, 211, 255), TextAnchor.MiddleLeft, false);
-            DrawStoreModule(StoreFormalArtContract.HeaderDividerResourceId,
-                new Rect(58f, 218f, 964f, 2f), 964, 2);
             DrawStoreModule(StoreFormalArtContract.BalancePanelResourceId,
-                new Rect(788f, 70f, 240f, 96f), 240, 96);
+                new Rect(768f, 36f, 240f, 96f), 240, 96);
             DrawStoreModule(StoreFormalArtContract.SkrBadgeResourceId,
-                new Rect(810f, 86f, 58f, 62f), 58, 62);
-            DrawStoreText(new Rect(872f, 80f, 118f, 48f), WalletBalanceText(), 34,
+                new Rect(790f, 52f, 58f, 62f), 58, 62);
+            DrawStoreText(new Rect(852f, 46f, 118f, 48f), WalletBalanceText(), 34,
                 new Color32(244, 231, 195, 255), TextAnchor.MiddleRight, true);
-            DrawStoreText(new Rect(872f, 124f, 118f, 30f), T("store.skrBalance"), 17,
+            DrawStoreText(new Rect(852f, 90f, 118f, 30f), T("store.skrBalance"), 17,
                 new Color32(201, 218, 211, 255), TextAnchor.MiddleRight, false);
 
-            DrawStoreModule(StoreFormalArtContract.MainBoardResourceId,
-                new Rect(46f, 248f, 988f, 1814f), 988, 1814);
-            DrawStoreText(new Rect(92f, 285f, 300f, 55f), T("store.goods"), 32,
-                new Color32(31, 61, 65, 255), TextAnchor.MiddleLeft, true);
-            DrawStoreText(new Rect(92f, 340f, 240f, 38f), T("store.characterPacks"), 21,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleLeft, false);
-            DrawStoreModule(StoreFormalArtContract.PityStripResourceId,
-                new Rect(363f, 283f, 624f, 76f), 624, 76);
-            DrawStoreText(new Rect(383f, 285f, 126f, 72f), T("store.pity"), 17,
-                new Color32(31, 61, 65, 255), TextAnchor.MiddleLeft, true);
-            DrawStoreText(new Rect(513f, 285f, 190f, 72f),
-                T("quality.epic") + " " + storeEpicPitySkr + " / " + StoreRules.EpicPityThresholdSkr, 17,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleLeft, false);
-            DrawStoreText(new Rect(703f, 285f, 216f, 72f),
-                T("quality.legendary") + " " + storeLegendaryPitySkr + " / " +
-                StoreRules.LegendaryPityThresholdSkr, 17,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleLeft, false);
-            DrawStoreText(new Rect(917f, 285f, 48f, 72f), T("store.rules"), 17,
-                new Color32(151, 94, 40, 255), TextAnchor.MiddleRight, true);
-
+            var viewport = new Rect(StoreSingleColumnFormalArtContract.ViewportX,
+                StoreSingleColumnFormalArtContract.ViewportY,
+                StoreSingleColumnFormalArtContract.ViewportWidth,
+                StoreSingleColumnFormalArtContract.ViewportHeight);
+            var content = new Rect(0f, 0f, StoreSingleColumnFormalArtContract.ViewportWidth,
+                StoreSingleColumnFormalArtContract.CurrentCatalogContentHeight);
+            var storeEvent = Event.current;
+            var storeEventType = storeEvent.rawType;
+            if (storeEventType == EventType.MouseDown && storeEvent.button == 0 &&
+                viewport.Contains(storeEvent.mousePosition))
+            {
+                storeCatalogPointerDown = storeEvent.mousePosition;
+                storeCatalogPointerLast = storeEvent.mousePosition;
+                storeCatalogPointerHeld = true;
+                storeCatalogPointerDragging = false;
+            }
+            else if (storeEventType == EventType.MouseDrag && storeCatalogPointerHeld)
+            {
+                var pointerPosition = storeEvent.mousePosition;
+                if (Vector2.Distance(storeCatalogPointerDown, pointerPosition) > 12f)
+                    storeCatalogPointerDragging = true;
+                if (storeCatalogPointerDragging)
+                {
+                    var maximumScroll = Mathf.Max(0f, content.height - viewport.height);
+                    var dragDelta = pointerPosition - storeCatalogPointerLast;
+                    storeCatalogScroll.y = Mathf.Clamp(
+                        storeCatalogScroll.y - dragDelta.y, 0f, maximumScroll);
+                    storeEvent.Use();
+                }
+                storeCatalogPointerLast = pointerPosition;
+            }
+            var releaseStorePointerAfterDraw = storeEventType == EventType.MouseUp &&
+                                               storeCatalogPointerHeld;
+            if (releaseStorePointerAfterDraw && storeCatalogPointerDragging)
+                storeEvent.Use();
+            storeCatalogScroll = GUI.BeginScrollView(viewport, storeCatalogScroll, content,
+                false, false, GUIStyle.none, GUIStyle.none);
+            DrawStoreSingleColumnSection(0f, T("store.characterPacks"),
+                T("store.characterPacks.subtitle"));
             var products = StoreCatalog.Products;
-            DrawCharacterPackCard(new Rect(86f, 400f, 438f, 630f), products[0], interactive);
-            DrawCharacterPackCard(new Rect(556f, 400f, 438f, 630f), products[1], interactive);
-            DrawCharacterPackCard(new Rect(86f, 1065f, 438f, 650f), products[2], interactive);
-            DrawBasePackCard(new Rect(556f, 1065f, 438f, 650f), products[3], interactive);
-
-            DrawStoreModule(StoreFormalArtContract.InstructionPanelResourceId,
-                new Rect(84f, 1753f, 912f, 234f), 912, 234);
-            DrawStoreText(new Rect(115f, 1780f, 160f, 40f), T("store.signatureTitle"), 17,
-                new Color32(31, 61, 65, 255), TextAnchor.MiddleLeft, true);
-            DrawStoreText(new Rect(115f, 1825f, 850f, 78f), T("store.signatureHint.formal"), 21,
-                new Color32(44, 72, 73, 255), TextAnchor.UpperLeft, false, true);
-            var paymentOrStatus = string.IsNullOrEmpty(storeStatusMessage) ||
-                                  string.Equals(storeStatusMessage, T("store.status.ready"), StringComparison.Ordinal)
-                ? T("store.signaturePayment.formal")
-                : storeStatusMessage;
-            DrawStoreText(new Rect(115f, 1910f, 850f, 38f), paymentOrStatus, 17,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleLeft, false);
-            if (Time.unscaledTime < storePurchaseNoticeUntil)
+            DrawStoreSingleColumnProductRow(76f, products[0],
+                StoreSingleColumnFormalArtContract.CharacterPackArt[0],
+                T("store.pack.white.description"), interactive);
+            DrawStoreSingleColumnProductRow(414f, products[1],
+                StoreSingleColumnFormalArtContract.CharacterPackArt[1],
+                T("store.pack.blue.description"), interactive);
+            DrawStoreSingleColumnProductRow(752f, products[2],
+                StoreSingleColumnFormalArtContract.CharacterPackArt[2],
+                T("store.pack.orange.description"), interactive);
+            DrawStoreSingleColumnSection(1098f, T("store.baseCategory"),
+                T("store.baseCategory.subtitle"));
+            DrawStoreSingleColumnProductRow(1174f, products[3],
+                StoreSingleColumnFormalArtContract.BasePairArt[0],
+                T("store.basePackDescription.formal"), interactive);
+            DrawStoreSingleColumnProductRow(1512f, products[4],
+                StoreSingleColumnFormalArtContract.BasePairArt[1],
+                T("store.basePackDescription.formal"), interactive);
+            DrawStoreSingleColumnProductRow(1850f, products[5],
+                StoreSingleColumnFormalArtContract.BasePairArt[2],
+                T("store.basePackDescription.formal"), interactive);
+            DrawStoreSingleColumnSection(2196f, T("store.battlefieldCategory"),
+                T("store.battlefieldCategory.subtitle"));
+            DrawStoreSingleColumnProductRow(2272f, products[6],
+                StoreSingleColumnFormalArtContract.BattlefieldArt[0],
+                T("store.battlefieldDescription.formal"), interactive);
+            DrawStoreSingleColumnProductRow(2610f, products[7],
+                StoreSingleColumnFormalArtContract.BattlefieldArt[1],
+                T("store.battlefieldDescription.formal"), interactive);
+            DrawStoreSingleColumnProductRow(2948f, products[8],
+                StoreSingleColumnFormalArtContract.BattlefieldArt[2],
+                T("store.battlefieldDescription.formal"), interactive);
+            GUI.EndScrollView();
+            if (releaseStorePointerAfterDraw)
             {
-                DrawStoreModule(StoreFormalArtContract.PurchaseButtonResourceId,
-                    new Rect(379f, 228f, 322f, 62f), 322, 62);
-                DrawStoreText(new Rect(381f, 230f, 318f, 58f), T("store.status.insufficient"), 25,
-                    new Color32(244, 229, 184, 255), TextAnchor.MiddleCenter, true);
+                storeCatalogPointerHeld = false;
+                storeCatalogPointerDragging = false;
+            }
+
+            if (!string.IsNullOrEmpty(storeStatusMessage) &&
+                !string.Equals(storeStatusMessage, T("store.status.ready"), StringComparison.Ordinal))
+                DrawStoreText(new Rect(180f, 154f, 720f, 32f), storeStatusMessage, 17,
+                    new Color32(244, 231, 195, 255), TextAnchor.MiddleCenter, true);
+        }
+
+        private void DrawStoreSingleColumnSection(float y, string title, string subtitle)
+        {
+            DrawStoreText(new Rect(12f, y, 220f, 44f), title, 31,
+                new Color32(244, 231, 195, 255), TextAnchor.MiddleLeft, true);
+            DrawStoreText(new Rect(12f, y + 44f, 500f, 28f), subtitle, 17,
+                new Color32(201, 218, 211, 255), TextAnchor.MiddleLeft, false);
+            DrawMarketTextureFormal(new Rect(248f, y + 16f, 664f, 20f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.SectionDivider);
+        }
+
+        private void DrawStoreSingleColumnProductRow(float y, StoreProductDefinition product,
+            string artResourceId, string description, bool interactive)
+        {
+            var characterPack = product.ProductType == StoreProductType.CharacterPack;
+            var battlefield = product.ProductType == StoreProductType.Battlefield;
+            DrawStoreSingleColumnModule(StoreSingleColumnFormalArtContract.ProductRow,
+                new Rect(8f, y, 912f, 330f), 912, 330);
+            if (characterPack)
+                DrawStoreSingleColumnModule(artResourceId, new Rect(18f, y + 47f, 280f, 236f), 280, 236);
+            else if (battlefield)
+                DrawStoreSingleColumnModule(artResourceId, new Rect(14f, y + 55f, 300f, 220f), 300, 220);
+            else
+                DrawStoreSingleColumnModule(artResourceId, new Rect(20f, y + 75f, 300f, 180f), 300, 180);
+
+            DrawStoreText(new Rect(340f, y + (characterPack ? 60f : 88f), 310f, 44f),
+                T(product.DisplayNameKey), 27, new Color32(31, 61, 65, 255),
+                TextAnchor.MiddleLeft, true);
+            DrawStoreText(new Rect(340f, y + (characterPack ? 106f : 136f), 310f, 72f),
+                description, 18, new Color32(75, 104, 102, 255), TextAnchor.UpperLeft, false, true);
+            if (characterPack) DrawStoreSingleColumnProbabilityGrid(y, product.PackTier);
+
+            var owned = product.ProductType != StoreProductType.CharacterPack &&
+                         ownedBasePackIds.Contains(product.ProductId);
+            DrawStoreText(new Rect(676f, y + 88f, 200f, 48f),
+                owned ? T("store.owned") : product.IsPurchasable
+                    ? product.PriceSkr + " SKR" : T("store.pricePending"), 25,
+                owned ? new Color32(79, 133, 99, 255) : new Color32(182, 112, 54, 255),
+                TextAnchor.MiddleLeft, true);
+            var button = new Rect(660f, y + 152f, 220f, 68f);
+            var enabled = interactive && !owned && product.IsPurchasable;
+            var clicked = DrawLanternDetailAStateButton(button,
+                GlobalButtonFormalArtContract.ResourceRoot,
+                GlobalButtonFormalArtContract.MediumNormal,
+                GlobalButtonFormalArtContract.MediumPressed,
+                GlobalButtonFormalArtContract.MediumDisabled, enabled);
+            DrawStoreText(button, T(owned ? "store.owned" : product.IsPurchasable
+                    ? "store.purchase" : "store.pending"), 23,
+                new Color32(244, 229, 184, 255), TextAnchor.MiddleCenter, true);
+            if (!clicked) return;
+            PlayUiClick(UiAudioCueIds.Purchase, "store-single-column-" + product.ProductId);
+            TryPurchaseStoreProduct(product);
+        }
+
+        private void DrawStoreSingleColumnProbabilityGrid(float y, CharacterPackTier tier)
+        {
+            var values = StoreProbabilityValues(tier);
+            var xOffsets = new[] { 340f, 462f, 340f, 462f, 340f };
+            var yOffsets = new[] { 195f, 195f, 231f, 231f, 267f };
+            for (var index = 0; index < values.Length; index++)
+            {
+                var badgeId = StoreFormalArtContract.QualityBadgeResourceIds[index];
+                DrawStoreModule(badgeId,
+                    new Rect(xOffsets[index], y + yOffsets[index], 30f, 30f), 30, 30);
+                DrawStoreText(new Rect(xOffsets[index] + 34f, y + yOffsets[index] - 2f, 82f, 34f),
+                    values[index], 16, new Color32(44, 72, 73, 255),
+                    TextAnchor.MiddleLeft, true);
             }
         }
 
-        private void DrawCharacterPackCard(Rect area, StoreProductDefinition product, bool interactive)
+        private void DrawStoreSingleColumnModule(string resourceId, Rect rect,
+            int expectedWidth, int expectedHeight)
         {
-            var tall = area.height > 640f;
-            DrawStoreModule(tall ? StoreFormalArtContract.TallProductCardResourceId :
-                    StoreFormalArtContract.ProductCardResourceId,
-                new Rect(area.x - 2f, area.y - 2f, area.width + 4f, area.height + 4f),
-                442, tall ? 654 : 634);
-            DrawStoreText(new Rect(area.x + 20f, area.y + 18f, area.width - 40f, 50f),
-                T(product.DisplayNameKey), 27, new Color32(31, 61, 65, 255),
-                TextAnchor.MiddleCenter, true);
-            DrawStoreCardBackFan(new Rect(area.x + 42f, area.y + 72f, area.width - 84f, 330f));
-            DrawStoreProbabilityGrid(new Rect(area.x + 26f, area.y + 402f, area.width - 52f, 82f),
-                product.PackTier);
-            DrawStoreText(new Rect(area.x + 20f, area.y + 492f, area.width - 40f, 40f),
-                product.PriceSkr + " SKR", 25, new Color32(165, 97, 51, 255),
-                TextAnchor.MiddleCenter, true);
-            DrawStoreModule(StoreFormalArtContract.PurchaseButtonResourceId,
-                new Rect(area.x + 58f, area.y + 543f, 322f, 62f), 322, 62);
-            DrawStoreText(new Rect(area.x + 60f, area.y + 545f, 318f, 58f), T("store.purchase"), 23,
-                new Color32(244, 229, 184, 255), TextAnchor.MiddleCenter, true);
-            // Keep the button interactive when funds are insufficient so the
-            // purchase attempt can provide explicit feedback instead of silently
-            // ignoring the tap. TryPurchaseStoreProduct remains authoritative.
-            GUI.enabled = interactive;
-            if (GUI.Button(new Rect(area.x + 60f, area.y + 545f, 318f, 58f), GUIContent.none, GUIStyle.none))
+            var texture = artCatalog.GetStoreSingleColumnTexture(resourceId);
+            if (texture == null || texture.width != expectedWidth || texture.height != expectedHeight)
             {
-                PlayUiClick(UiAudioCueIds.Purchase, "store-pack-" + product.ProductId);
-                TryPurchaseStoreProduct(product);
+                Debug.LogError("Rejected non-native Store v1.6 module: " + resourceId);
+                return;
             }
-            GUI.enabled = interactive;
-        }
-
-        private void DrawBasePackCard(Rect area, StoreProductDefinition product, bool interactive)
-        {
-            DrawStoreModule(StoreFormalArtContract.TallProductCardResourceId,
-                new Rect(area.x - 2f, area.y - 2f, area.width + 4f, area.height + 4f), 442, 654);
-            DrawStoreText(new Rect(area.x + 20f, area.y + 18f, area.width - 40f, 50f),
-                T(product.DisplayNameKey), 27, new Color32(31, 61, 65, 255),
-                TextAnchor.MiddleCenter, true);
-            DrawStoreBasePair(new Rect(area.x + 29f, area.y + 75f, 380f, 300f));
-            DrawStoreText(new Rect(576f, 1458f, 398f, 40f), T("store.basePackPair"), 21,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleCenter, false);
-            DrawStoreText(new Rect(576f, 1498f, 398f, 36f), T("store.basePackDescription.formal"), 17,
-                new Color32(44, 72, 73, 255), TextAnchor.MiddleCenter, false);
-            var owned = ownedBasePackIds.Contains(product.ProductId);
-            DrawStoreText(new Rect(576f, 1538f, 398f, 40f),
-                owned ? T("store.owned") : product.PriceSkr + " SKR",
-                25, owned ? new Color32(79, 133, 99, 255) : new Color32(165, 97, 51, 255),
-                TextAnchor.MiddleCenter, true);
-            DrawStoreModule(StoreFormalArtContract.PurchaseButtonResourceId,
-                new Rect(614f, 1608f, 322f, 62f), 322, 62);
-            DrawStoreText(new Rect(616f, 1610f, 318f, 58f), T(owned ? "store.owned" : "store.purchase"), 23,
-                new Color32(244, 229, 184, 255), TextAnchor.MiddleCenter, true);
-            GUI.enabled = interactive && !owned;
-            if (GUI.Button(new Rect(616f, 1610f, 318f, 58f), GUIContent.none, GUIStyle.none))
-            {
-                PlayUiClick(UiAudioCueIds.Purchase, "store-base-" + product.ProductId);
-                TryPurchaseStoreProduct(product);
-            }
-            GUI.enabled = interactive;
+            var previousColor = GUI.color;
+            GUI.color = Color.white;
+            GUI.DrawTexture(rect, texture, ScaleMode.StretchToFill, true);
+            GUI.color = previousColor;
         }
 
         private void DrawStoreCardBackFan(Rect area)
@@ -3237,47 +3685,6 @@ namespace SeekerAutoChess.Prototype
                 StoreFormalArtContract.RightCardAngle);
             DrawRotatedStoreTexture(centerCard, new Vector2(area.x + area.width * 0.50f, centerY - 5f),
                 StoreFormalArtContract.CenterCardWidth, StoreFormalArtContract.CenterCardHeight, 0f);
-        }
-
-        private void DrawStoreBasePair(Rect area)
-        {
-            var defender = GetVerifiedStoreTexture(StoreFormalArtContract.DefenderBaseResourceId,
-                StoreFormalArtContract.BaseWidth, StoreFormalArtContract.BaseHeight);
-            var enemy = GetVerifiedStoreTexture(StoreFormalArtContract.EnemyBaseResourceId,
-                StoreFormalArtContract.BaseWidth, StoreFormalArtContract.BaseHeight);
-            DrawRotatedStoreTexture(defender,
-                new Vector2(area.x + 163.4f, area.y + 135f),
-                StoreFormalArtContract.BaseWidth, StoreFormalArtContract.BaseHeight,
-                StoreFormalArtContract.DefenderBaseAngle);
-            DrawRotatedStoreTexture(enemy,
-                new Vector2(area.x + 228f, area.y + 174f),
-                StoreFormalArtContract.BaseWidth, StoreFormalArtContract.BaseHeight,
-                StoreFormalArtContract.EnemyBaseAngle);
-            DrawStoreModule(StoreFormalArtContract.DefenderLabelResourceId,
-                new Rect(627f, 1390f, 108f, 40f), 108, 40);
-            DrawStoreModule(StoreFormalArtContract.EnemyLabelResourceId,
-                new Rect(815f, 1390f, 108f, 40f), 108, 40);
-            DrawStoreText(new Rect(629f, 1392f, 104f, 36f), T("store.defender"), 15,
-                new Color32(240, 231, 199, 255), TextAnchor.MiddleCenter, true);
-            DrawStoreText(new Rect(817f, 1392f, 104f, 36f), T("store.enemy"), 15,
-                new Color32(240, 231, 199, 255), TextAnchor.MiddleCenter, true);
-        }
-
-        private void DrawStoreProbabilityGrid(Rect area, CharacterPackTier tier)
-        {
-            var values = StoreProbabilityValues(tier);
-            var xOffsets = new[] { 24f, 139f, 254f, 82f, 197f };
-            var yOffsets = new[] { 0f, 0f, 0f, 42f, 42f };
-            for (var index = 0; index < values.Length; index++)
-            {
-                var x = area.x + xOffsets[index];
-                var y = area.y + yOffsets[index];
-                DrawStoreModule(StoreFormalArtContract.QualityBadgeResourceIds[index],
-                    new Rect(x, y + 4f, 30f, 30f), 30, 30);
-                DrawStoreText(new Rect(x + 34f, y, 76f, 38f), values[index], 17,
-                    values[index] == "0%" ? new Color32(65, 85, 82, 135) :
-                        new Color32(44, 72, 73, 255), TextAnchor.MiddleLeft, true);
-            }
         }
 
         private void DrawStoreModule(string resourceId, Rect rect, int expectedWidth, int expectedHeight)
@@ -3346,12 +3753,18 @@ namespace SeekerAutoChess.Prototype
         private void TryPurchaseStoreProduct(StoreProductDefinition product)
         {
             if (product == null) return;
+            if (!product.IsPurchasable)
+            {
+                storeStatusMessage = T("store.status.pricePending");
+                return;
+            }
             if (storeOpeningActive)
             {
                 storeStatusMessage = T("store.status.claimFirst");
                 return;
             }
-            if (product.ProductType == StoreProductType.BasePack && ownedBasePackIds.Contains(product.ProductId))
+            if (product.ProductType != StoreProductType.CharacterPack &&
+                ownedBasePackIds.Contains(product.ProductId))
             {
                 storeStatusMessage = T("store.status.alreadyOwned");
                 return;
@@ -3396,6 +3809,9 @@ namespace SeekerAutoChess.Prototype
             pendingStoreDefinitionIds = new string[ids.Length];
             pendingStoreInstanceIds = new string[ids.Length];
             pendingStoreQualities = new int[ids.Length];
+            pendingStoreAptitudeRolls = new int[ids.Length];
+            pendingStoreRevealAlreadyGranted = false;
+            pendingStarterGrantId = null;
             storeEpicPitySkr += product.PriceSkr;
             storeLegendaryPitySkr += product.PriceSkr;
             for (var i = 0; i < ids.Length; i++)
@@ -3417,6 +3833,8 @@ namespace SeekerAutoChess.Prototype
                 pendingStoreDefinitionIds[i] = ids[i];
                 pendingStoreInstanceIds[i] = instanceId;
                 pendingStoreQualities[i] = (int)quality;
+                pendingStoreAptitudeRolls[i] =
+                    CharacterRarityInstanceRules.ComputeAptitudeRoll(instanceId);
             }
             pendingStoreOrderId = orderId;
             storeOpeningProgress = 0f;
@@ -3459,43 +3877,59 @@ namespace SeekerAutoChess.Prototype
         {
             if (!storeOpeningActive || pendingStoreDefinitionIds == null ||
                 pendingStoreInstanceIds == null || pendingStoreQualities == null ||
+                pendingStoreAptitudeRolls == null ||
                 pendingStoreDefinitionIds.Length != StoreRules.DrawCountPerCharacterPack ||
                 pendingStoreInstanceIds.Length != StoreRules.DrawCountPerCharacterPack ||
-                pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack)
+                pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack ||
+                pendingStoreAptitudeRolls.Length != StoreRules.DrawCountPerCharacterPack)
             {
                 storeStatusMessage = T("store.status.noPending");
                 return;
             }
 
-            var entries = new List<OwnedCharacterState>(playerCollection.Entries);
-            var acquiredAtUtcTicks = PlayerCollection.NextAcquiredAtUtcTicks(
-                entries, DateTime.UtcNow.Ticks);
-            for (var i = 0; i < StoreRules.DrawCountPerCharacterPack; i++)
+            var starterGrantReveal = pendingStoreRevealAlreadyGranted;
+            if (!starterGrantReveal)
             {
-                entries.Add(new OwnedCharacterState(
-                    pendingStoreInstanceIds[i],
-                    pendingStoreDefinitionIds[i],
-                    1,
-                    0,
-                    (CharacterQuality)pendingStoreQualities[i],
-                    acquiredAtUtcTicks++));
-            }
+                var entries = new List<OwnedCharacterState>(playerCollection.Entries);
+                var acquiredAtUtcTicks = PlayerCollection.NextAcquiredAtUtcTicks(
+                    entries, DateTime.UtcNow.Ticks);
+                for (var i = 0; i < StoreRules.DrawCountPerCharacterPack; i++)
+                {
+                    entries.Add(new OwnedCharacterState(
+                        pendingStoreInstanceIds[i],
+                        pendingStoreDefinitionIds[i],
+                        1,
+                        0,
+                        (CharacterQuality)pendingStoreQualities[i],
+                        acquiredAtUtcTicks++,
+                        pendingStoreAptitudeRolls[i]));
+                }
 
-            var selectedIds = nextRunDeckSelection == null
-                ? new string[0] : CopyIds(nextRunDeckSelection.SelectedInstanceIds);
-            playerCollection = new PlayerCollection(characterCatalog, entries);
-            nextRunDeckSelection = new RunDeckSelection(playerCollection, selectedIds,
-                MaximumDeckSize, MinimumDeckSize);
+                var selectedIds = nextRunDeckSelection == null
+                    ? new string[0] : CopyIds(nextRunDeckSelection.SelectedInstanceIds);
+                playerCollection = new PlayerCollection(characterCatalog, entries);
+                nextRunDeckSelection = new RunDeckSelection(playerCollection, selectedIds,
+                    MaximumDeckSize, MinimumDeckSize);
+            }
+            else
+            {
+                acknowledgedStarterGrantId = pendingStarterGrantId;
+            }
             pendingStoreOrderId = null;
             pendingStoreInstanceIds = new string[0];
             pendingStoreDefinitionIds = new string[0];
             pendingStoreQualities = new int[0];
+            pendingStoreAptitudeRolls = new int[0];
+            pendingStoreRevealAlreadyGranted = false;
+            pendingStarterGrantId = null;
             storeOpeningProgress = 0f;
             storeRevealLoadingElapsed = 0f;
             storeRevealAssetsReady = false;
             storeRevealPreloadComplete = false;
             storeOpeningActive = false;
-            storeStatusMessage = T("store.status.claimed");
+            storeStatusMessage = T(starterGrantReveal
+                ? "starterGrant.status.claimed" : "store.status.claimed");
+            if (starterGrantReveal) currentView = ScreenView.Home;
             SaveGame();
         }
 
@@ -3505,21 +3939,28 @@ namespace SeekerAutoChess.Prototype
             GUI.DrawTexture(new Rect(0f, 0f, DesignWidth, layoutContentHeight), Texture2D.whiteTexture);
             GUI.color = Color.white;
             uiSkin.DrawPanel(new Rect(42f, 190f, 996f, 1500f), true);
-            GUI.Label(new Rect(72f, 225f, 936f, 62f), T("store.opening.title"),
+            GUI.Label(new Rect(72f, 225f, 936f, 62f),
+                T(pendingStoreRevealAlreadyGranted
+                    ? "starterGrant.opening.title" : "store.opening.title"),
                 Style(32, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
             GUI.Label(new Rect(72f, 292f, 936f, 40f),
                 !storeRevealAssetsReady || storeOpeningProgress < 1f
-                    ? T("store.opening") : T("store.reveal.ready"),
+                    ? T("store.opening")
+                    : T(pendingStoreRevealAlreadyGranted
+                        ? "starterGrant.reveal.ready" : "store.reveal.ready"),
                 Style(17, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleCenter));
 
             if (!storeRevealAssetsReady)
             {
                 DrawStoreRevealLoadingAnimation();
                 GUI.enabled = false;
-                GUI.Button(new Rect(300f, 1240f, 480f, 86f), T("store.claim"),
+                GUI.Button(new Rect(300f, 1240f, 480f, 86f),
+                    T(pendingStoreRevealAlreadyGranted ? "starterGrant.claim" : "store.claim"),
                     ButtonStyle(UiButtonSemantic.Primary, 23));
                 GUI.enabled = true;
-                GUI.Label(new Rect(72f, 1350f, 936f, 120f), T("store.reveal.hint"),
+                GUI.Label(new Rect(72f, 1350f, 936f, 120f),
+                    T(pendingStoreRevealAlreadyGranted
+                        ? "starterGrant.reveal.hint" : "store.reveal.hint"),
                     Style(16, new Color(0.70f, 0.78f, 0.82f), TextAnchor.MiddleCenter));
                 return;
             }
@@ -3536,7 +3977,8 @@ namespace SeekerAutoChess.Prototype
             HandleStoreRevealCardSelection(revealIndex);
 
             GUI.enabled = storeOpeningProgress >= 1f;
-            if (GUI.Button(new Rect(300f, 1240f, 480f, 86f), T("store.claim"),
+            if (GUI.Button(new Rect(300f, 1240f, 480f, 86f),
+                    T(pendingStoreRevealAlreadyGranted ? "starterGrant.claim" : "store.claim"),
                     ButtonStyle(UiButtonSemantic.Primary, 23)))
             {
                 PlayUiClick(UiAudioCueIds.Confirm, "store-claim");
@@ -3544,7 +3986,8 @@ namespace SeekerAutoChess.Prototype
             }
             GUI.enabled = true;
             GUI.Label(new Rect(72f, 1350f, 936f, 120f),
-                T("store.reveal.hint"),
+                T(pendingStoreRevealAlreadyGranted
+                    ? "starterGrant.reveal.hint" : "store.reveal.hint"),
                 Style(16, new Color(0.70f, 0.78f, 0.82f), TextAnchor.MiddleCenter));
         }
 
@@ -3570,7 +4013,8 @@ namespace SeekerAutoChess.Prototype
             if (index < revealIndex)
             {
                 DrawStoreRevealDetailCard(area, pendingStoreDefinitionIds[index],
-                    (CharacterQuality)pendingStoreQualities[index], pendingStoreInstanceIds[index]);
+                    (CharacterQuality)pendingStoreQualities[index], pendingStoreInstanceIds[index],
+                    pendingStoreAptitudeRolls[index]);
             }
             else
             {
@@ -3615,11 +4059,14 @@ namespace SeekerAutoChess.Prototype
         }
 
         private void DrawStoreRevealDetailCard(
-            Rect area, string definitionId, CharacterQuality quality, string instanceId)
+            Rect area, string definitionId, CharacterQuality quality, string instanceId,
+            int aptitudeRoll)
         {
             var definition = characterCatalog.Get(definitionId);
             var qualityId = CharacterQualityResourceId(quality);
-            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(instanceId);
+            aptitudeRoll = aptitudeRoll < 0
+                ? CharacterRarityInstanceRules.ComputeAptitudeRoll(instanceId)
+                : aptitudeRoll;
             var stats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, quality, aptitudeRoll, 0);
             var ivory = ArchiveColor("F6E8C8");
@@ -3692,118 +4139,121 @@ namespace SeekerAutoChess.Prototype
                 new Rect(0f, 0f, 1080f, 2400f), 1080, 2400);
             DrawArenaText(new Rect(92f, 62f, 650f, 98f), T("arena.title"), 78,
                 ArenaIvory, TextAnchor.UpperLeft, true);
-            DrawArenaText(new Rect(112f, 172f, 790f, 48f), T("arena.subtitle"), 30,
+            DrawArenaText(new Rect(112f, 164f, 790f, 42f), T("arena.subtitle"), 27,
                 ArenaIvory, TextAnchor.UpperLeft, false);
             DrawArenaText(new Rect(910f, 12f, 120f, 30f), ClientVersionLabel, 16,
                 ArenaIvory, TextAnchor.MiddleCenter, false);
 
+            var nowUtc = DateTime.UtcNow;
+            var cycleRemaining = ArenaPrototypeRules.RemainingInCycle(
+                nowUtc, ArenaPrototypeRules.PvpRewardCycleDays);
+            var cycleNumber = Mathf.Max(1, Mathf.FloorToInt((float)(
+                nowUtc - ArenaPrototypeRules.CycleEpochUtc).TotalDays /
+                ArenaPrototypeRules.PvpRewardCycleDays) + 1);
+            var cycleEndUtc = nowUtc + cycleRemaining;
+            DrawArenaText(new Rect(760f, 62f, 260f, 40f),
+                string.Format(T("arena.cycleTitle"), cycleNumber), 24,
+                ArenaIvory, TextAnchor.MiddleRight, true);
+            DrawArenaText(new Rect(720f, 105f, 300f, 36f),
+                string.Format(T("arena.cycleCountdown"), FormatArenaCountdown(cycleRemaining)), 19,
+                ArenaIvory, TextAnchor.MiddleRight, false);
+            DrawArenaText(new Rect(700f, 145f, 320f, 34f),
+                FormatArenaLockTime(cycleEndUtc), 16,
+                ArenaIvory, TextAnchor.MiddleRight, false);
+
+            var displayRanking = ArenaPrototypeRules.CreateDisplayRanking(
+                arenaOpponents, arenaRating, CurrentPvpDeckPower(), T("home.playerName"));
+            var playerDisplayRank = ArenaPrototypeRules.CalculatePlayerDisplayRank(arenaOpponents, arenaRating);
+            var playerRowIndex = 0;
+            for (var index = 0; index < displayRanking.Length; index++)
+            {
+                if (!displayRanking[index].IsCurrentPlayer) continue;
+                playerRowIndex = index;
+                break;
+            }
+
             DrawArenaModule(ArenaFormalArtContract.StatusPanel,
-                new Rect(40f, 280f, 1000f, 190f), 1000, 190);
+                new Rect(40f, 244f, 1000f, 190f), 1000, 190);
             DrawArenaModule(ArenaFormalArtContract.TrophyIcon,
-                new Rect(87f, 336f, 64f, 64f), 64, 64);
+                new Rect(88f, 304f, 64f, 64f), 64, 64);
             DrawArenaModule(ArenaFormalArtContract.SwordsIcon,
-                new Rect(420f, 336f, 64f, 64f), 64, 64);
+                new Rect(414f, 304f, 64f, 64f), 64, 64);
             DrawArenaModule(ArenaFormalArtContract.ClockIcon,
-                new Rect(725f, 336f, 64f, 64f), 64, 64);
-            DrawArenaText(new Rect(147f, 326f, 180f, 42f), T("arena.ratingLabel"), 25,
+                new Rect(738f, 304f, 64f, 64f), 64, 64);
+            DrawArenaText(new Rect(156f, 278f, 202f, 40f), T("arena.ratingLabel"), 22,
                 ArenaInk, TextAnchor.MiddleCenter, true);
-            DrawArenaText(new Rect(480f, 326f, 180f, 42f), T("arena.dailyLabel"), 25,
+            DrawArenaText(new Rect(482f, 278f, 202f, 40f), T("arena.rankLabel"), 22,
                 ArenaInk, TextAnchor.MiddleCenter, true);
-            DrawArenaText(new Rect(800f, 326f, 220f, 42f), T("arena.weeklyLabel"), 25,
+            DrawArenaText(new Rect(806f, 278f, 202f, 40f), T("arena.dailyLabel"), 22,
                 ArenaInk, TextAnchor.MiddleCenter, true);
-            DrawArenaText(new Rect(147f, 366f, 180f, 58f), arenaRating.ToString(), 40,
+            DrawArenaText(new Rect(156f, 318f, 202f, 52f), arenaRating.ToString(), 35,
                 ArenaCopper, TextAnchor.MiddleCenter, false);
-            DrawArenaText(new Rect(480f, 366f, 180f, 58f),
-                arenaChallengesRemaining + "/" + ArenaPrototypeRules.DailyChallengeLimit, 40,
+            DrawArenaText(new Rect(482f, 318f, 202f, 52f),
+                "#" + playerDisplayRank, 35,
                 ArenaInk, TextAnchor.MiddleCenter, false);
-            DrawArenaText(new Rect(800f, 366f, 220f, 58f),
-                FormatArenaCountdown(ArenaPrototypeRules.RemainingInCycle(
-                    DateTime.UtcNow, ArenaPrototypeRules.PvpRewardCycleDays)), 25,
-                ArenaCopper, TextAnchor.MiddleCenter, false);
+            DrawArenaText(new Rect(806f, 318f, 202f, 52f),
+                arenaChallengesRemaining + "/" + ArenaPrototypeRules.DailyChallengeLimit, 35,
+                ArenaInk, TextAnchor.MiddleCenter, false);
+            DrawArenaText(new Rect(72f, 446f, 292f, 34f),
+                T("arena.rewardEligibility") + " —", 22,
+                ArenaIvory, TextAnchor.MiddleCenter, false);
+            DrawArenaText(new Rect(394f, 446f, 292f, 34f),
+                T("arena.defenseScoring") + " —", 22,
+                ArenaIvory, TextAnchor.MiddleCenter, false);
+            DrawArenaText(new Rect(716f, 446f, 292f, 34f),
+                T("arena.estimatedPool") + " —", 22,
+                ArenaIvory, TextAnchor.MiddleCenter, false);
 
             DrawArenaModule(ArenaFormalArtContract.MainBoard,
-                new Rect(40f, 488f, 1000f, 1600f), 1000, 1600);
-            DrawArenaText(new Rect(124f, 528f, 300f, 52f), T("arena.topThree"), 36,
-                ArenaInk, TextAnchor.UpperLeft, true);
-            var displayRanking = ArenaPrototypeRules.CreateDisplayRanking(
-                arenaOpponents, arenaRating, CurrentPvpDeckPower(), T("arena.self"));
+                new Rect(40f, 500f, 1000f, 1600f), 1000, 1600);
+            DrawArenaText(new Rect(100f, 612f, 880f, 70f), T("arena.nearby"), 34,
+                ArenaInk, TextAnchor.MiddleCenter, true);
+            DrawArenaText(new Rect(130f, 686f, 108f, 42f), T("arena.rankColumn"), 19,
+                ArenaInk, TextAnchor.MiddleCenter, false);
+            DrawArenaText(new Rect(246f, 686f, 390f, 42f), T("arena.playerColumn"), 19,
+                ArenaInk, TextAnchor.MiddleLeft, false);
+            DrawArenaText(new Rect(654f, 686f, 266f, 42f), T("arena.ratingColumn"), 19,
+                ArenaInk, TextAnchor.MiddleRight, false);
 
             var previousEnabled = GUI.enabled;
             GUI.enabled = previousEnabled && !modalOpen;
-            for (var index = 0; index < 3 && index < displayRanking.Length; index++)
+            var rankingViewport = new Rect(130f, 736f, 820f, 1056f);
+            var rankingContentHeight = Mathf.Max(rankingViewport.height, displayRanking.Length * 96f);
+            var rankingMaxScroll = Mathf.Max(0f, rankingContentHeight - rankingViewport.height);
+            if (!arenaRankingScrollInitialized || arenaRankingContentCount != displayRanking.Length)
             {
-                var rankingRow = displayRanking[index];
-                var card = new Rect(66f + index * 332f, 598f, 284f, 440f);
-                DrawArenaModule(ArenaFormalArtContract.TopThreeCard, card, 284, 440);
-                DrawArenaText(new Rect(card.x + 104f, card.y, 76f, 65f), rankingRow.Rank.ToString(), 38,
-                    ArenaIvory, TextAnchor.MiddleCenter, true);
-                DrawArenaModule(ArenaFormalArtContract.TopThreeCrests[index],
-                    new Rect(card.x + 52f, card.y + 52f, 180f, 180f), 180, 180);
-                DrawArenaText(new Rect(card.x + 16f, card.y + 234f, 252f, 44f), rankingRow.DisplayName, 27,
-                    ArenaInk, TextAnchor.MiddleCenter, true);
-                DrawArenaText(new Rect(card.x + 16f, card.y + 274f, 252f, 34f),
-                    string.Format(T("arena.power"), rankingRow.Power), 22,
-                    ArenaMutedInk, TextAnchor.MiddleCenter, false);
-                DrawArenaText(new Rect(card.x + 16f, card.y + 306f, 252f, 34f),
-                    string.Format(T("arena.rating"), rankingRow.Rating), 23,
-                    ArenaCopper, TextAnchor.MiddleCenter, false);
-                if (!rankingRow.IsCurrentPlayer)
-                {
-                    var viewButton = new Rect(card.x + 32f, card.y + 354f, 220f, 68f);
-                    DrawArenaModule(ArenaFormalArtContract.TopThreeButton, viewButton, 220, 68);
-                    DrawArenaText(viewButton, T("arena.view"), 25, ArenaIvory, TextAnchor.MiddleCenter, true);
-                    if (GUI.Button(viewButton, GUIContent.none, GUIStyle.none))
-                        SelectArenaOpponent(rankingRow.OpponentIndex);
-                }
+                arenaRankingScroll.y = Mathf.Clamp((playerRowIndex - 5) * 96f, 0f, rankingMaxScroll);
+                arenaRankingContentCount = displayRanking.Length;
+                arenaRankingScrollInitialized = true;
             }
-
-            var playerDisplayRank = ArenaPrototypeRules.CalculatePlayerDisplayRank(arenaOpponents, arenaRating);
-            DrawArenaText(new Rect(108f, 1048f, 850f, 48f),
-                T("arena.nearby") + " · " + string.Format(T("arena.myRank"), playerDisplayRank), 34,
-                ArenaInk, TextAnchor.UpperLeft, true);
-            var nearby = ArenaPrototypeRules.SelectNearby(displayRanking, playerDisplayRank, 7);
-            arenaRankingScroll = GUI.BeginScrollView(new Rect(80f, 1106f, 920f, 742f), arenaRankingScroll,
-                new Rect(0f, 0f, 920f, Mathf.Max(742f, nearby.Length * 106f)), false, false,
+            arenaRankingScroll.y = Mathf.Clamp(arenaRankingScroll.y, 0f, rankingMaxScroll);
+            HandleArenaRankingPointer(rankingViewport, rankingMaxScroll, !modalOpen);
+            arenaRankingScroll = GUI.BeginScrollView(rankingViewport, arenaRankingScroll,
+                new Rect(0f, 0f, 820f, rankingContentHeight), false, false,
                 GUIStyle.none, GUIStyle.none);
-            for (var row = 0; row < nearby.Length; row++)
+            for (var row = 0; row < displayRanking.Length; row++)
             {
-                var rankingRow = nearby[row];
-                var sourceIndex = rankingRow.OpponentIndex;
-                var area = new Rect(0f, row * 106f, 920f, 104f);
-                var isSelectedRow = !rankingRow.IsCurrentPlayer && ArenaPrototypeRules.ShouldHighlightOpponentRow(
-                    sourceIndex, selectedArenaOpponentIndex);
-                DrawArenaModule(isSelectedRow ? ArenaFormalArtContract.PlayerRankRow : ArenaFormalArtContract.RankRow,
-                    area, 920, 104);
-                DrawArenaText(new Rect(area.x + 12f, area.y + 10f, 72f, 84f), "#" + rankingRow.Rank, 28,
+                var area = new Rect(0f, row * 96f, 820f, 96f);
+                var rankingRow = displayRanking[row];
+                DrawArenaModule(rankingRow.IsCurrentPlayer
+                        ? ArenaFormalArtContract.PlayerRankRow
+                        : ArenaFormalArtContract.RankRow,
+                    area, 820, 96);
+                DrawArenaText(new Rect(area.x + 16f, area.y, 92f, 96f), "#" + rankingRow.Rank, 24,
                     ArenaInk, TextAnchor.MiddleCenter, true);
-                DrawArenaText(new Rect(area.x + 108f, area.y + 13f, 300f, 36f), rankingRow.DisplayName, 26,
-                    ArenaInk, TextAnchor.MiddleLeft, true);
-                DrawArenaText(new Rect(area.x + 108f, area.y + 53f, 300f, 30f),
-                    string.Format(T("arena.power"), rankingRow.Power), 22,
-                    ArenaMutedInk, TextAnchor.MiddleLeft, false);
-                DrawArenaText(new Rect(area.x + 420f, area.y + 10f, 205f, 84f),
-                    string.Format(T("arena.rating"), rankingRow.Rating), 23,
-                    ArenaCopper, TextAnchor.MiddleCenter, false);
-                if (!rankingRow.IsCurrentPlayer)
-                {
-                    var rowButton = new Rect(area.x + 710f, area.y + 20f, 190f, 64f);
-                    DrawArenaModule(ArenaFormalArtContract.ViewButton, rowButton, 190, 64);
-                    DrawArenaText(rowButton, T("arena.view"), 22, ArenaIvory, TextAnchor.MiddleCenter, true);
-                    if (GUI.Button(rowButton, GUIContent.none, GUIStyle.none))
-                        SelectArenaOpponent(sourceIndex);
-                }
+                DrawArenaText(new Rect(area.x + 116f, area.y, 390f, 96f), rankingRow.DisplayName, 23,
+                    ArenaInk, TextAnchor.MiddleLeft, rankingRow.IsCurrentPlayer);
+                DrawArenaText(new Rect(area.x + 524f, area.y, 266f, 96f),
+                    rankingRow.Rating.ToString("N0"), 21,
+                    ArenaCopper, TextAnchor.MiddleRight, false);
             }
             GUI.EndScrollView();
 
-            DrawArenaText(new Rect(110f, 1918f, 520f, 38f), T("arena.footer"), 22,
-                ArenaMutedInk, TextAnchor.MiddleLeft, false);
-            var defenseButton = new Rect(660f, 1888f, 320f, 90f);
-            DrawArenaModule(ArenaFormalArtContract.DefenseButton, defenseButton, 320, 90);
-            DrawArenaModule(ArenaFormalArtContract.ShieldIcon,
-                new Rect(690f, 1901f, 64f, 64f), 64, 64);
-            DrawArenaText(new Rect(740f, 1888f, 218f, 90f), T("arena.defense"), 31,
-                ArenaIvory, TextAnchor.MiddleCenter, true);
-            if (GUI.Button(defenseButton, GUIContent.none, GUIStyle.none))
+            DrawArenaText(new Rect(118f, 1810f, 844f, 54f),
+                string.Format(T("arena.myRank"), playerDisplayRank), 22,
+                ArenaMutedInk, TextAnchor.MiddleCenter, false);
+            var defenseButton = new Rect(348f, 1918f, 220f, 68f);
+            if (DrawArenaFormalButton(defenseButton, T("arena.defense"), true, false))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "arena-defense");
                 var removed = ReconcileDefenseWithActiveDeck();
@@ -3814,15 +4264,67 @@ namespace SeekerAutoChess.Prototype
                 SaveGame();
                 currentView = ScreenView.Defense;
             }
+            var findButton = new Rect(590f, 1909f, 390f, 86f);
+            if (DrawArenaFormalButton(findButton, T("arena.findOpponents"), true, true))
+            {
+                var candidates = ArenaPrototypeRules.SelectNearby(arenaOpponents, playerDisplayRank, 6);
+                if (candidates.Length > 0)
+                    SelectArenaOpponent(Array.IndexOf(arenaOpponents, candidates[0]));
+            }
             DrawMainNavigation();
             GUI.enabled = previousEnabled;
             if (selectedArenaOpponentIndex >= 0) DrawArenaOpponentDetail(arenaOpponents[selectedArenaOpponentIndex]);
             if (arenaPageState == ArenaPageState.ChallengeConfirm) DrawArenaChallengeConfirmation();
         }
 
+        private void HandleArenaRankingPointer(Rect viewport, float maxScroll, bool enabled)
+        {
+            var current = Event.current;
+            if (!enabled || current == null)
+            {
+                arenaRankingPointerHeld = false;
+                arenaRankingPointerDragging = false;
+                return;
+            }
+
+            if (current.type == EventType.MouseDown && current.button == 0 &&
+                viewport.Contains(current.mousePosition))
+            {
+                arenaRankingPointerHeld = true;
+                arenaRankingPointerDragging = false;
+                arenaRankingPointerLast = current.mousePosition;
+                return;
+            }
+
+            if (current.type == EventType.MouseDrag && arenaRankingPointerHeld)
+            {
+                var delta = current.mousePosition - arenaRankingPointerLast;
+                if (Mathf.Abs(delta.y) >= 1f) arenaRankingPointerDragging = true;
+                arenaRankingScroll.y = Mathf.Clamp(arenaRankingScroll.y - delta.y, 0f, maxScroll);
+                arenaRankingPointerLast = current.mousePosition;
+                current.Use();
+                return;
+            }
+
+            if (current.type != EventType.MouseUp || current.button != 0 ||
+                !arenaRankingPointerHeld) return;
+            if (arenaRankingPointerDragging) current.Use();
+            arenaRankingPointerHeld = false;
+            arenaRankingPointerDragging = false;
+        }
+
+        private string FormatArenaLockTime(DateTime cycleEndUtc)
+        {
+            cycleEndUtc = cycleEndUtc.Kind == DateTimeKind.Utc
+                ? cycleEndUtc : cycleEndUtc.ToUniversalTime();
+            return language == GameLanguage.ChineseSimplified
+                ? cycleEndUtc.ToString("M月d日  HH:mm 'UTC' 锁定")
+                : cycleEndUtc.ToString("MMM d  HH:mm 'UTC LOCK'");
+        }
+
         private void DrawArenaOpponentDetail(ArenaOpponentProfile opponent)
         {
-            var panel = new Rect(40f, 720f, 1000f, 700f);
+            var panel = new Rect(60f, 420f, 960f, 1560f);
             if (arenaPageState == ArenaPageState.OpponentDetail && Event.current != null &&
                 Event.current.type == EventType.MouseUp && Event.current.button == 0 &&
                 !panel.Contains(Event.current.mousePosition))
@@ -3831,62 +4333,98 @@ namespace SeekerAutoChess.Prototype
                 Event.current.Use();
                 return;
             }
-            GUI.color = new Color32(2, 15, 22, 155);
-            GUI.DrawTexture(new Rect(0f, 0f, 1080f, 2400f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            DrawArenaModule(ArenaFormalArtContract.DetailPanel, panel, 1000, 700);
-            DrawArenaText(new Rect(98f, 820f, 884f, 52f),
-                opponent.DisplayName + " · #" + opponent.Rank, 39,
-                ArenaInk, TextAnchor.MiddleLeft, true);
-            DrawArenaText(new Rect(98f, 872f, 884f, 40f),
-                string.Format(T("arena.power"), opponent.Power) + " · " +
-                string.Format(T("arena.rating"), opponent.Rating), 27,
-                ArenaCopper, TextAnchor.MiddleLeft, false);
-            DrawArenaText(new Rect(98f, 926f, 884f, 38f), T("arena.defensePreview"), 29,
-                ArenaInk, TextAnchor.MiddleLeft, true);
+            DrawArenaModule(ArenaFormalArtContract.DimOverlay,
+                new Rect(0f, 0f, 1080f, 2400f), 1080, 2400);
+            DrawArenaModule(ArenaFormalArtContract.OpponentPickerShell, panel, 960, 1560);
+            DrawArenaText(new Rect(130f, 526f, 760f, 78f), T("arena.opponentPickerTitle"), 34,
+                ArenaIvory, TextAnchor.MiddleCenter, true);
+            DrawArenaText(new Rect(130f, 652f, 820f, 48f),
+                T("arena.candidateRemaining") + " —", 20,
+                ArenaMutedInk, TextAnchor.MiddleCenter, false);
+
+            var playerDisplayRank = ArenaPrototypeRules.CalculatePlayerDisplayRank(arenaOpponents, arenaRating);
+            var candidates = ArenaPrototypeRules.SelectNearby(arenaOpponents, playerDisplayRank, 6);
+            for (var row = 0; row < candidates.Length; row++)
+            {
+                var candidate = candidates[row];
+                var candidateIndex = Array.IndexOf(arenaOpponents, candidate);
+                var selected = candidateIndex == selectedArenaOpponentIndex;
+                var rowArea = new Rect(130f, 782f + row * 96f, 820f, 96f);
+                if (selected)
+                    DrawArenaSelectedCandidateRow(rowArea);
+                else
+                    DrawArenaModule(ArenaFormalArtContract.RankRow, rowArea, 820, 96);
+                DrawArenaText(new Rect(rowArea.x + 28f, rowArea.y, 330f, 96f), candidate.DisplayName, 23,
+                    selected ? ArenaIvory : ArenaInk, TextAnchor.MiddleLeft, selected);
+                DrawArenaText(new Rect(rowArea.x + 372f, rowArea.y, 174f, 96f),
+                    string.Format(T("arena.rating"), candidate.Rating), 20,
+                    selected ? ArenaIvory : ArenaCopper, TextAnchor.MiddleCenter, false);
+                DrawArenaText(new Rect(rowArea.x + 540f, rowArea.y, 170f, 96f),
+                    T("arena.estimatedChange") + " +" + ArenaPrototypeRules.TemporaryWinRatingDelta,
+                    17, selected ? ArenaIvory : ArenaMutedInk, TextAnchor.MiddleRight, false);
+                var chevronArea = new Rect(858f, 806f + row * 96f, 48f, 48f);
+                DrawArenaModule(selected ? ArenaFormalArtContract.ChevronPressed : ArenaFormalArtContract.ChevronNormal,
+                    chevronArea, 48, 48);
+                if (arenaPageState == ArenaPageState.OpponentDetail &&
+                    GUI.Button(rowArea, GUIContent.none, GUIStyle.none))
+                    SelectArenaOpponent(candidateIndex);
+            }
+
+            DrawArenaText(new Rect(130f, 1358f, 820f, 54f),
+                opponent.DisplayName + " · " + T("arena.defensePreview"), 24,
+                ArenaInk, TextAnchor.MiddleCenter, true);
             for (var slot = 0; slot < ArenaPrototypeRules.DefenseSlotCount; slot++)
             {
-                var area = new Rect(98f + slot * 150f, 964f, 134f, 210f);
+                var area = new Rect(138f + slot * 134f, 1434f, 134f, 210f);
                 DrawArenaModule(ArenaFormalArtContract.DefenderSlot, area, 134, 210);
                 if (slot >= ArenaPrototypeRules.PublicDefenseSlotCount)
                 {
-                    DrawArenaText(new Rect(area.x, 989f, 134f, 176f), T("arena.hidden"), 58,
+                    DrawArenaText(new Rect(area.x, area.y + 17f, 134f, 176f), T("arena.hidden"), 48,
                         ArenaIvory, TextAnchor.MiddleCenter, true);
                     continue;
                 }
                 DrawArenaModule(ArenaFormalArtContract.PublicDefenders[slot],
-                    new Rect(area.x + 8f, 989f, 118f, 176f), 118, 176);
+                    new Rect(area.x + 8f, area.y + 17f, 118f, 176f), 118, 176);
             }
-            DrawArenaText(new Rect(98f, 1204f, 884f, 40f), T("arena.publicDefenseHint"), 23,
-                ArenaMutedInk, TextAnchor.MiddleLeft, false);
-
-            var closeButton = new Rect(98f, 1275f, 390f, 86f);
-            DrawArenaModule(ArenaFormalArtContract.ModalButton, closeButton, 390, 86);
-            DrawArenaText(closeButton, T("arena.close"), 29, ArenaIvory, TextAnchor.MiddleCenter, true);
-            var challengeButton = new Rect(592f, 1275f, 390f, 86f);
-            DrawArenaModule(ArenaFormalArtContract.ModalButton, challengeButton, 390, 86);
-            DrawArenaModule(ArenaFormalArtContract.SwordsIcon,
-                new Rect(625f, 1286f, 64f, 64f), 64, 64);
-            DrawArenaText(new Rect(665f, 1275f, 285f, 86f),
-                T("arena.challenge") + " " + arenaChallengesRemaining + "/" +
-                ArenaPrototypeRules.DailyChallengeLimit, 29,
-                ArenaIvory, TextAnchor.MiddleCenter, true);
 
             var detailInteractive = arenaPageState == ArenaPageState.OpponentDetail;
-            GUI.enabled = detailInteractive;
-            if (GUI.Button(closeButton, GUIContent.none, GUIStyle.none))
+            var closeButton = new Rect(816f, 530f, 72f, 72f);
+            DrawArenaModule(detailInteractive && Event.current != null && Input.GetMouseButton(0) &&
+                    closeButton.Contains(Event.current.mousePosition)
+                    ? ArenaFormalArtContract.ClosePressed
+                    : detailInteractive ? ArenaFormalArtContract.CloseNormal : ArenaFormalArtContract.CloseDisabled,
+                closeButton, 72, 72);
+            if (detailInteractive && GUI.Button(closeButton, GUIContent.none, GUIStyle.none))
             {
                 CloseArenaOpponentDetail("arena-opponent-detail-close");
-                GUI.enabled = true;
                 return;
             }
-            GUI.enabled = detailInteractive && arenaChallengesRemaining > 0;
-            if (GUI.Button(challengeButton, GUIContent.none, GUIStyle.none))
+            var challengeButton = new Rect(345f, 1760f, 390f, 86f);
+            if (DrawArenaFormalButton(challengeButton,
+                    T("arena.challenge") + " " + arenaChallengesRemaining + "/" +
+                    ArenaPrototypeRules.DailyChallengeLimit,
+                    detailInteractive && arenaChallengesRemaining > 0, true))
             {
                 PlayUiClick(UiAudioCueIds.Confirm, "arena-challenge-prompt");
                 arenaPageState = ArenaPageState.ChallengeConfirm;
             }
-            GUI.enabled = true;
+        }
+
+        private bool DrawArenaFormalButton(Rect area, string label, bool enabled, bool extraLarge)
+        {
+            var pressed = enabled && Event.current != null &&
+                area.Contains(Event.current.mousePosition) && Input.GetMouseButton(0);
+            var resourceId = extraLarge
+                ? enabled
+                    ? pressed ? ArenaFormalArtContract.ButtonXlPressed : ArenaFormalArtContract.ButtonXlNormal
+                    : ArenaFormalArtContract.ButtonXlDisabled
+                : enabled
+                    ? pressed ? ArenaFormalArtContract.ButtonMPressed : ArenaFormalArtContract.ButtonMNormal
+                    : ArenaFormalArtContract.ButtonMDisabled;
+            DrawArenaModule(resourceId, area, Mathf.RoundToInt(area.width), Mathf.RoundToInt(area.height));
+            DrawArenaText(area, label, extraLarge ? 27 : 22,
+                enabled ? ArenaIvory : ArenaMutedInk, TextAnchor.MiddleCenter, true);
+            return enabled && GUI.Button(area, GUIContent.none, GUIStyle.none);
         }
 
         private static readonly Color ArenaIvory = new Color32(241, 231, 191, 255);
@@ -3913,6 +4451,15 @@ namespace SeekerAutoChess.Prototype
             GUI.color = previousColor;
         }
 
+        private void DrawArenaSelectedCandidateRow(Rect rowArea)
+        {
+            // The accepted pressed-state artwork is intentionally translucent. Re-compositing the
+            // same unmodified 1:1 formal asset makes the selected opponent unmistakable without
+            // generating, recolouring, cropping, or resizing any art resource.
+            for (var pass = 0; pass < 4; pass++)
+                DrawArenaModule(ArenaFormalArtContract.PlayerRankRow, rowArea, 820, 96);
+        }
+
         private void CloseArenaOpponentDetail(string audioSource)
         {
             PlayUiClick(UiAudioCueIds.Cancel, audioSource);
@@ -3922,25 +4469,16 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawArenaChallengeConfirmation()
         {
-            GUI.color = new Color(0f, 0f, 0f, 0.72f);
-            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            var panel = new Rect(130f, 610f, 820f, 470f);
-            uiSkin.DrawPanel(panel, true);
-            GUI.Label(new Rect(panel.x + 45f, panel.y + 38f, panel.width - 90f, 60f), T("arena.confirmTitle"),
-                Style(30, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-            GUI.Label(new Rect(panel.x + 70f, panel.y + 120f, panel.width - 140f, 145f),
-                string.Format(T("arena.confirmBody"), arenaChallengesRemaining, Mathf.Max(0, arenaChallengesRemaining - 1)),
-                Style(21, new Color(0.86f, 0.90f, 0.91f), TextAnchor.MiddleCenter));
-            if (GUI.Button(new Rect(panel.x + 55f, panel.y + 330f, 325f, 76f), T("arena.cancel"), ButtonStyle(UiButtonSemantic.Danger, 20)))
+            var result = DrawCommonConfirmDialog(T("arena.confirmTitle"),
+                string.Format(T("arena.confirmBody"), arenaChallengesRemaining,
+                    Mathf.Max(0, arenaChallengesRemaining - 1)), string.Empty,
+                T("arena.cancel"), T("arena.confirm"));
+            if (result == 0)
             {
                 PlayUiClick(UiAudioCueIds.Cancel, "arena-challenge-cancel");
                 arenaPageState = ArenaPageState.OpponentDetail;
             }
-            if (GUI.Button(new Rect(panel.x + 440f, panel.y + 330f, 325f, 76f), T("arena.confirm"), ButtonStyle(UiButtonSemantic.Primary, 20)))
-            {
-                ConfirmArenaChallenge();
-            }
+            else if (result == 1) ConfirmArenaChallenge();
         }
 
         private void DrawArenaPreparation()
@@ -4422,7 +4960,7 @@ namespace SeekerAutoChess.Prototype
         private UnitData CreateOwnedArenaUnit(OwnedCharacterState owned)
         {
             var definition = characterCatalog.Get(owned.DefinitionId);
-            var aptitudeRoll = CharacterRarityInstanceRules.ComputeAptitudeRoll(owned.CharacterInstanceId);
+            var aptitudeRoll = OwnedAptitudeRoll(owned);
             var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(definition, definition.BasePower, 1,
                 owned.Quality, aptitudeRoll, owned.ExternalStar);
             var stats = EquipmentDerivedStatCalculator.Calculate(rarityStats,
@@ -4433,6 +4971,14 @@ namespace SeekerAutoChess.Prototype
             unit.AptitudeRoll = aptitudeRoll;
             unit.ExternalStar = owned.ExternalStar;
             return unit;
+        }
+
+        private static int OwnedAptitudeRoll(OwnedCharacterState owned)
+        {
+            if (owned == null) throw new ArgumentNullException(nameof(owned));
+            return owned.AptitudeRoll >= 0
+                ? owned.AptitudeRoll
+                : CharacterRarityInstanceRules.ComputeAptitudeRoll(owned.CharacterInstanceId);
         }
 
         private UnitData CreateArenaProfileUnit(ArenaUnitProfile profile)
@@ -4522,119 +5068,588 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawWarehouseScreen()
         {
-            var pageExtra = AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 1f);
-            GUI.Label(new Rect(55f, 185f, 970f, 58f), T("warehouse.title"),
-                Style(34, new Color(0.36f, 0.82f, 0.77f), TextAnchor.MiddleLeft, FontStyle.Normal));
-            GUI.Label(new Rect(55f, 250f, 970f, 70f), T("warehouse.subtitle"),
-                Style(18, new Color(0.74f, 0.84f, 0.89f), TextAnchor.MiddleLeft));
-            uiSkin.DrawDivider(new Rect(55f, 300f, 970f, 28f));
+            DrawWarehouseTexture(new Rect(0f, 0f, 1080f, 2400f),
+                WarehouseAFormalArtContract.Background, "modules");
+            GUI.Label(new Rect(48f, 54f, 420f, 92f), T("warehouse.title"),
+                Style(54, new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleLeft, FontStyle.Normal));
 
-            var tabs = new[] { WarehouseTab.All, WarehouseTab.Equipment, WarehouseTab.Lantern };
-            var tabKeys = new[] { "warehouse.all", "warehouse.equipment", "warehouse.lantern" };
+            var returnArea = new Rect(800f, 52f, 192f, 72f);
+            DrawWarehouseButtonTexture(returnArea, WarehouseAFormalArtContract.ReturnNormal,
+                WarehouseAFormalArtContract.ReturnPressed);
+            GUI.Label(new Rect(842f, 52f, 140f, 72f), T("home.back"),
+                Style(28, new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleCenter));
+            if (GUI.Button(returnArea, GUIContent.none, GUIStyle.none))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "warehouse-return-home");
+                warehouseEquipmentScroll = Vector2.zero;
+                currentView = ScreenView.Home;
+                return;
+            }
+
+            var tabs = new[]
+            {
+                WarehouseTab.All, WarehouseTab.Equipment, WarehouseTab.Lantern,
+                WarehouseTab.Materials, WarehouseTab.Other
+            };
+            var tabKeys = new[]
+            {
+                "warehouse.all", "warehouse.equipment", "warehouse.lantern",
+                "warehouse.materials", "warehouse.other"
+            };
             for (var i = 0; i < tabs.Length; i++)
             {
                 var selected = warehouseTab == tabs[i];
-                if (!GUI.Button(new Rect(55f + i * 326f, 330f, 312f, 70f), T(tabKeys[i]),
-                        TabStyle(selected, 19)))
+                var tabArea = new Rect(48f + i * 200f, 220f, 184f, 88f);
+                DrawWarehouseTexture(tabArea, selected
+                    ? WarehouseAFormalArtContract.TabSelected
+                    : WarehouseAFormalArtContract.TabNormal, "modules");
+                GUI.Label(tabArea, T(tabKeys[i]), Style(30,
+                    new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleCenter));
+                if (!GUI.Button(tabArea, GUIContent.none, GUIStyle.none))
                     continue;
                 PlayUiClick(UiAudioCueIds.TabSwitch, "warehouse-tab-" + tabs[i]);
                 warehouseTab = tabs[i];
                 warehouseEquipmentScroll = Vector2.zero;
+                ResetWarehouseItemPointer();
             }
 
+            ReconcileWarehouseLayout();
             var usedSlots = WarehouseStorageRules.CountUsedSlots(
-                equipmentInventory.Instances.Count, lanternInventory.Instances.Count);
-            GUI.Label(new Rect(55f, 415f, 620f, 42f),
+                equipmentInventory.Instances.Count, lanternInventory.Instances.Count,
+                OwnedStoreCosmeticCount());
+            GUI.Label(new Rect(48f, 356f, 520f, 72f),
                 string.Format(T("warehouse.capacity"), usedSlots, WarehouseStorageRules.InitialCapacity),
-                Style(18, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
-            GUI.Label(new Rect(675f, 415f, 350f, 42f),
-                T("warehouse.crystal") + "  " + tideCrystalBalance,
-                Style(18, new Color(0.45f, 0.90f, 0.82f), TextAnchor.MiddleRight, FontStyle.Normal));
+                Style(28, new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleLeft, FontStyle.Normal));
 
-            var showLanterns = warehouseTab != WarehouseTab.Equipment;
-            var showEquipment = warehouseTab != WarehouseTab.Lantern;
-            var lanternContentHeight = showLanterns ? Mathf.Max(1, lanternInventory.Instances.Count) * 210f : 0f;
-            var equipmentSlotCapacity = Mathf.Max(0,
-                WarehouseStorageRules.InitialCapacity - lanternInventory.Instances.Count);
-            var visibleItemCount = showEquipment ? equipmentInventory.Instances.Count : 0;
-            var displaySlotCount = showEquipment ? Mathf.Max(equipmentSlotCapacity, visibleItemCount) : 0;
-            var rowCount = Mathf.CeilToInt(displaySlotCount / 5f);
-            var contentHeight = Mathf.Max(1120f + pageExtra * 0.9f,
-                lanternContentHeight + rowCount * 153f + 10f);
-            uiSkin.DrawPanel(new Rect(45f, 462f, 990f, 1156f + pageExtra * 0.9f), false);
-            warehouseEquipmentScroll = GUI.BeginScrollView(
-                new Rect(55f, 475f, 970f, 1130f + pageExtra * 0.9f), warehouseEquipmentScroll,
-                new Rect(0f, 0f, 940f, contentHeight));
-            var contentY = 0f;
-            if (showLanterns)
+            var organizeArea = new Rect(704f, 356f, 160f, 72f);
+            var sortArea = new Rect(880f, 356f, 160f, 72f);
+            DrawWarehouseButtonTexture(organizeArea, WarehouseAFormalArtContract.ToolNormal,
+                WarehouseAFormalArtContract.ToolPressed);
+            DrawWarehouseButtonTexture(sortArea, WarehouseAFormalArtContract.ToolNormal,
+                WarehouseAFormalArtContract.ToolPressed);
+            GUI.Label(organizeArea, T("warehouse.organize"), Style(27,
+                new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleCenter));
+            GUI.Label(sortArea, T("warehouse.sort") + "·" + T(WarehouseSortLocalizationKey()), Style(21,
+                new Color(0.95f, 0.89f, 0.72f), TextAnchor.MiddleCenter));
+            if (GUI.Button(organizeArea, GUIContent.none, GUIStyle.none))
             {
-                if (lanternInventory.Instances.Count == 0)
-                {
-                    uiSkin.DrawListRow(new Rect(10f, 10f, 920f, 180f), false);
-                    GUI.Label(new Rect(10f, 10f, 920f, 180f), T("warehouse.noLantern"),
-                        Style(20, new Color(0.62f, 0.72f, 0.76f), TextAnchor.MiddleCenter));
-                }
-                else
-                {
-                    for (var index = 0; index < lanternInventory.Instances.Count; index++)
-                        DrawWarehouseLanternCard(new Rect(10f, 10f + index * 210f, 920f, 190f),
-                            lanternInventory.Instances[index]);
-                }
-                contentY = lanternContentHeight;
+                PlayUiClick(UiAudioCueIds.Tap, "warehouse-organize");
+                if (WarehouseLayoutRules.Organize(warehouseSlotTokens)) SaveGame();
             }
-            for (var i = 0; i < displaySlotCount; i++)
+            if (GUI.Button(sortArea, GUIContent.none, GUIStyle.none))
             {
-                var area = new Rect(10f + i % 5 * 185f, contentY + i / 5 * 153f, 170f, 138f);
-                var equipmentIndex = i;
-                if (equipmentIndex >= 0 && equipmentIndex < equipmentInventory.Instances.Count)
-                {
-                    DrawWarehouseEquipmentSlot(area, equipmentInventory.Instances[equipmentIndex]);
-                    continue;
-                }
-                uiSkin.DrawListRow(area, false);
-                GUI.Label(area, T("warehouse.empty"),
-                    Style(14, new Color(0.39f, 0.50f, 0.55f), TextAnchor.MiddleCenter));
+                PlayUiClick(UiAudioCueIds.Tap, "warehouse-sort");
+                warehouseSortMode = (WarehouseSortMode)(((int)warehouseSortMode + 1) % 3);
+                WarehouseLayoutRules.Sort(warehouseSlotTokens,
+                    CreateWarehouseSortEntries(), warehouseSortMode, WarehouseTokenVisible);
+                SaveGame();
+            }
+
+            var viewport = new Rect(40f, WarehouseAFormalArtContract.GridY, 992f,
+                WarehouseAFormalArtContract.ScrollViewportHeight);
+            HandleWarehouseItemPointer(viewport);
+            HandleWarehouseScrollPointer(viewport, WarehouseAFormalArtContract.ScrollContentHeight);
+            warehouseEquipmentScroll = GUI.BeginScrollView(
+                viewport, warehouseEquipmentScroll,
+                new Rect(0f, 0f, 992f, WarehouseAFormalArtContract.ScrollContentHeight),
+                false, false, GUIStyle.none, GUIStyle.none);
+            var visibleStorageSlots = WarehouseLayoutRules.VisibleSlotIndices(
+                warehouseSlotTokens, warehouseTab == WarehouseTab.All ? null : WarehouseTokenVisible);
+            for (var i = 0; i < WarehouseAFormalArtContract.SlotCount; i++)
+            {
+                var area = new Rect(8f + i % WarehouseAFormalArtContract.ColumnCount *
+                    WarehouseAFormalArtContract.GridStep,
+                    i / WarehouseAFormalArtContract.ColumnCount * WarehouseAFormalArtContract.GridStep,
+                    WarehouseAFormalArtContract.SlotSize, WarehouseAFormalArtContract.SlotSize);
+                var storageSlot = warehouseTab == WarehouseTab.All
+                    ? i
+                    : i < visibleStorageSlots.Count ? visibleStorageSlots[i] : -1;
+                var token = storageSlot >= 0 ? warehouseSlotTokens[storageSlot] : null;
+                if (string.IsNullOrEmpty(token) ||
+                    (warehouseItemPointerDragging && i == warehouseDragSourceSlot))
+                    DrawWarehouseTexture(area, WarehouseAFormalArtContract.EmptySlot, "modules");
+                else if (!DrawWarehouseSlotToken(area, token))
+                    DrawWarehouseTexture(area, WarehouseAFormalArtContract.EmptySlot, "modules");
             }
             GUI.EndScrollView();
-            GUI.Label(new Rect(55f, 1625f + pageExtra * 0.9f, 970f, 72f), T("warehouse.prototypeHint"),
-                Style(16, new Color(0.75f, 0.70f, 0.48f), TextAnchor.MiddleLeft));
+            DrawWarehouseTexture(new Rect(1034f, WarehouseAFormalArtContract.GridY, 32f,
+                WarehouseAFormalArtContract.ScrollViewportHeight),
+                WarehouseAFormalArtContract.Scrollbar, "modules");
+            DrawWarehouseDragGhost();
         }
 
-        private void DrawWarehouseLanternCard(Rect area, LanternInstanceState instance)
+        private static string WarehouseEquipmentToken(string instanceId)
         {
-            var isActive = string.Equals(lanternInventory.ActiveLanternInstanceId,
-                instance.LanternInstanceId, StringComparison.Ordinal);
-            uiSkin.DrawListRow(area, isActive);
+            return "equipment:" + instanceId;
+        }
 
-            DrawLanternCircularComponent(instance,
-                new Rect(area.x + 22f, area.y + 24f, 142f, 142f), "warehouse-card");
+        private static string WarehouseLanternToken(string instanceId)
+        {
+            return "lantern:" + instanceId;
+        }
 
-            GUI.Label(new Rect(area.x + 190f, area.y + 18f, 430f, 40f), T(instance.TemplateId),
-                Style(24, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
-            GUI.Label(new Rect(area.x + 190f, area.y + 58f, 430f, 30f),
-                T("quality." + instance.Quality.ToString().ToLowerInvariant()) +
-                "  ·  " + string.Format(T("warehouse.lanternStage"), instance.ContractStage, 6),
-                Style(16, new Color(0.84f, 0.79f, 0.55f), TextAnchor.MiddleLeft));
-            GUI.Label(new Rect(area.x + 190f, area.y + 91f, 520f, 28f),
-                string.Format(T("warehouse.lanternBaseFlame"), instance.BaseFlameValue / 100f),
-                Style(15, new Color(0.82f, 0.88f, 0.90f), TextAnchor.MiddleLeft));
-            var modifierText = LanternModifierText(instance, "；");
-            GUI.Label(new Rect(area.x + 190f, area.y + 121f, 520f, 28f), modifierText,
-                Style(15, new Color(0.82f, 0.88f, 0.90f), TextAnchor.MiddleLeft));
-            GUI.Label(new Rect(area.x + 190f, area.y + 151f, 520f, 24f),
-                T(instance.CoreEffectId),
-                Style(14, new Color(0.65f, 0.78f, 0.82f), TextAnchor.MiddleLeft));
+        private static string WarehouseCosmeticToken(string productId)
+        {
+            return "cosmetic:" + productId;
+        }
 
-            var actionArea = new Rect(area.x + 722f, area.y + 54f, 170f, 82f);
-            GUI.Label(actionArea, T(isActive ? "warehouse.lanternEquipped" : "warehouse.lanternDetails"),
-                Style(18, isActive ? new Color(1f, 0.86f, 0.42f) : new Color(0.56f, 0.91f, 0.83f),
-                    TextAnchor.MiddleCenter, FontStyle.Normal));
+        private int OwnedStoreCosmeticCount()
+        {
+            var count = 0;
+            for (var index = 0; index < ownedBasePackIds.Count; index++)
+            {
+                StoreProductDefinition product;
+                if (StoreCatalog.TryGet(ownedBasePackIds[index], out product) &&
+                    product.ProductType != StoreProductType.CharacterPack) count++;
+            }
+            return count;
+        }
+
+        private void ReconcileWarehouseLayout()
+        {
+            var current = new List<string>();
+            foreach (var instance in equipmentInventory.Instances)
+                current.Add(WarehouseEquipmentToken(instance.EquipmentInstanceId));
+            foreach (var instance in lanternInventory.Instances)
+                current.Add(WarehouseLanternToken(instance.LanternInstanceId));
+            if (firstLightseekerBadgeOwned) current.Add(FirstLightseekerBadgeToken());
+            for (var index = 0; index < ownedBasePackIds.Count; index++)
+            {
+                StoreProductDefinition product;
+                if (StoreCatalog.TryGet(ownedBasePackIds[index], out product) &&
+                    product.ProductType != StoreProductType.CharacterPack)
+                    current.Add(WarehouseCosmeticToken(product.ProductId));
+            }
+
+            var currentSet = new HashSet<string>(current, StringComparer.Ordinal);
+            for (var index = warehouseAcquisitionOrder.Count - 1; index >= 0; index--)
+                if (!currentSet.Contains(warehouseAcquisitionOrder[index]))
+                    warehouseAcquisitionOrder.RemoveAt(index);
+            if (warehouseAcquisitionOrder.Count == 0)
+                warehouseAcquisitionOrder.AddRange(current);
+            else
+            {
+                for (var index = current.Count - 1; index >= 0; index--)
+                    if (!warehouseAcquisitionOrder.Contains(current[index]))
+                        warehouseAcquisitionOrder.Insert(0, current[index]);
+            }
+            WarehouseLayoutRules.Reconcile(warehouseSlotTokens, current);
+        }
+
+        private string WarehouseSortLocalizationKey()
+        {
+            switch (warehouseSortMode)
+            {
+                case WarehouseSortMode.Type: return "warehouse.sortType";
+                case WarehouseSortMode.Name: return "warehouse.sortName";
+                default: return "warehouse.sortTime";
+            }
+        }
+
+        private List<WarehouseSortEntry> CreateWarehouseSortEntries()
+        {
+            var entries = new List<WarehouseSortEntry>();
+            foreach (var instance in equipmentInventory.Instances)
+            {
+                var token = WarehouseEquipmentToken(instance.EquipmentInstanceId);
+                entries.Add(new WarehouseSortEntry(token,
+                    WarehouseAcquisitionIndex(token), 0,
+                    (int)equipmentCatalog.Get(instance.TemplateId).Slot, T(instance.TemplateId)));
+            }
+            foreach (var instance in lanternInventory.Instances)
+            {
+                var token = WarehouseLanternToken(instance.LanternInstanceId);
+                entries.Add(new WarehouseSortEntry(token,
+                    WarehouseAcquisitionIndex(token), 1, 0, T(instance.TemplateId)));
+            }
+            if (firstLightseekerBadgeOwned)
+            {
+                var token = FirstLightseekerBadgeToken();
+                entries.Add(new WarehouseSortEntry(token,
+                    WarehouseAcquisitionIndex(token), 2, 0, "First Lightseeker"));
+            }
+            for (var index = 0; index < ownedBasePackIds.Count; index++)
+            {
+                StoreProductDefinition product;
+                if (!StoreCatalog.TryGet(ownedBasePackIds[index], out product) ||
+                    product.ProductType == StoreProductType.CharacterPack) continue;
+                var token = WarehouseCosmeticToken(product.ProductId);
+                entries.Add(new WarehouseSortEntry(token, WarehouseAcquisitionIndex(token), 2,
+                    (int)product.ProductType, T(product.DisplayNameKey)));
+            }
+            return entries;
+        }
+
+        private int WarehouseAcquisitionIndex(string token)
+        {
+            var index = warehouseAcquisitionOrder.IndexOf(token);
+            return index < 0 ? int.MaxValue : index;
+        }
+
+        private bool WarehouseTokenVisible(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return false;
+            if (warehouseTab == WarehouseTab.All) return true;
+            if (warehouseTab == WarehouseTab.Equipment)
+                return token.StartsWith("equipment:", StringComparison.Ordinal);
+            if (warehouseTab == WarehouseTab.Lantern)
+                return token.StartsWith("lantern:", StringComparison.Ordinal);
+            if (warehouseTab == WarehouseTab.Other)
+                return token.StartsWith("cosmetic:", StringComparison.Ordinal) ||
+                       token.StartsWith("badge:", StringComparison.Ordinal);
+            if (warehouseTab == WarehouseTab.Materials)
+                return token.StartsWith("material:", StringComparison.Ordinal);
+            return false;
+        }
+
+        private string WarehouseDisplayToken(int displaySlot)
+        {
+            if (displaySlot < 0 || displaySlot >= WarehouseAFormalArtContract.SlotCount) return null;
+            if (warehouseTab == WarehouseTab.Materials)
+            {
+                var materials = WarehouseMaterialTokens();
+                return displaySlot < materials.Count ? materials[displaySlot] : null;
+            }
+            if (warehouseTab == WarehouseTab.All) return warehouseSlotTokens[displaySlot];
+            var visible = WarehouseLayoutRules.VisibleSlotIndices(warehouseSlotTokens, WarehouseTokenVisible);
+            return displaySlot < visible.Count ? warehouseSlotTokens[visible[displaySlot]] : null;
+        }
+
+        private bool DrawWarehouseSlotToken(Rect area, string token)
+        {
+            if (string.IsNullOrEmpty(token)) return false;
+            if (token.StartsWith("equipment:", StringComparison.Ordinal))
+            {
+                var id = token.Substring("equipment:".Length);
+                if (!equipmentInventory.Contains(id)) return false;
+                DrawWarehouseEquipmentSlot(area, equipmentInventory.Get(id));
+                return true;
+            }
+            if (token.StartsWith("lantern:", StringComparison.Ordinal))
+            {
+                var id = token.Substring("lantern:".Length);
+                if (!lanternInventory.Contains(id)) return false;
+                DrawWarehouseLanternSlot(area, lanternInventory.Get(id));
+                return true;
+            }
+            if (token.StartsWith("cosmetic:", StringComparison.Ordinal))
+            {
+                var productId = token.Substring("cosmetic:".Length);
+                StoreProductDefinition product;
+                if (!ownedBasePackIds.Contains(productId) || !StoreCatalog.TryGet(productId, out product) ||
+                    product.ProductType == StoreProductType.CharacterPack) return false;
+                DrawWarehouseCosmeticSlot(area, product);
+                return true;
+            }
+            if (token.StartsWith("material:", StringComparison.Ordinal))
+            {
+                DrawWarehouseMaterialSlot(area, token.Substring("material:".Length));
+                return true;
+            }
+            if (string.Equals(token, FirstLightseekerBadgeToken(), StringComparison.Ordinal))
+            {
+                DrawFirstLightseekerWarehouseSlot(area);
+                return firstLightseekerBadgeOwned;
+            }
+            return false;
+        }
+
+        private List<string> WarehouseMaterialTokens()
+        {
+            var tokens = new List<string>(6);
+            if (tideCrystalBalance > 0) tokens.Add("material:tide-crystal");
+            if (localLampGlowBalance > 0 ||
+                (lanternWorkshopSnapshot != null && lanternWorkshopSnapshot.LampGlowBalance > 0))
+                tokens.Add("material:lamp-glow");
+            if (localTideIronBalance > 0) tokens.Add("material:tide-iron");
+            if (localMistLeatherBalance > 0) tokens.Add("material:mist-leather");
+            if (localStarSandBalance > 0) tokens.Add("material:star-sand");
+            if (localBountyTicketBalance > 0) tokens.Add("material:bounty-ticket");
+            return tokens;
+        }
+
+        private void DrawWarehouseMaterialSlot(Rect area, string kind)
+        {
+            var resourceId = ExpeditionSettlementFormalArtContract.WarehouseThumbnail(kind);
+            DrawSettlementTexture(area, ExpeditionSettlementFormalArtContract.WarehouseThumbnailRoot,
+                resourceId, 184, 184);
+            long quantity = 0;
+            if (string.Equals(kind, "tide-crystal", StringComparison.Ordinal))
+                quantity = tideCrystalBalance;
+            else if (string.Equals(kind, "lamp-glow", StringComparison.Ordinal))
+                quantity = localLampGlowBalance +
+                           (lanternWorkshopSnapshot == null ? 0 : lanternWorkshopSnapshot.LampGlowBalance);
+            else if (string.Equals(kind, "tide-iron", StringComparison.Ordinal))
+                quantity = localTideIronBalance;
+            else if (string.Equals(kind, "mist-leather", StringComparison.Ordinal))
+                quantity = localMistLeatherBalance;
+            else if (string.Equals(kind, "star-sand", StringComparison.Ordinal))
+                quantity = localStarSandBalance;
+            else if (string.Equals(kind, "bounty-ticket", StringComparison.Ordinal))
+                quantity = localBountyTicketBalance;
+            GUI.Label(new Rect(area.x + 8f, area.y + 142f, 168f, 34f), "×" + quantity.ToString("N0"),
+                ArchiveStyle(22, new Color32(8, 55, 78, 255), TextAnchor.MiddleRight, true));
+        }
+
+        private void DrawWarehouseCosmeticSlot(Rect area, StoreProductDefinition product)
+        {
+            DrawWarehouseCosmeticVisual(area, product);
+            if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) return;
+            PlayUiClick(UiAudioCueIds.Tap, "warehouse-cosmetic-detail-open");
+            warehouseCosmeticDetailProductId = product.ProductId;
+            warehouseCosmeticDetailOpen = true;
+        }
+
+        private void DrawWarehouseCosmeticVisual(Rect area, StoreProductDefinition product)
+        {
+            var thumbnailId = StoreCosmeticFormalArtContract.WarehouseThumbnailResourceId(
+                product.ProductId);
+            var thumbnail = artCatalog.GetStoreCosmeticWarehouseThumbnail(thumbnailId);
+            if (thumbnail == null ||
+                thumbnail.width != StoreCosmeticFormalArtContract.WarehouseThumbnailWidth ||
+                thumbnail.height != StoreCosmeticFormalArtContract.WarehouseThumbnailHeight)
+            {
+                DrawWarehouseTexture(area, WarehouseAFormalArtContract.EmptySlot, "modules");
+                Debug.LogError("Rejected missing or resized cosmetic warehouse thumbnail: " +
+                               thumbnailId);
+                return;
+            }
+            var thumbnailArea = new Rect(area.x, area.y,
+                StoreCosmeticFormalArtContract.WarehouseThumbnailWidth,
+                StoreCosmeticFormalArtContract.WarehouseThumbnailHeight);
+            GUI.DrawTexture(thumbnailArea, thumbnail, ScaleMode.StretchToFill, true);
+            var equipped = IsStoreCosmeticEquipped(product);
+            if (equipped)
+                GUI.Label(new Rect(area.x + 10f, area.y + 145f, 164f, 28f),
+                    T("warehouse.cosmeticEquipped"),
+                    Style(15, MarketGold, TextAnchor.MiddleCenter, FontStyle.Bold));
+        }
+
+        private bool IsStoreCosmeticEquipped(StoreProductDefinition product)
+        {
+            if (product == null) return false;
+            return string.Equals(product.ProductId,
+                product.ProductType == StoreProductType.BasePack
+                    ? equippedBasePackProductId : equippedBattlefieldProductId,
+                StringComparison.Ordinal);
+        }
+
+        private void DrawWarehouseCosmeticDetailScreen()
+        {
+            StoreProductDefinition product;
+            if (!ownedBasePackIds.Contains(warehouseCosmeticDetailProductId) ||
+                !StoreCatalog.TryGet(warehouseCosmeticDetailProductId, out product) ||
+                product.ProductType == StoreProductType.CharacterPack)
+            {
+                warehouseCosmeticDetailOpen = false;
+                warehouseCosmeticDetailProductId = null;
+                return;
+            }
+
+            var panel = EquipmentDetailAFormalArtContract.ActionPanelRect;
+            DrawEquipmentDetailAModule(panel, EquipmentDetailAFormalArtContract.ActionShell, 760, 650);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 130f, 18f, 500f, 70f),
+                T("market.detail"), Style(31, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+
+            var appearance = OffsetEquipmentDetailRect(panel, 48f, 145f, 184f, 184f);
+            var thumbnailId = StoreCosmeticFormalArtContract.WarehouseThumbnailResourceId(
+                product.ProductId);
+            var thumbnail = artCatalog.GetStoreCosmeticWarehouseThumbnail(thumbnailId);
+            if (thumbnail != null &&
+                thumbnail.width == StoreCosmeticFormalArtContract.WarehouseThumbnailWidth &&
+                thumbnail.height == StoreCosmeticFormalArtContract.WarehouseThumbnailHeight)
+                GUI.DrawTexture(appearance, thumbnail, ScaleMode.StretchToFill, true);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 337f, 184f, 40f),
+                T(product.DisplayNameKey), Style(21, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 380f, 184f, 30f),
+                product.ProductType == StoreProductType.BasePack
+                    ? T("warehouse.cosmeticBase") : T("warehouse.cosmeticBattlefield"),
+                Style(18, MarketGold, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 413f, 190f, 48f),
+                !StoreCosmeticFormalArtContract.HasNativeRuntimeVisual(product.ProductId)
+                    ? T("warehouse.cosmeticArtBlocked")
+                    : IsStoreCosmeticEquipped(product)
+                        ? T("warehouse.cosmeticEquipped") : T("warehouse.cosmeticAvailable"),
+                Style(18, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 260f, 145f, 4f, 280f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.VerticalDivider);
+            DrawGenericCosmeticDetailRow(panel, 138f, 172f, "warehouse.cosmeticDescription",
+                product.ProductType == StoreProductType.BasePack
+                    ? "warehouse.cosmeticBaseDescription" : "warehouse.cosmeticBattlefieldDescription");
+            DrawGenericCosmeticDetailRow(panel, 242f, 276f, "warehouse.cosmeticUsage",
+                product.ProductType == StoreProductType.BasePack
+                    ? "warehouse.cosmeticBaseUsage" : "warehouse.cosmeticBattlefieldUsage");
+            DrawGenericCosmeticDetailRow(panel, 346f, 380f, "warehouse.cosmeticQuantity",
+                "warehouse.cosmeticQuantityOne");
+
+            var equipped = IsStoreCosmeticEquipped(product);
+            var runtimeVisualReady = StoreCosmeticFormalArtContract.HasNativeRuntimeVisual(product.ProductId);
+            var actionArea = OffsetEquipmentDetailRect(panel, 520f, 552f, 220f, 68f);
+            var clicked = DrawLanternDetailAStateButton(actionArea,
+                GlobalButtonFormalArtContract.ResourceRoot,
+                GlobalButtonFormalArtContract.MediumNormal,
+                GlobalButtonFormalArtContract.MediumPressed,
+                GlobalButtonFormalArtContract.MediumDisabled, runtimeVisualReady && !equipped);
+            GUI.Label(actionArea, T(!runtimeVisualReady
+                    ? "warehouse.cosmeticArtBlocked"
+                    : equipped ? "warehouse.cosmeticEquipped" : "warehouse.cosmeticEquip"),
+                Style(22, equipped || !runtimeVisualReady ? MarketMuted : MarketIvory,
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+            if (clicked && runtimeVisualReady)
+            {
+                if (product.ProductType == StoreProductType.BasePack)
+                    equippedBasePackProductId = product.ProductId;
+                else
+                    equippedBattlefieldProductId = product.ProductId;
+                PlayUiClick(UiAudioCueIds.Confirm, "warehouse-cosmetic-equip");
+                SaveGame();
+            }
+
+            if (!GUI.Button(OffsetEquipmentDetailRect(panel, 660f, 20f, 76f, 76f),
+                    GUIContent.none, GUIStyle.none)) return;
+            PlayUiClick(UiAudioCueIds.Cancel, "warehouse-cosmetic-detail-close");
+            warehouseCosmeticDetailOpen = false;
+            warehouseCosmeticDetailProductId = null;
+            firstLightseekerBadgeDetailOpen = false;
+        }
+
+        private void DrawGenericCosmeticDetailRow(Rect panel, float titleY, float rowY,
+            string titleKey, string valueKey)
+        {
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, titleY, 360f, 30f), T(titleKey),
+                Style(22, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            var row = OffsetEquipmentDetailRect(panel, 292f, rowY, 360f, 56f);
+            DrawEquipmentDetailAModule(row, EquipmentDetailAFormalArtContract.BaseRow, 360, 56);
+            var style = Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal);
+            style.wordWrap = true;
+            GUI.Label(new Rect(row.x + 18f, row.y, row.width - 36f, row.height), T(valueKey), style);
+        }
+
+        private int WarehouseSlotAt(Rect viewport, Vector2 pointerPosition)
+        {
+            if (!viewport.Contains(pointerPosition)) return -1;
+            var localX = pointerPosition.x - viewport.x - 8f;
+            var localY = pointerPosition.y - viewport.y + warehouseEquipmentScroll.y;
+            if (localX < 0f || localY < 0f) return -1;
+            var column = Mathf.FloorToInt(localX / WarehouseAFormalArtContract.GridStep);
+            var row = Mathf.FloorToInt(localY / WarehouseAFormalArtContract.GridStep);
+            if (column < 0 || column >= WarehouseAFormalArtContract.ColumnCount || row < 0) return -1;
+            if (localX - column * WarehouseAFormalArtContract.GridStep >= WarehouseAFormalArtContract.SlotSize ||
+                localY - row * WarehouseAFormalArtContract.GridStep >= WarehouseAFormalArtContract.SlotSize)
+                return -1;
+            var slot = row * WarehouseAFormalArtContract.ColumnCount + column;
+            return slot < WarehouseAFormalArtContract.SlotCount ? slot : -1;
+        }
+
+        private void HandleWarehouseItemPointer(Rect viewport)
+        {
+            var pointerEvent = Event.current;
+            if (pointerEvent == null) return;
+            var pointerPosition = pointerEvent.mousePosition;
+            if (pointerEvent.type == EventType.MouseDown && pointerEvent.button == 0)
+            {
+                var source = WarehouseSlotAt(viewport, pointerPosition);
+                var sourceToken = WarehouseDisplayToken(source);
+                if (source < 0 || string.IsNullOrEmpty(sourceToken)) return;
+                warehouseDragSourceSlot = source;
+                warehouseDraggedToken = sourceToken;
+                warehouseItemPointerDown = pointerPosition;
+                warehouseItemPointerLast = pointerPosition;
+                warehouseItemPointerHeld = true;
+                warehouseItemPointerDragging = false;
+                return;
+            }
+            if (pointerEvent.type == EventType.MouseDrag && warehouseItemPointerHeld)
+            {
+                warehouseItemPointerLast = pointerPosition;
+                if (!warehouseItemPointerDragging &&
+                    (pointerPosition - warehouseItemPointerDown).sqrMagnitude >= 144f)
+                {
+                    warehouseItemPointerDragging = true;
+                    PlayUiClick(UiAudioCueIds.DragPick, "warehouse-item-drag-pick");
+                }
+                if (warehouseItemPointerDragging) pointerEvent.Use();
+                return;
+            }
+            if (pointerEvent.type != EventType.MouseUp || !warehouseItemPointerHeld) return;
+            warehouseItemPointerLast = pointerPosition;
+            if (warehouseItemPointerDragging)
+            {
+                var destination = WarehouseSlotAt(viewport, pointerPosition);
+                var moved = false;
+                if (destination >= 0)
+                {
+                    moved = warehouseTab == WarehouseTab.All
+                        ? WarehouseLayoutRules.TryMove(
+                            warehouseSlotTokens, warehouseDragSourceSlot, destination)
+                        : WarehouseLayoutRules.TryReorderVisible(
+                            warehouseSlotTokens, WarehouseTokenVisible,
+                            warehouseDragSourceSlot, destination);
+                }
+                if (moved)
+                {
+                    PlayUiClick(UiAudioCueIds.DragDrop, "warehouse-item-drag-drop");
+                    SaveGame();
+                }
+                pointerEvent.Use();
+            }
+            warehouseDragSourceSlot = -1;
+            warehouseDraggedToken = null;
+            warehouseItemPointerHeld = false;
+            warehouseItemPointerDragging = false;
+        }
+
+        private void DrawWarehouseDragGhost()
+        {
+            if (!warehouseItemPointerDragging || string.IsNullOrEmpty(warehouseDraggedToken)) return;
+            var area = new Rect(warehouseItemPointerLast.x - WarehouseAFormalArtContract.SlotSize * 0.5f,
+                warehouseItemPointerLast.y - WarehouseAFormalArtContract.SlotSize * 0.5f,
+                WarehouseAFormalArtContract.SlotSize, WarehouseAFormalArtContract.SlotSize);
+            if (warehouseDraggedToken.StartsWith("equipment:", StringComparison.Ordinal))
+            {
+                var id = warehouseDraggedToken.Substring("equipment:".Length);
+                if (equipmentInventory.Contains(id)) DrawWarehouseEquipmentVisual(area, equipmentInventory.Get(id));
+            }
+            else if (warehouseDraggedToken.StartsWith("lantern:", StringComparison.Ordinal))
+            {
+                var id = warehouseDraggedToken.Substring("lantern:".Length);
+                if (lanternInventory.Contains(id)) DrawWarehouseLanternVisual(area, lanternInventory.Get(id));
+            }
+            else if (warehouseDraggedToken.StartsWith("cosmetic:", StringComparison.Ordinal))
+            {
+                var productId = warehouseDraggedToken.Substring("cosmetic:".Length);
+                StoreProductDefinition product;
+                if (StoreCatalog.TryGet(productId, out product)) DrawWarehouseCosmeticVisual(area, product);
+            }
+        }
+
+        private void DrawWarehouseLanternSlot(Rect area, LanternInstanceState instance)
+        {
+            DrawWarehouseLanternVisual(area, instance);
             if (GUI.Button(area, GUIContent.none, GUIStyle.none))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "warehouse-lantern-detail-open");
                 warehouseLanternDetailId = instance.LanternInstanceId;
                 warehouseLanternDetailOpen = true;
+                lanternDetailCovenantPage = false;
+                warehouseLanternStagePopup = -1;
             }
+        }
+
+        private void DrawWarehouseLanternVisual(Rect area, LanternInstanceState instance)
+        {
+            DrawWarehouseTexture(area, WarehouseAFormalArtContract.QualityBackground(
+                instance.Quality.ToString()), "quality");
+            DrawWarehouseTexture(area, WarehouseAFormalArtContract.LanternAppearance(
+                instance.TemplateId), "lantern");
+            var isActive = string.Equals(lanternInventory.ActiveLanternInstanceId,
+                instance.LanternInstanceId, StringComparison.Ordinal);
+            if (isActive)
+                GUI.Label(new Rect(area.x + 8f, area.y + 6f, area.width - 16f, 28f),
+                    T("warehouse.lanternEquipped"), Style(14, new Color(1f, 0.86f, 0.42f),
+                        TextAnchor.MiddleLeft, FontStyle.Bold));
         }
 
         private string LanternModifierText(LanternInstanceState instance, string separator)
@@ -4661,7 +5676,6 @@ namespace SeekerAutoChess.Prototype
                 instance, AllowLanternBossClearBypassForTesting);
             MarkLanternSelectionChanged();
             PlayUiClick(UiAudioCueIds.Confirm, "warehouse-equip-lantern");
-            homeNoticeKey = "home.notice.lanternChanged";
             SaveGame();
         }
 
@@ -4672,7 +5686,6 @@ namespace SeekerAutoChess.Prototype
             chapterOneLighthouse.RecordLanternUnequipped();
             MarkLanternSelectionChanged();
             PlayUiClick(UiAudioCueIds.Confirm, "warehouse-unequip-lantern");
-            homeNoticeKey = "home.notice.lanternChanged";
             SaveGame();
         }
 
@@ -4842,123 +5855,497 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
 
-            var panel = WarehouseEquipmentDetailPanel;
-            Sprite detailBackground;
-            var hasDetailBackground = artCatalog.TryGetEquipmentDetailBackground(
-                EquipmentRarityId(EquipmentQuality.Common), out detailBackground);
-            GUI.color = Color.white;
-            if (hasDetailBackground)
-                GUI.DrawTexture(panel, detailBackground.texture, ScaleMode.StretchToFill, true);
-            else
-            {
-                GUI.color = new Color(0.035f, 0.10f, 0.12f, 0.98f);
-                GUI.DrawTexture(panel, Texture2D.whiteTexture);
-            }
-            GUI.color = Color.white;
-
-            GUI.Label(new Rect(245f, 370f, 590f, 58f), T(instance.TemplateId),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-            DrawEquipmentDetailSection(new Rect(261f, 449f, 558f, 304f),
-                "warehouse.lanternDetail", !hasDetailBackground);
-            DrawLanternCircularComponent(instance,
-                new Rect(300f, 515f, 142f, 142f), "warehouse-detail");
-            GUI.Label(new Rect(475f, 500f, 320f, 190f),
-                T("quality." + instance.Quality.ToString().ToLowerInvariant()) + "  ·  " +
-                string.Format(T("warehouse.lanternStage"), instance.ContractStage, 6) + "\n" +
-                string.Format(T("warehouse.lanternBaseFlame"), instance.BaseFlameValue / 100f),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleLeft));
-
-            DrawEquipmentDetailSection(new Rect(261f, 771f, 558f, 275f),
-                "warehouse.lanternCoreTitle", !hasDetailBackground);
-            GUI.Label(new Rect(285f, 838f, 510f, 145f), T(instance.CoreEffectId),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleCenter));
-            DrawEquipmentDetailSection(new Rect(261f, 1064f, 558f, 220f),
-                "warehouse.lanternGlyphTitle", !hasDetailBackground);
-            GUI.Label(new Rect(285f, 1125f, 510f, 100f),
-                LanternModifierText(instance, "\n"),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleCenter));
+            var panel = DrawWarehouseLanternDetailAFormal(instance);
 
             var isActive = string.Equals(lanternInventory.ActiveLanternInstanceId,
                 instance.LanternInstanceId, StringComparison.Ordinal);
             var hasActiveLantern = !string.IsNullOrEmpty(lanternInventory.ActiveLanternInstanceId);
-            var equipArea = new Rect(260f, 1325f, 260f, 78f);
-            var unequipArea = new Rect(560f, 1325f, 260f, 78f);
-            GUI.enabled = pendingLanternChangeAction == LanternChangeAction.None;
-            var equipLabelKey = isActive || hasActiveLantern
-                ? "warehouse.lanternChange"
-                : "warehouse.lanternEquipAction";
-            if (GUI.Button(equipArea, T(equipLabelKey),
-                    ButtonStyle(UiButtonSemantic.Primary, 20)))
+            var actionArea = OffsetEquipmentDetailRect(panel, 240f, 888f, 280f, 76f);
+            var actionEnabled = pendingLanternChangeAction == LanternChangeAction.None &&
+                warehouseLanternStagePopup < 0;
+            var actionLabelKey = isActive ? "warehouse.lanternUnequip" :
+                hasActiveLantern ? "warehouse.lanternChange" : "warehouse.lanternEquipAction";
+            var actionClicked = DrawLanternDetailAStateButton(actionArea,
+                GlobalButtonFormalArtContract.ResourceRoot,
+                GlobalButtonFormalArtContract.LargeNormal,
+                GlobalButtonFormalArtContract.LargePressed,
+                GlobalButtonFormalArtContract.LargeDisabled, actionEnabled);
+            GUI.Label(actionArea, T(actionLabelKey),
+                Style(24, actionEnabled ? MarketIvory : MarketMuted,
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+            if (actionClicked)
             {
                 if (isActive)
-                {
-                    warehouseLanternDetailOpen = false;
-                    warehouseLanternDetailId = null;
-                    PlayUiClick(UiAudioCueIds.Tap, "warehouse-change-lantern");
-                }
+                    OpenLanternChangeConfirmation(LanternChangeAction.Unequip, instance);
                 else OpenLanternChangeConfirmation(hasActiveLantern
                     ? LanternChangeAction.Replace
                     : LanternChangeAction.Equip, instance);
             }
-            GUI.enabled = pendingLanternChangeAction == LanternChangeAction.None && isActive;
-            if (GUI.Button(unequipArea, T("warehouse.lanternUnequip"),
-                    ButtonStyle(UiButtonSemantic.Secondary, 20)))
-                OpenLanternChangeConfirmation(LanternChangeAction.Unequip, instance);
-            GUI.enabled = true;
+            var closeArea = OffsetEquipmentDetailRect(panel, 662f, 22f, 72f, 72f);
+            var closeEnabled = pendingLanternChangeAction == LanternChangeAction.None &&
+                warehouseLanternStagePopup < 0;
+            if (DrawLanternDetailAStateButton(closeArea, SettingsFormalArtContract.ModuleRoot,
+                    SettingsFormalArtContract.CloseNormal, SettingsFormalArtContract.ClosePressed,
+                    SettingsFormalArtContract.CloseDisabled, closeEnabled))
+            {
+                PlayUiClick(UiAudioCueIds.Cancel, "warehouse-lantern-detail-close");
+                warehouseLanternDetailOpen = false;
+                warehouseLanternDetailId = null;
+                warehouseLanternStagePopup = -1;
+            }
+            if (warehouseLanternStagePopup >= 0)
+                DrawWarehouseLanternCovenantPopup(panel, instance, warehouseLanternStagePopup);
             if (pendingLanternChangeAction != LanternChangeAction.None)
                 DrawLanternChangeConfirmation();
         }
 
+        private Rect DrawWarehouseLanternDetailAFormal(LanternInstanceState instance)
+        {
+            var panel = LanternDetailAFormalArtContract.PanelRect;
+            DrawMarketTextureFormal(panel, LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CompactShell);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 200f, 22f, 360f, 72f),
+                T("warehouse.lanternDetail"),
+                Style(31, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+
+            var appearance = OffsetEquipmentDetailRect(panel, 48f, 150f, 184f, 184f);
+            DrawWarehouseTexture(appearance, WarehouseAFormalArtContract.QualityBackground(
+                instance.Quality.ToString()), "quality");
+            DrawWarehouseTexture(appearance, WarehouseAFormalArtContract.LanternAppearance(
+                instance.TemplateId), "lantern");
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 344f, 210f, 34f), T(instance.TemplateId),
+                Style(27, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 380f, 210f, 30f),
+                T("quality." + instance.Quality.ToString().ToLowerInvariant()),
+                Style(21, MarketQualityTextColorFormal(MarketAssetKind.Lantern,
+                    (int)instance.Quality), TextAnchor.MiddleLeft, FontStyle.Normal));
+            var equipped = string.Equals(lanternInventory.ActiveLanternInstanceId,
+                instance.LanternInstanceId, StringComparison.Ordinal);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 412f, 210f, 30f),
+                equipped ? T("warehouse.lanternEquipped") : T("warehouse.lanternEquip"),
+                Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 444f, 210f, 30f),
+                string.Format(T("warehouse.lanternStage"), instance.ContractStage, 6),
+                Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 258f, 150f, 4f, 280f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.VerticalDivider);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, 142f, 140f, 40f),
+                T("lantern.detail.baseAttributes"),
+                Style(25, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 432f, 146f, 280f, 20f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.SubsectionDivider);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, 181f, 360f, 24f),
+                T("lantern.detail.baseFlameTitle"),
+                Style(19, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 292f, 205f, 360f, 56f),
+                EquipmentDetailAFormalArtContract.ResourceRoot,
+                EquipmentDetailAFormalArtContract.BaseRow);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 310f, 205f, 324f, 56f),
+                string.Format(T("warehouse.lanternBaseFlame"), instance.BaseFlameValue / 100f),
+                Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, 273f, 360f, 24f),
+                T("warehouse.lanternGlyphTitle"),
+                Style(19, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            for (var index = 0; index < 3; index++)
+            {
+                var row = OffsetEquipmentDetailRect(panel, 292f, 301f + index * 60f, 360f, 56f);
+                DrawMarketTextureFormal(row, EquipmentDetailAFormalArtContract.ResourceRoot,
+                    EquipmentDetailAFormalArtContract.MagicRow);
+                var text = index < instance.ModifierRolls.Count
+                    ? LanternModifierRowText(instance.ModifierRolls[index])
+                    : index == 0 ? T("warehouse.lanternNoGlyph") : string.Empty;
+                GUI.Label(new Rect(row.x + 18f, row.y, row.width - 36f, row.height), text,
+                    Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            }
+
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 48f, 488f, 664f, 20f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.SectionDivider);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 515f, 240f, 28f),
+                T("warehouse.lanternCoreTitle"),
+                Style(24, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 48f, 548f, 664f, 112f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CorePanel);
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 62f, 548f, 112f, 112f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CoreEmblem);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 190f, 554f, 492f, 38f),
+                T(instance.CoreEffectId),
+                Style(23, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 190f, 590f, 492f, 56f),
+                string.Format(T("lantern.detail.coreRules"), instance.RulesVersion),
+                Style(18, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 48f, 655f, 664f, 20f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.SectionDivider);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 680f, 240f, 28f),
+                T("lantern.detail.covenantSlots"),
+                Style(24, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+
+            var authoritative = FindAuthoritativeLantern(instance.LanternInstanceId);
+            var optionIds = authoritative == null || authoritative.CovenantOptionIds == null
+                ? new string[0] : authoritative.CovenantOptionIds;
+            for (var index = 0; index < 6; index++)
+                DrawWarehouseLanternCovenantSlot(panel, instance, optionIds, index);
+            return panel;
+        }
+
+        private void DrawWarehouseLanternCovenantSlot(Rect panel, LanternInstanceState instance,
+            string[] optionIds, int index)
+        {
+            var row = index / 2;
+            var column = index % 2;
+            var slot = OffsetEquipmentDetailRect(panel, column == 0 ? 48f : 392f,
+                712f + row * 58f, 320f, 56f);
+            var lit = index < instance.ContractStage;
+            DrawMarketTextureFormal(slot, LanternDetailAFormalArtContract.ResourceRoot,
+                lit ? LanternDetailAFormalArtContract.CovenantSlotNormal :
+                    LanternDetailAFormalArtContract.CovenantSlotDisabled);
+            var roman = new[] { "I", "II", "III", "IV", "V", "VI" };
+            GUI.Label(new Rect(slot.x + 12f, slot.y + 4f, 48f, 48f), roman[index],
+                Style(17, lit ? DetailBodyInk : MarketMuted, TextAnchor.MiddleCenter, FontStyle.Normal));
+            var optionId = index < optionIds.Length ? optionIds[index] : null;
+            var name = lit && !string.IsNullOrWhiteSpace(optionId)
+                ? T("lantern.covenant." + optionId)
+                : lit ? T("lantern.detail.stageLit") : T("lantern.detail.stageUnlit");
+            DrawLanternDetailASlotName(new Rect(slot.x + 66f, slot.y + 4f, 186f, 48f), name,
+                lit ? DetailBodyInk : MarketMuted);
+            var info = new Rect(slot.x + 268f, slot.y + 6f, 44f, 44f);
+            var canInspect = lit;
+            var clicked = DrawLanternDetailAStateButton(info,
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.InfoNormal,
+                LanternDetailAFormalArtContract.InfoPressed,
+                LanternDetailAFormalArtContract.InfoDisabled, canInspect);
+            if (clicked)
+            {
+                warehouseLanternStagePopup = index;
+                PlayUiClick(UiAudioCueIds.Tap, "lantern-covenant-stage-detail");
+            }
+        }
+
+        private void DrawLanternDetailASlotName(Rect area, string value, Color color)
+        {
+            var text = value ?? string.Empty;
+            GUIStyle style = null;
+            for (var size = 17; size >= 13; size--)
+            {
+                style = Style(size, color, TextAnchor.MiddleLeft, FontStyle.Normal);
+                style.clipping = TextClipping.Clip;
+                if (style.CalcSize(new GUIContent(text)).x <= area.width) break;
+            }
+            if (style.CalcSize(new GUIContent(text)).x > area.width)
+            {
+                const string ellipsis = "…";
+                while (text.Length > 0 &&
+                       style.CalcSize(new GUIContent(text + ellipsis)).x > area.width)
+                    text = text.Substring(0, text.Length - 1);
+                text += ellipsis;
+            }
+            GUI.Label(area, text, style);
+        }
+
+        private void DrawWarehouseLanternCovenantPopup(Rect panel, LanternInstanceState instance,
+            int stageIndex)
+        {
+            var popup = OffsetEquipmentDetailRect(panel, 100f, 260f, 560f, 460f);
+            DrawMarketTextureFormal(popup, LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CovenantPopupShell);
+            GUI.Label(new Rect(popup.x + 130f, popup.y + 10f, 300f, 72f),
+                T("lantern.detail.popupTitle"),
+                Style(27, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+            var close = new Rect(popup.x + 470f, popup.y + 10f, 72f, 72f);
+            if (DrawLanternDetailAStateButton(close, SettingsFormalArtContract.ModuleRoot,
+                    SettingsFormalArtContract.CloseNormal, SettingsFormalArtContract.ClosePressed,
+                    SettingsFormalArtContract.CloseDisabled, true))
+            {
+                warehouseLanternStagePopup = -1;
+                PlayUiClick(UiAudioCueIds.Cancel, "lantern-covenant-stage-close");
+                return;
+            }
+            DrawMarketTextureFormal(new Rect(popup.x + 32f, popup.y + 94f, 112f, 112f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.StageMedallion);
+            var roman = new[] { "I", "II", "III", "IV", "V", "VI" };
+            GUI.Label(new Rect(popup.x + 32f, popup.y + 94f, 112f, 112f), roman[stageIndex],
+                Style(28, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+            DrawMarketTextureFormal(new Rect(popup.x + 164f, popup.y + 90f, 4f, 120f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CovenantPopupVerticalDivider);
+            var authoritative = FindAuthoritativeLantern(instance.LanternInstanceId);
+            var optionIds = authoritative == null || authoritative.CovenantOptionIds == null
+                ? new string[0] : authoritative.CovenantOptionIds;
+            var optionId = stageIndex < optionIds.Length ? optionIds[stageIndex] : null;
+            var title = string.IsNullOrWhiteSpace(optionId)
+                ? T("lantern.detail.stageLit") : T("lantern.covenant." + optionId);
+            GUI.Label(new Rect(popup.x + 192f, popup.y + 92f, 320f, 48f), title,
+                Style(25, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(new Rect(popup.x + 192f, popup.y + 142f, 320f, 40f),
+                T("lantern.detail.stageStatusLit"),
+                Style(20, MarketGold, TextAnchor.MiddleLeft, FontStyle.Normal));
+            DrawMarketTextureFormal(new Rect(popup.x + 50f, popup.y + 224f, 460f, 20f),
+                LanternDetailAFormalArtContract.ResourceRoot,
+                LanternDetailAFormalArtContract.CovenantPopupDivider);
+            GUI.Label(new Rect(popup.x + 50f, popup.y + 252f, 460f, 38f),
+                T("lantern.detail.popupEffectTitle"),
+                Style(24, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(new Rect(popup.x + 50f, popup.y + 294f, 460f, 82f),
+                string.IsNullOrWhiteSpace(optionId)
+                    ? T("lantern.detail.selectionUnavailable")
+                    : T("lantern.detail.effectServerRule"),
+                Style(19, DetailBodyInk, TextAnchor.UpperLeft, FontStyle.Normal));
+            GUI.Label(new Rect(popup.x + 50f, popup.y + 390f, 460f, 32f),
+                string.Format(T("lantern.detail.rulesVersion"), instance.RulesVersion),
+                Style(17, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+        }
+
+        private bool DrawLanternDetailAStateButton(Rect area, string root, string normal,
+            string pressed, string disabled, bool enabled)
+        {
+            var pointerDown = enabled && Event.current != null &&
+                area.Contains(Event.current.mousePosition) && Input.GetMouseButton(0);
+            DrawMarketTextureFormal(area, root, enabled ? (pointerDown ? pressed : normal) : disabled);
+            var previousEnabled = GUI.enabled;
+            GUI.enabled = enabled;
+            var clicked = GUI.Button(area, GUIContent.none, GUIStyle.none);
+            GUI.enabled = previousEnabled;
+            return clicked;
+        }
+
+        private Rect DrawLanternDetailFormal(LanternInstanceState instance, string displayTemplateId)
+        {
+            var panel = LanternDetailFormalArtContract.PanelRect;
+            DrawMarketTextureFormal(panel, LanternDetailFormalArtContract.ResourceRoot,
+                LanternDetailFormalArtContract.FixedShell);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 250f, 36f, 482f, 84f),
+                T("warehouse.lanternDetail"),
+                Style(34, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+
+            var attributesTab = OffsetEquipmentDetailRect(panel, 150f, 172f, 330f, 64f);
+            var covenantTab = OffsetEquipmentDetailRect(panel, 502f, 172f, 330f, 64f);
+            DrawMarketTextureFormal(attributesTab, LanternDetailFormalArtContract.ResourceRoot,
+                lanternDetailCovenantPage ? LanternDetailFormalArtContract.TabInactive :
+                    LanternDetailFormalArtContract.TabActive);
+            DrawMarketTextureFormal(covenantTab, LanternDetailFormalArtContract.ResourceRoot,
+                lanternDetailCovenantPage ? LanternDetailFormalArtContract.TabActive :
+                    LanternDetailFormalArtContract.TabInactive);
+            GUI.Label(attributesTab, T("lantern.detail.attributesTab"),
+                Style(24, lanternDetailCovenantPage ? MarketInk : MarketIvory,
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+            GUI.Label(covenantTab, T("lantern.detail.covenantTab"),
+                Style(24, lanternDetailCovenantPage ? MarketIvory : MarketInk,
+                    TextAnchor.MiddleCenter, FontStyle.Bold));
+            if (GUI.Button(attributesTab, GUIContent.none, GUIStyle.none))
+            {
+                lanternDetailCovenantPage = false;
+                PlayUiClick(UiAudioCueIds.TabSwitch, "lantern-detail-attributes");
+            }
+            if (GUI.Button(covenantTab, GUIContent.none, GUIStyle.none))
+            {
+                lanternDetailCovenantPage = true;
+                PlayUiClick(UiAudioCueIds.TabSwitch, "lantern-detail-covenant");
+            }
+
+            var pageArea = OffsetEquipmentDetailRect(panel, 62f, 258f, 858f, 930f);
+            DrawMarketTextureFormal(pageArea, LanternDetailFormalArtContract.ResourceRoot,
+                lanternDetailCovenantPage ? LanternDetailFormalArtContract.CovenantPage :
+                    LanternDetailFormalArtContract.AttributesPage);
+            if (lanternDetailCovenantPage)
+                DrawLanternCovenantPageFormal(panel, instance);
+            else
+                DrawLanternAttributesPageFormal(panel, instance, displayTemplateId);
+            return panel;
+        }
+
+        private void DrawLanternAttributesPageFormal(Rect panel, LanternInstanceState instance,
+            string displayTemplateId)
+        {
+            DrawWarehouseTexture(OffsetEquipmentDetailRect(panel, 70f, 270f, 220f, 220f),
+                WarehouseAFormalArtContract.LanternDetailAppearance(displayTemplateId), "lantern-detail");
+            GUI.Label(OffsetEquipmentDetailRect(panel, 70f, 496f, 280f, 54f), T(displayTemplateId),
+                Style(28, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 104f, 554f, 246f, 50f),
+                T("quality." + instance.Quality.ToString().ToLowerInvariant()),
+                Style(21, MarketQualityTextColorFormal(MarketAssetKind.Lantern, (int)instance.Quality),
+                    TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 70f, 606f, 280f, 40f),
+                string.Format(T("warehouse.lanternStage"), instance.ContractStage, 6),
+                Style(21, MarketInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 410f, 282f, 360f, 54f),
+                T("lantern.detail.baseFlameTitle"),
+                Style(24, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 850f, 280f, 56f, 56f),
+                LanternDetailFormalArtContract.SharedResourceRoot, EquipmentDetailFormalArtContract.Info);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 438f, 360f, 446f, 122f),
+                string.Format(T("warehouse.lanternBaseFlame"), instance.BaseFlameValue / 100f),
+                Style(23, MarketInk, TextAnchor.MiddleCenter, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 70f, 712f, 350f, 54f),
+                T("warehouse.lanternGlyphTitle"),
+                Style(24, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 850f, 711f, 56f, 56f),
+                LanternDetailFormalArtContract.SharedResourceRoot, EquipmentDetailFormalArtContract.Info);
+            for (var index = 0; index < 3; index++)
+            {
+                var text = index < instance.ModifierRolls.Count
+                    ? LanternModifierRowText(instance.ModifierRolls[index])
+                    : index == 0 ? T("warehouse.lanternNoGlyph") : string.Empty;
+                GUI.Label(OffsetEquipmentDetailRect(panel, 102f, 790f + index * 110f, 778f, 84f), text,
+                    Style(23, MarketInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            }
+        }
+
+        private void DrawLanternCovenantPageFormal(Rect panel, LanternInstanceState instance)
+        {
+            GUI.Label(OffsetEquipmentDetailRect(panel, 62f, 270f, 500f, 56f),
+                T("warehouse.lanternCoreTitle"),
+                Style(28, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 850f, 268f, 56f, 56f),
+                LanternDetailFormalArtContract.SharedResourceRoot, EquipmentDetailFormalArtContract.Info);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 102f, 346f, 250f, 56f),
+                T("lantern.detail.initialForm"),
+                Style(24, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 632f, 346f, 260f, 56f),
+                string.Format(T("warehouse.lanternStage"), instance.ContractStage, 6),
+                Style(23, MarketInk, TextAnchor.MiddleRight, FontStyle.Bold));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 102f, 416f, 778f, 86f),
+                T(instance.CoreEffectId), Style(25, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            var roman = new[] { "I", "II", "III", "IV", "V", "VI" };
+            for (var index = 0; index < roman.Length; index++)
+            {
+                var row = OffsetEquipmentDetailRect(panel, 62f, 558f + index * 96f, 858f, 82f);
+                GUI.Label(new Rect(row.x + 34f, row.y, 92f, row.height), roman[index],
+                    Style(24, MarketInk, TextAnchor.MiddleCenter, FontStyle.Bold));
+                GUI.Label(new Rect(row.x + 142f, row.y, 250f, row.height),
+                    index == 0 ? T("lantern.detail.initialForm") : T("lantern.detail.contractStage"),
+                    Style(22, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+                GUI.Label(new Rect(row.x + 402f, row.y, 416f, row.height),
+                    instance.ContractStage >= index + 1 ? T(instance.CoreEffectId) : T("lantern.detail.locked"),
+                    Style(22, MarketInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            }
+            GUI.Label(OffsetEquipmentDetailRect(panel, 62f, 1140f, 858f, 42f),
+                string.Format(T("lantern.detail.rulesVersion"), instance.RulesVersion),
+                Style(20, MarketInk, TextAnchor.MiddleCenter, FontStyle.Bold));
+        }
+
+        private string LanternModifierRowText(LanternModifierRoll modifier)
+        {
+            var percentage = !string.Equals(modifier.ModifierId,
+                FirstChapterLanternFixtures.ArmorModifierId, StringComparison.Ordinal);
+            return string.Format(T(modifier.ModifierId),
+                percentage ? (object)(modifier.Value / 100f) : modifier.Value);
+        }
+
         private void DrawLanternChangeConfirmation()
         {
-            GUI.color = new Color(0f, 0f, 0f, 0.82f);
-            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f),
-                Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            var panel = new Rect(110f, 610f, 860f, 590f);
-            uiSkin.DrawPanel(panel, true);
             var titleKey = pendingLanternChangeAction == LanternChangeAction.Unequip
                 ? "warehouse.lanternConfirmUnequipTitle"
                 : pendingLanternChangeAction == LanternChangeAction.Replace
                     ? "warehouse.lanternConfirmReplaceTitle"
                     : "warehouse.lanternConfirmEquipTitle";
-            GUI.Label(new Rect(panel.x + 50f, panel.y + 45f, panel.width - 100f, 65f),
-                T(titleKey), Style(30, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-            GUI.Label(new Rect(panel.x + 70f, panel.y + 135f, panel.width - 140f, 260f),
-                T("warehouse.lanternConfirmBody"),
-                Style(20, new Color(0.86f, 0.90f, 0.91f), TextAnchor.MiddleCenter));
-            if (GUI.Button(new Rect(panel.x + 60f, panel.y + 450f, 330f, 78f),
-                    T("arena.cancel"), ButtonStyle(UiButtonSemantic.Secondary, 19)))
+            var result = DrawCommonConfirmDialog(T(titleKey), T("warehouse.lanternConfirmBody"),
+                string.Empty, T("arena.cancel"), T("warehouse.lanternConfirmAction"));
+            if (result == 0)
             {
                 PlayUiClick(UiAudioCueIds.Cancel, "warehouse-lantern-confirm-cancel");
                 CloseLanternChangeConfirmation();
             }
-            if (GUI.Button(new Rect(panel.x + 470f, panel.y + 450f, 330f, 78f),
-                    T("warehouse.lanternConfirmAction"), ButtonStyle(UiButtonSemantic.Primary, 19)))
-                ConfirmLanternChange();
+            else if (result == 1) ConfirmLanternChange();
         }
 
         private void DrawWarehouseEquipmentSlot(Rect area, EquipmentInstanceState instance)
         {
-            var template = equipmentCatalog.Get(instance.TemplateId);
-            DrawEquipmentCardBase(area, instance.Quality);
-            DrawEquipmentIcon(instance.TemplateId, new Rect(area.x + 36f, area.y + 4f, 98f, 72f));
-            GUI.Label(new Rect(area.x + 7f, area.y + 75f, area.width - 14f, 25f), T(template.TemplateId),
-                Style(13, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-            GUI.Label(new Rect(area.x + 7f, area.y + 98f, area.width - 14f, 20f),
-                EquipmentModifierText(template.Modifier),
-                Style(11, new Color(0.86f, 0.91f, 0.92f), TextAnchor.MiddleCenter));
-            if (!string.IsNullOrEmpty(instance.EquippedCharacterInstanceId))
-            {
-                GUI.Label(new Rect(area.x + 7f, area.y + 117f, area.width - 14f, 18f), T("warehouse.equipped"),
-                    Style(10, new Color(1f, 0.86f, 0.42f), TextAnchor.MiddleCenter, FontStyle.Normal));
-            }
+            DrawWarehouseEquipmentVisual(area, instance);
             if (GUI.Button(area, GUIContent.none, GUIStyle.none))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "warehouse-equipment-detail-open");
                 warehouseEquipmentDetailId = instance.EquipmentInstanceId;
                 warehouseEquipmentDetailOpen = true;
             }
+        }
+
+        private void DrawWarehouseEquipmentVisual(Rect area, EquipmentInstanceState instance)
+        {
+            DrawWarehouseTexture(area, WarehouseAFormalArtContract.QualityBackground(
+                EquipmentRarityId(instance.Quality)), "quality");
+            DrawWarehouseTexture(area, WarehouseAFormalArtContract.EquipmentAppearance(
+                instance.TemplateId), "equipment");
+            if (!string.IsNullOrEmpty(instance.EquippedCharacterInstanceId))
+            {
+                GUI.Label(new Rect(area.x + 8f, area.y + 6f, area.width - 16f, 28f), T("warehouse.equipped"),
+                    Style(14, new Color(1f, 0.86f, 0.42f), TextAnchor.MiddleLeft, FontStyle.Bold));
+            }
+        }
+
+        private void DrawWarehouseTexture(Rect area, string resourceId, string group)
+        {
+            var texture = artCatalog.GetWarehouseTexture(resourceId, group);
+            if (texture == null) return;
+            if (Mathf.RoundToInt(area.width) != texture.width || Mathf.RoundToInt(area.height) != texture.height)
+                return;
+            GUI.color = Color.white;
+            GUI.DrawTexture(area, texture, ScaleMode.StretchToFill, true);
+        }
+
+        private void DrawEquipmentDetailAppearanceFormal(Rect area, string templateId, int quality)
+        {
+            DrawMarketItemLayersFormal(area, MarketAssetKind.Equipment, templateId, quality, true);
+        }
+
+        private void DrawWarehouseButtonTexture(Rect area, string normalResourceId,
+            string pressedResourceId)
+        {
+            var currentEvent = Event.current;
+            var pressed = currentEvent != null && area.Contains(currentEvent.mousePosition) &&
+                          Input.GetMouseButton(0);
+            DrawWarehouseTexture(area, pressed ? pressedResourceId : normalResourceId, "modules");
+        }
+
+        private void HandleWarehouseScrollPointer(Rect viewport, float contentHeight)
+        {
+            var pointerEvent = Event.current;
+            if (pointerEvent == null) return;
+            var pointerPosition = pointerEvent.mousePosition;
+            if (pointerEvent.type == EventType.MouseDown && pointerEvent.button == 0 &&
+                viewport.Contains(pointerPosition) && !warehouseItemPointerHeld)
+            {
+                warehousePointerHeld = true;
+                warehousePointerDragging = false;
+                warehousePointerDown = pointerPosition;
+                warehousePointerLast = pointerPosition;
+                return;
+            }
+            if (pointerEvent.type == EventType.MouseDrag && warehousePointerHeld)
+            {
+                if (!warehousePointerDragging &&
+                    (pointerPosition - warehousePointerDown).sqrMagnitude >= 64f)
+                    warehousePointerDragging = true;
+                if (warehousePointerDragging)
+                {
+                    var maximumScroll = Mathf.Max(0f, contentHeight - viewport.height);
+                    var dragDelta = pointerPosition - warehousePointerLast;
+                    warehouseEquipmentScroll.y = Mathf.Clamp(
+                        warehouseEquipmentScroll.y - dragDelta.y, 0f, maximumScroll);
+                    pointerEvent.Use();
+                }
+                warehousePointerLast = pointerPosition;
+                return;
+            }
+            if (pointerEvent.type != EventType.MouseUp || !warehousePointerHeld) return;
+            if (warehousePointerDragging) pointerEvent.Use();
+            warehousePointerHeld = false;
+            warehousePointerDragging = false;
+        }
+
+        private void ResetWarehouseItemPointer()
+        {
+            warehouseDragSourceSlot = -1;
+            warehouseDraggedToken = null;
+            warehouseItemPointerHeld = false;
+            warehouseItemPointerDragging = false;
         }
 
         private void DrawWarehouseEquipmentDetailScreen()
@@ -4978,59 +6365,127 @@ namespace SeekerAutoChess.Prototype
             }
 
             var template = equipmentCatalog.Get(instance.TemplateId);
-            var rarityColor = EquipmentRarityColor(instance.Quality);
-            var panel = WarehouseEquipmentDetailPanel;
-            Sprite detailBackground;
-            var hasDetailBackground = artCatalog.TryGetEquipmentDetailBackground(
-                EquipmentRarityId(instance.Quality), out detailBackground);
-            GUI.color = Color.white;
-            if (hasDetailBackground)
-                GUI.DrawTexture(panel, detailBackground.texture, ScaleMode.StretchToFill, true);
-            else
+            var panel = EquipmentDetailAFormalArtContract.ViewPanelRect;
+            DrawEquipmentDetailAContent(panel, false, T("market.detail"), instance.TemplateId,
+                instance.Quality, T(instance.TemplateId), T(EquipmentQualityKey(instance.Quality)),
+                T(EquipmentSlotKey(template.Slot)) + " · " + EquipmentUsageStateText(instance),
+                template.Modifier);
+
+            if (GUI.Button(OffsetEquipmentDetailRect(panel, 660f, 20f, 76f, 76f),
+                    GUIContent.none, GUIStyle.none))
             {
-                GUI.color = rarityColor;
-                GUI.DrawTexture(panel, Texture2D.whiteTexture);
+                PlayUiClick(UiAudioCueIds.Cancel, "warehouse-equipment-detail-close");
+                warehouseEquipmentDetailOpen = false;
+                warehouseEquipmentDetailId = null;
             }
-            GUI.color = Color.white;
-
-            GUI.Label(new Rect(245f, 370f, 590f, 58f), T(instance.TemplateId),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-
-            DrawEquipmentDetailSection(new Rect(261f, 449f, 558f, 304f),
-                "equipment.detail.descriptionTitle", !hasDetailBackground);
-            DrawEquipmentIcon(instance.TemplateId, new Rect(270f, 500f, 220f, 205f));
-            GUI.Label(new Rect(515f, 505f, 290f, 82f),
-                T(EquipmentQualityKey(instance.Quality)) + " · " + T(EquipmentSlotKey(template.Slot)) + "\n" +
-                EquipmentUsageStateText(instance),
-                Style(EquipmentDetailFontSize, new Color(0.92f, 0.95f, 0.96f), TextAnchor.MiddleLeft, FontStyle.Normal));
-            GUI.Label(new Rect(515f, 590f, 290f, 155f), T(instance.TemplateId + ".description"),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleLeft));
-
-            var baseSection = new Rect(261f, 771f, 558f, 275f);
-            DrawEquipmentDetailSection(baseSection, "equipment.detail.baseTitle", !hasDetailBackground);
-            GUI.Label(baseSection, EquipmentModifierText(template.Modifier),
-                Style(EquipmentDetailFontSize, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-
-            DrawEquipmentDetailSection(new Rect(261f, 1064f, 558f, 248f),
-                "equipment.detail.magicTitle", !hasDetailBackground);
-            GUI.Label(new Rect(280f, 1130f, 520f, 55f), T("equipment.detail.noMagic"),
-                Style(EquipmentDetailFontSize, new Color(0.82f, 0.87f, 0.89f), TextAnchor.MiddleCenter, FontStyle.Normal));
-            GUI.Label(new Rect(275f, 1185f, 530f, 130f), T("equipment.detail.magicHint"),
-                Style(EquipmentDetailFontSize, new Color(0.72f, 0.80f, 0.82f), TextAnchor.MiddleCenter));
-            GUI.Label(new Rect(250f, 1335f, 580f, 100f), T("equipment.detail.prototypeHint"),
-                Style(EquipmentDetailFontSize, new Color(0.94f, 0.82f, 0.48f), TextAnchor.MiddleCenter));
         }
 
-        private void DrawEquipmentDetailSection(Rect area, string titleKey, bool drawFallbackBackground)
+        private Rect CurrentWarehouseEquipmentDetailPanel()
         {
-            if (drawFallbackBackground)
+            return warehouseCosmeticDetailOpen
+                ? EquipmentDetailAFormalArtContract.ActionPanelRect
+                : WarehouseEquipmentDetailPanel;
+        }
+
+        private static Rect OffsetEquipmentDetailRect(Rect panel, float x, float y, float width, float height)
+        {
+            return new Rect(panel.x + x, panel.y + y, width, height);
+        }
+
+        private void DrawEquipmentDetailAContent(Rect panel, bool actionShell, string title,
+            string templateId, EquipmentQuality quality, string displayName, string qualityName,
+            string slotAndLimit, EquipmentStatModifier modifier)
+        {
+            DrawEquipmentDetailAModule(panel, actionShell
+                    ? EquipmentDetailAFormalArtContract.ActionShell
+                    : EquipmentDetailAFormalArtContract.ViewShell,
+                760, actionShell ? 650 : 570);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 130f, 20f, 500f, 70f), title,
+                Style(31, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+
+            var appearance = OffsetEquipmentDetailRect(panel, 48f, 145f, 184f, 184f);
+            DrawWarehouseTexture(appearance, WarehouseAFormalArtContract.QualityBackground(
+                EquipmentRarityId(quality)), "quality");
+            DrawWarehouseTexture(appearance,
+                WarehouseAFormalArtContract.EquipmentAppearance(templateId), "equipment");
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 340f, 210f, 34f), displayName,
+                Style(26, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            DrawMarketTextureFormal(OffsetEquipmentDetailRect(panel, 48f, 381f, 24f, 24f),
+                MarketFormalModuleRoot, "ART-UI-MARKET-B-QUALITY-" +
+                MarketQualityAssetNameFormal(MarketAssetKind.Equipment, (int)quality) +
+                "-24-v1.0.0");
+            GUI.Label(OffsetEquipmentDetailRect(panel, 82f, 381f, 176f, 30f), qualityName,
+                Style(21, EquipmentRarityColor(quality), TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(OffsetEquipmentDetailRect(panel, 48f, 417f, 210f, 30f), slotAndLimit,
+                Style(21, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, 139f, 360f, 35f),
+                T("market.detail.baseAttributes"),
+                Style(25, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            var baseNames = new List<string>();
+            var baseValues = new List<string>();
+            CollectEquipmentDetailBaseAttributes(modifier, baseNames, baseValues);
+            if (baseNames.Count > 0)
             {
-                GUI.color = new Color(0.035f, 0.07f, 0.09f, 0.76f);
-                GUI.DrawTexture(area, Texture2D.whiteTexture);
+                var baseRow = OffsetEquipmentDetailRect(panel, 292f, 174f, 360f, 56f);
+                DrawEquipmentDetailAModule(baseRow, EquipmentDetailAFormalArtContract.BaseRow, 360, 56);
+                DrawEquipmentDetailARowText(baseRow, baseNames[0], baseValues[0]);
+            }
+
+            DrawEquipmentDetailAModule(OffsetEquipmentDetailRect(panel, 292f, 240f, 360f, 24f),
+                EquipmentDetailAFormalArtContract.SectionDivider, 360, 24);
+            GUI.Label(OffsetEquipmentDetailRect(panel, 292f, 270f, 360f, 35f),
+                T("market.detail.magicAttributes"),
+                Style(25, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Bold));
+            for (var index = 1; index < baseNames.Count && index < 4; index++)
+            {
+                var row = OffsetEquipmentDetailRect(panel, 292f, 305f + (index - 1) * 60f, 360f, 56f);
+                DrawEquipmentDetailAModule(row, EquipmentDetailAFormalArtContract.MagicRow, 360, 56);
+                DrawEquipmentDetailARowText(row, baseNames[index], baseValues[index]);
+            }
+        }
+
+        private void DrawEquipmentDetailARowText(Rect row, string name, string value)
+        {
+            GUI.Label(new Rect(row.x + 18f, row.y, 230f, row.height), name,
+                Style(20, DetailBodyInk, TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.Label(new Rect(row.x + 248f, row.y, 94f, row.height), value,
+                Style(20, MarketGold, TextAnchor.MiddleRight, FontStyle.Bold));
+        }
+
+        private void CollectEquipmentDetailBaseAttributes(EquipmentStatModifier modifier,
+            List<string> names, List<string> values)
+        {
+            if (modifier == null) return;
+            AddEquipmentDetailBaseAttribute(names, values, "stat.health", modifier.MaxHealth);
+            AddEquipmentDetailBaseAttribute(names, values, "stat.attack", modifier.AttackDamage);
+            AddEquipmentDetailBaseAttribute(names, values, "stat.armor", modifier.Armor);
+            AddEquipmentDetailBaseAttribute(names, values, "stat.healing", modifier.HealAmount);
+            AddEquipmentDetailBaseAttribute(names, values, "stat.speedTier", modifier.SpeedTierShift);
+        }
+
+        private void AddEquipmentDetailBaseAttribute(List<string> names, List<string> values,
+            string localizationKey, int value)
+        {
+            if (value == 0) return;
+            names.Add(T(localizationKey));
+            values.Add(value > 0 ? "+" + value : value.ToString());
+        }
+
+        private void DrawEquipmentDetailAModule(Rect area, string resourceId,
+            int expectedWidth, int expectedHeight)
+        {
+            var texture = artCatalog.GetEquipmentDetailATexture(resourceId);
+            if (texture == null) return;
+            if (texture.width != expectedWidth || texture.height != expectedHeight ||
+                Mathf.RoundToInt(area.width) != expectedWidth ||
+                Mathf.RoundToInt(area.height) != expectedHeight)
+            {
+                Debug.LogError("Rejected resized Equipment Detail A module: " + resourceId);
+                return;
             }
             GUI.color = Color.white;
-            GUI.Label(new Rect(area.x + 28f, area.y + 14f, area.width - 56f, 46f), T(titleKey),
-                Style(EquipmentDetailFontSize, new Color(0.42f, 0.91f, 0.82f), TextAnchor.MiddleLeft, FontStyle.Normal));
+            GUI.DrawTexture(area, texture, ScaleMode.StretchToFill, true);
         }
 
         private bool DrawWarehouseEquipmentDetailBackdrop(Rect panel)
@@ -5046,6 +6501,8 @@ namespace SeekerAutoChess.Prototype
             warehouseEquipmentDetailId = null;
             warehouseLanternDetailOpen = false;
             warehouseLanternDetailId = null;
+            warehouseCosmeticDetailOpen = false;
+            warehouseCosmeticDetailProductId = null;
             return true;
         }
 
@@ -5157,8 +6614,19 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
             DrawDeckWorkspace(true);
-            if (GUI.Button(new Rect(80f, 2210f, 430f, 76f), T("deck.cancel"),
-                    ButtonStyle(UiButtonSemantic.Danger, 20)))
+            var cancelRect = new Rect(220f, 2210f, 280f, 76f);
+            var saveRect = new Rect(580f, 2210f, 280f, 76f);
+            var cancelClicked = DrawLanternDetailAStateButton(cancelRect,
+                GlobalButtonFormalArtContract.ResourceRoot, GlobalButtonFormalArtContract.LargeNormal,
+                GlobalButtonFormalArtContract.LargePressed, GlobalButtonFormalArtContract.LargeDisabled, true);
+            GUI.Label(cancelRect, T("deck.cancel"),
+                Style(24, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+            var saveClicked = DrawLanternDetailAStateButton(saveRect,
+                GlobalButtonFormalArtContract.ResourceRoot, GlobalButtonFormalArtContract.LargeNormal,
+                GlobalButtonFormalArtContract.LargePressed, GlobalButtonFormalArtContract.LargeDisabled, true);
+            GUI.Label(saveRect, T("deck.save"),
+                Style(24, MarketIvory, TextAnchor.MiddleCenter, FontStyle.Bold));
+            if (cancelClicked)
             {
                 PlayUiClick(UiAudioCueIds.Cancel, "deck-edit-cancel");
                 deckSaveConfirmationOpen = false;
@@ -5167,8 +6635,7 @@ namespace SeekerAutoChess.Prototype
                 deckEquipmentDraft = null;
                 deckDraftAutomaticUnequipCount = 0;
             }
-            if (GUI.Button(new Rect(570f, 2210f, 430f, 76f), T("deck.save"),
-                    ButtonStyle(UiButtonSemantic.Primary, 21)))
+            if (saveClicked)
             {
                 if (deckDraftSelection.Count < MinimumDeckSize)
                 {
@@ -5185,28 +6652,16 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawDeckSaveConfirmation()
         {
-            GUI.color = new Color(0f, 0f, 0f, 0.78f);
-            GUI.DrawTexture(new Rect(0f, 130f, DesignWidth, layoutContentHeight - 130f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            var panel = new Rect(110f, 560f, 860f, 560f);
-            uiSkin.DrawPanel(panel, true);
-            GUI.Label(new Rect(panel.x + 50f, panel.y + 45f, panel.width - 100f, 65f),
-                T("deck.confirmTitle"), Style(30, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
-            GUI.Label(new Rect(panel.x + 70f, panel.y + 135f, panel.width - 140f, 220f),
+            var result = DrawCommonConfirmDialog(T("deck.confirmTitle"),
                 string.Format(T("deck.confirmBody"), deckDraftSelection.Count,
-                    deckDraftAutomaticUnequipCount),
-                Style(20, new Color(0.86f, 0.90f, 0.91f), TextAnchor.MiddleCenter));
-            if (GUI.Button(new Rect(panel.x + 60f, panel.y + 420f, 330f, 78f),
-                    T("deck.continueEditing"), ButtonStyle(UiButtonSemantic.Secondary, 19)))
+                    deckDraftAutomaticUnequipCount), string.Empty,
+                T("deck.continueEditing"), T("deck.confirmSave"));
+            if (result == 0)
             {
                 PlayUiClick(UiAudioCueIds.Cancel, "deck-save-confirm-cancel");
                 deckSaveConfirmationOpen = false;
             }
-            if (GUI.Button(new Rect(panel.x + 470f, panel.y + 420f, 330f, 78f),
-                    T("deck.confirmSave"), ButtonStyle(UiButtonSemantic.Primary, 19)))
-            {
-                CommitDeckChanges();
-            }
+            else if (result == 1) CommitDeckChanges();
         }
 
         private void CommitDeckChanges()
@@ -5597,16 +7052,13 @@ namespace SeekerAutoChess.Prototype
                 DrawLibraryBaseCharacterDetail(selected, definition);
                 return;
             }
-            DrawCharacterEquipmentDetailC(selected, definition);
+            DrawCharacterEquipmentDetailB(selected, definition);
         }
 
-        private void DrawCharacterEquipmentDetailC(OwnedCharacterState selected,
+        private void DrawCharacterEquipmentDetailB(OwnedCharacterState selected,
             CharacterDefinition definition)
         {
             DrawHomeLighthouseCanvas(PrototypeArtResourceIds.HomeLighthouseBackground, false);
-            DrawStoreModule(StoreFormalArtContract.BackgroundVeilResourceId,
-                new Rect(0f, 0f, 1080f, 2400f), 1080, 2400);
-
             DrawCharacterDetailCShared(PrototypeArtResourceIds.FormationBattleV94BackFrame,
                 new Rect(45f, 60f, 94f, 94f), 94, 94);
             DrawCharacterDetailCShared(PrototypeArtResourceIds.FormationBattleV94BackGlyph,
@@ -5621,44 +7073,42 @@ namespace SeekerAutoChess.Prototype
             DrawDeckText(new Rect(167f, 132f, 700f, 36f), T("deck.editCharacterHint"), 18,
                 ArchiveColor("A8C5C5"), TextAnchor.MiddleLeft, false);
 
-            DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.HeroPanel,
-                new Rect(24f, 210f, 1032f, 620f), 1032, 620);
+            DrawCharacterDetailBTexture(CharacterDetailBFormalArtContract.WideSafePanel,
+                "module", new Rect(10f, 180f, 1060f, 1900f), 1060, 1900);
             DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.CharacterViewport,
-                new Rect(70f, 295f, 520f, 370f), 520, 370);
+                new Rect(70f, 270f, 520f, 370f), 520, 370);
             DrawCharacterAvatar(selected.DefinitionId, selected.Quality, AvatarArtContext.Detail,
-                new Rect(80f, 295f, 500f, 370f));
-            DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.StatArea,
-                new Rect(625f, 295f, 388f, 370f), 388, 370);
-            DrawDeckText(new Rect(625f, 286f, 388f, 70f),
+                new Rect(110f, 292f, 440f, 326f));
+            DrawDeckText(new Rect(625f, 275f, 345f, 56f),
                 CharacterDisplayName(selected.DefinitionId, selected.Quality), 34,
                 Color.black, TextAnchor.MiddleCenter, true);
 
             var currentStats = CalculateDraftDeckCharacterStats(selected, definition);
-            DrawCharacterDetailCStatRows(currentStats);
-            DrawCharacterDetailCButton(new Rect(345f, 720f, 390f, 86f),
-                T("character.fusionUnavailable"), false);
-
-            DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.EquipmentPanel,
-                new Rect(24f, 850f, 1032f, 1280f), 1032, 1280);
-            DrawCharacterDetailCSlots();
-            DrawCharacterDetailCCarousel(selected);
+            DrawCharacterDetailBStatRows(currentStats);
+            DrawCharacterDetailBEquippedSlots(selected);
+            DrawCharacterDetailBTexture(CharacterDetailBFormalArtContract.SectionDivider,
+                "divider", new Rect(208f, 882f, 664f, 20f), 664, 20);
+            DrawDeckText(new Rect(92f, 922f, 320f, 68f), T("equipment.pickerTitle"), 30,
+                Color.black, TextAnchor.MiddleLeft, true);
+            DrawArenaFormalButton(new Rect(430f, 922f, 220f, 68f),
+                T("equipment.autoEquip"), false, false);
+            DrawCharacterDetailBCandidates(selected);
 
             EquipmentInstanceState previewTarget;
             var hasTarget = TryGetDetailEquipmentPreview(out previewTarget);
-            var removeSelection = detailEquipmentPreviewId == EmptyEquipmentPreviewId;
-            var afterStats = hasTarget || removeSelection
+            var afterStats = hasTarget
                 ? CalculateEquipmentSelectionPreview(selected, definition, detailEquipmentSlot,
-                    hasTarget ? previewTarget : null)
+                    previewTarget)
                 : currentStats;
-            DrawCharacterDetailCSummary(selected, previewTarget, removeSelection);
+            DrawCharacterDetailBSelectionSummary(previewTarget);
 
             var alreadyEquipped = previewTarget != null && deckEquipmentDraft != null &&
                                   deckEquipmentDraft.IsEquippedTo(previewTarget.EquipmentInstanceId,
                                       selected.CharacterInstanceId);
-            var unequipSelection = removeSelection || alreadyEquipped;
+            var unequipSelection = alreadyEquipped;
             var canConfirm = CanConfirmCharacterDetailCSelection(selected, previewTarget, unequipSelection);
-            if (DrawCharacterDetailCButton(new Rect(345f, 1660f, 390f, 86f),
-                    T(unequipSelection ? "equipment.unequip" : "equipment.equip"), canConfirm))
+            if (DrawArenaFormalButton(new Rect(345f, 1610f, 390f, 86f),
+                    T(unequipSelection ? "equipment.unequip" : "equipment.equip"), canConfirm, true))
             {
                 var changed = false;
                 if (unequipSelection)
@@ -5677,7 +7127,7 @@ namespace SeekerAutoChess.Prototype
                     detailEquipmentPreviewId = null;
                     detailEquipmentPreviewBySlot.Remove(detailEquipmentSlot);
                     deckEditorMessageKey = "deck.unsaved";
-                    PlayUiClick(UiAudioCueIds.Confirm, "character-detail-c-draft-equipment");
+                    PlayUiClick(UiAudioCueIds.Confirm, "character-detail-b-draft-equipment");
                 }
             }
             var breakdownBaseStats = previewTarget == null
@@ -5686,22 +7136,203 @@ namespace SeekerAutoChess.Prototype
             var breakdownModifier = previewTarget == null
                 ? null
                 : equipmentCatalog.Get(previewTarget.TemplateId).Modifier;
-            DrawCharacterDetailCAttributeComparison(currentStats, afterStats,
+            DrawCharacterDetailBAttributeComposition(currentStats, afterStats,
                 breakdownBaseStats, breakdownModifier);
-
-            DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.EquipmentPanelFront,
-                new Rect(24f, 850f, 1032f, 1280f), 1032, 1280);
-            DrawDeckText(new Rect(92f, 872f, 190f, 64f), T("equipment.testTitle"), 30,
-                Color.black, TextAnchor.MiddleLeft, true);
-            DrawDeckText(new Rect(78f, 1150f, 300f, 52f), T("equipment.pickerTitle"), 24,
-                Color.black, TextAnchor.MiddleLeft, true);
-            DrawDeckText(new Rect(78f, 1790f, 300f, 52f), T("equipment.after"), 24,
-                Color.black, TextAnchor.MiddleLeft, true);
 
             DrawHomeNavigation(new[]
             {
                 ScreenView.Store, ScreenView.Deck, ScreenView.Home, ScreenView.Arena, ScreenView.Harbor
             });
+        }
+
+        private void DrawCharacterDetailBTexture(string resourceId, string group, Rect rect,
+            int expectedWidth, int expectedHeight)
+        {
+            var texture = artCatalog.GetCharacterDetailBTexture(resourceId, group);
+            if (texture == null || texture.width != expectedWidth || texture.height != expectedHeight)
+            {
+                Debug.LogError("Rejected non-native Character Detail B asset: " + resourceId);
+                return;
+            }
+            var previousColor = GUI.color;
+            GUI.color = Color.white;
+            GUI.DrawTexture(rect, texture, ScaleMode.StretchToFill, true);
+            GUI.color = previousColor;
+        }
+
+        private void DrawCharacterDetailBStatRows(CombatStatBlock stats)
+        {
+            var labels = new[] { T("stat.health"), T("stat.attack"), T("stat.armor"), T("detail.attackSpeed") };
+            var values = new[]
+            {
+                stats.MaxHealth.ToString(), stats.AttackDamage.ToString(), stats.Armor.ToString(),
+                DetailTideWindowLayout.FormatAttackSpeed(stats.AttackSpeedBasisPoints)
+            };
+            var icons = new[]
+            {
+                CharacterDetailCFormalArtContract.StatHealth,
+                CharacterDetailCFormalArtContract.StatAttack,
+                CharacterDetailCFormalArtContract.StatArmor,
+                CharacterDetailCFormalArtContract.StatSpeed
+            };
+            for (var i = 0; i < labels.Length; i++)
+            {
+                var y = 350f + i * 62f;
+                DrawCharacterDetailCTexture(icons[i], "icon", new Rect(646f, y, 48f, 48f), 48, 48);
+                DrawDeckText(new Rect(706f, y, 120f, 48f), labels[i], 20,
+                    Color.black, TextAnchor.MiddleCenter, false);
+                DrawDeckText(new Rect(875f, y, 100f, 48f), values[i], 23,
+                    Color.black, TextAnchor.MiddleCenter, true);
+            }
+        }
+
+        private void DrawCharacterDetailBEquippedSlots(OwnedCharacterState selected)
+        {
+            var slots = new[]
+            {
+                EquipmentSlot.Weapon, EquipmentSlot.Body, EquipmentSlot.Head,
+                EquipmentSlot.Hands, EquipmentSlot.Feet
+            };
+            var x = new[] { 70f, 256f, 442f, 628f, 814f };
+            for (var i = 0; i < slots.Length; i++)
+            {
+                var area = new Rect(x[i], 660f, 184f, 184f);
+                var equipped = FindEquippedEquipment(selected.CharacterInstanceId, slots[i]);
+                if (equipped == null)
+                {
+                    DrawCharacterDetailBTexture(CharacterDetailBSlotSupport(slots[i]), "equipment",
+                        area, 184, 184);
+                }
+                else
+                {
+                    DrawWarehouseEquipmentVisual(area, equipped);
+                }
+                DrawDeckText(new Rect(area.x, 844f, 184f, 34f), T(EquipmentSlotKey(slots[i])), 18,
+                    Color.black, TextAnchor.MiddleCenter, slots[i] == detailEquipmentSlot);
+                if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) continue;
+                PlayUiClick(UiAudioCueIds.TabSwitch, "character-detail-b-equipped-slot");
+                if (!string.IsNullOrEmpty(detailEquipmentPreviewId))
+                    detailEquipmentPreviewBySlot[detailEquipmentSlot] = detailEquipmentPreviewId;
+                detailEquipmentSlot = slots[i];
+                detailEquipmentPreviewId = equipped == null ? null : equipped.EquipmentInstanceId;
+                if (string.IsNullOrEmpty(detailEquipmentPreviewId))
+                    detailEquipmentPreviewBySlot.Remove(detailEquipmentSlot);
+                else
+                    detailEquipmentPreviewBySlot[detailEquipmentSlot] = detailEquipmentPreviewId;
+            }
+        }
+
+        private static string CharacterDetailBSlotSupport(EquipmentSlot slot)
+        {
+            switch (slot)
+            {
+                case EquipmentSlot.Weapon:
+                    return "ART-UI-WAREHOUSE-A-ITEM-WEAPON-184-v1.0.0";
+                case EquipmentSlot.Body:
+                    return "ART-UI-WAREHOUSE-A-ITEM-BODY-184-v1.0.0";
+                case EquipmentSlot.Head:
+                    return "ART-UI-WAREHOUSE-A-ITEM-HEAD-184-v1.0.0";
+                case EquipmentSlot.Hands:
+                    return "ART-UI-WAREHOUSE-A-ITEM-HANDS-184-v1.0.0";
+                default:
+                    return "ART-UI-WAREHOUSE-A-ITEM-FEET-184-v1.0.0";
+            }
+        }
+
+        private void DrawCharacterDetailBCandidates(OwnedCharacterState selected)
+        {
+            var candidates = FindFormalCharacterDetailCandidates(selected.CharacterInstanceId,
+                detailEquipmentSlot);
+            EnsureCharacterDetailCSelection(selected.CharacterInstanceId, candidates);
+            var visibleCount = Math.Min(4, candidates.Count);
+            for (var i = 0; i < 4; i++)
+            {
+                var area = new Rect(150f + i * 200f, 1000f, 184f, 184f);
+                if (i >= visibleCount) continue;
+                var candidate = candidates[i];
+                DrawWarehouseEquipmentVisual(area, candidate);
+                if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) continue;
+                PlayUiClick(UiAudioCueIds.Tap, "character-detail-b-equipment-preview");
+                detailEquipmentPreviewId = candidate.EquipmentInstanceId;
+                detailEquipmentPreviewBySlot[detailEquipmentSlot] = detailEquipmentPreviewId;
+            }
+        }
+
+        private void DrawCharacterDetailBSelectionSummary(EquipmentInstanceState previewTarget)
+        {
+            if (previewTarget == null)
+            {
+                DrawDeckText(new Rect(180f, 1184f, 720f, 48f), T("equipment.noSelection"), 28,
+                    Color.black, TextAnchor.MiddleCenter, true);
+                DrawDeckText(new Rect(180f, 1232f, 720f, 40f), T("equipment.previewHint"), 17,
+                    Color.black, TextAnchor.MiddleCenter, false);
+            }
+            else
+            {
+                DrawDeckText(new Rect(180f, 1184f, 720f, 48f), T(previewTarget.TemplateId), 28,
+                    Color.black, TextAnchor.MiddleCenter, true);
+                DrawDeckText(new Rect(180f, 1232f, 720f, 40f),
+                    T("quality." + EquipmentRarityId(previewTarget.Quality)), 21,
+                    EquipmentRarityColor(previewTarget.Quality), TextAnchor.MiddleCenter, true);
+            }
+
+            DrawDeckText(new Rect(180f, 1276f, 720f, 40f), T("equipment.detail.baseTitle"), 23,
+                Color.black, TextAnchor.MiddleCenter, true);
+            var baseText = previewTarget == null
+                ? "—"
+                : EquipmentModifierText(equipmentCatalog.Get(previewTarget.TemplateId).Modifier);
+            DrawDeckText(new Rect(180f, 1318f, 720f, 52f), baseText, 24,
+                Color.black, TextAnchor.MiddleCenter, true);
+            DrawCharacterDetailBTexture(CharacterDetailBFormalArtContract.SectionDivider,
+                "divider", new Rect(208f, 1390f, 664f, 20f), 664, 20);
+            DrawDeckText(new Rect(180f, 1410f, 720f, 42f), T("equipment.detail.magicTitle"), 23,
+                Color.black, TextAnchor.MiddleCenter, true);
+            DrawDeckText(new Rect(180f, 1460f, 720f, 80f), T("equipment.noMagicRecorded"), 18,
+                Color.black, TextAnchor.MiddleCenter, false);
+        }
+
+        private void DrawCharacterDetailBAttributeComposition(CombatStatBlock current,
+            CombatStatBlock after, CombatStatBlock breakdownBase,
+            EquipmentStatModifier selectedModifier)
+        {
+            var labels = new[] { T("stat.health"), T("stat.attack"), T("stat.armor"), T("detail.attackSpeed") };
+            var afterValues = new[]
+            {
+                after.MaxHealth, after.AttackDamage, after.Armor, after.AttackSpeedBasisPoints
+            };
+            var baseValues = new[]
+            {
+                breakdownBase.MaxHealth, breakdownBase.AttackDamage, breakdownBase.Armor,
+                breakdownBase.AttackSpeedBasisPoints
+            };
+            var equipmentBonuses = selectedModifier == null
+                ? new[] { 0, 0, 0, 0 }
+                : new[]
+                {
+                    selectedModifier.MaxHealth, selectedModifier.AttackDamage,
+                    selectedModifier.Armor, 0
+                };
+            var x = new[] { 148f, 348f, 548f, 748f };
+            DrawDeckText(new Rect(92f, 1732f, 320f, 48f), T("equipment.after"), 26,
+                Color.black, TextAnchor.MiddleLeft, true);
+            for (var i = 0; i < 4; i++)
+            {
+                var area = new Rect(x[i], 1800f, 184f, 88f);
+                DrawWarehouseTexture(area, WarehouseAFormalArtContract.TabSelected, "modules");
+                DrawDeckText(new Rect(area.x, 1812f, 184f, 28f), labels[i], 17,
+                    ArchiveColor("F4E7C5"), TextAnchor.MiddleCenter, false);
+                var value = i == 3
+                    ? DetailTideWindowLayout.FormatAttackSpeed(afterValues[i])
+                    : equipmentBonuses[i] > 0
+                        ? baseValues[i] + " + " + equipmentBonuses[i]
+                        : afterValues[i].ToString();
+                var comparisonColor = afterValues[i] > new[]
+                    { current.MaxHealth, current.AttackDamage, current.Armor, current.AttackSpeedBasisPoints }[i]
+                    ? ArchiveColor("74B7A8")
+                    : ArchiveColor("F4E7C5");
+                DrawDeckText(new Rect(area.x, 1840f, 184f, 42f), value, 23,
+                    comparisonColor, TextAnchor.MiddleCenter, true);
+            }
         }
 
         private void DrawCharacterDetailCModule(string resourceId, Rect rect,
@@ -5738,140 +7369,6 @@ namespace SeekerAutoChess.Prototype
             GUI.color = Color.white;
             GUI.DrawTexture(rect, texture, ScaleMode.StretchToFill, true);
             GUI.color = previousColor;
-        }
-
-        private bool DrawCharacterDetailCButton(Rect rect, string label, bool enabled)
-        {
-            var pressed = enabled && Event.current != null && Event.current.type == EventType.MouseDown &&
-                          rect.Contains(Event.current.mousePosition);
-            var resourceId = !enabled
-                ? CharacterDetailCFormalArtContract.ButtonDisabled
-                : pressed
-                    ? CharacterDetailCFormalArtContract.ButtonPressed
-                    : CharacterDetailCFormalArtContract.ButtonNormal;
-            DrawCharacterDetailCModule(resourceId, rect, 390, 86);
-            DrawDeckText(rect, label, 25,
-                enabled ? ArchiveColor("F4E7C5") : ArchiveColor("7E8A8C"),
-                TextAnchor.MiddleCenter, true);
-            return enabled && GUI.Button(rect, GUIContent.none, GUIStyle.none);
-        }
-
-        private void DrawCharacterDetailCStatRows(CombatStatBlock stats)
-        {
-            var labels = new[] { T("stat.health"), T("stat.attack"), T("stat.armor"), T("detail.attackSpeed") };
-            var values = new[]
-            {
-                stats.MaxHealth.ToString(), stats.AttackDamage.ToString(), stats.Armor.ToString(),
-                DetailTideWindowLayout.FormatAttackSpeed(stats.AttackSpeedBasisPoints)
-            };
-            var icons = new[]
-            {
-                CharacterDetailCFormalArtContract.StatHealth,
-                CharacterDetailCFormalArtContract.StatAttack,
-                CharacterDetailCFormalArtContract.StatArmor,
-                CharacterDetailCFormalArtContract.StatSpeed
-            };
-            for (var i = 0; i < labels.Length; i++)
-            {
-                var y = 372f + i * 62f;
-                DrawCharacterDetailCTexture(icons[i], "icon", new Rect(646f, y, 48f, 48f), 48, 48);
-                DrawDeckText(new Rect(712f, y, 150f, 48f), labels[i], 20,
-                    Color.black, TextAnchor.MiddleLeft, false);
-                DrawDeckText(new Rect(862f, y, 125f, 48f), values[i], 23,
-                    Color.black, TextAnchor.MiddleRight, true);
-            }
-        }
-
-        private void DrawCharacterDetailCSlots()
-        {
-            var slots = new[]
-            {
-                EquipmentSlot.Head, EquipmentSlot.Body, EquipmentSlot.Weapon,
-                EquipmentSlot.Hands, EquipmentSlot.Feet
-            };
-            var x = new[] { 70f, 270f, 470f, 670f, 870f };
-            for (var i = 0; i < slots.Length; i++)
-            {
-                var area = new Rect(x[i], 965f, 140f, 140f);
-                DrawCharacterDetailCModule(slots[i] == detailEquipmentSlot
-                        ? CharacterDetailCFormalArtContract.SlotSelected
-                        : CharacterDetailCFormalArtContract.SlotNormal,
-                    area, 140, 140);
-                DrawCharacterDetailCTexture(CharacterDetailCFormalArtContract.SlotIcon(slots[i]),
-                    "equipment", new Rect(area.x + 18f, area.y + 18f, 104f, 104f), 104, 104);
-                DrawDeckText(new Rect(area.x, 1107f, 140f, 36f), T(EquipmentSlotKey(slots[i])), 19,
-                    Color.black, TextAnchor.MiddleCenter, slots[i] == detailEquipmentSlot);
-                if (!GUI.Button(area, GUIContent.none, GUIStyle.none)) continue;
-                PlayUiClick(UiAudioCueIds.TabSwitch, "character-equipment-slot");
-                if (!string.IsNullOrEmpty(detailEquipmentPreviewId))
-                    detailEquipmentPreviewBySlot[detailEquipmentSlot] = detailEquipmentPreviewId;
-                detailEquipmentSlot = slots[i];
-                string restored;
-                detailEquipmentPreviewId = detailEquipmentPreviewBySlot.TryGetValue(
-                    detailEquipmentSlot, out restored) ? restored : null;
-                detailEquipmentScroll = Vector2.zero;
-            }
-        }
-
-        private void DrawCharacterDetailCCarousel(OwnedCharacterState selected)
-        {
-            var candidates = FindFormalCharacterDetailCandidates(selected.CharacterInstanceId,
-                detailEquipmentSlot);
-            EnsureCharacterDetailCSelection(selected.CharacterInstanceId, candidates);
-            const int maxCandidateCards = 4;
-            var visibleCandidateCount = Math.Min(candidates.Count, maxCandidateCards);
-            var emptySelectionIndex = visibleCandidateCount;
-            var viewport = new Rect(58f, 1198f, 964f, 294f);
-            GUI.BeginGroup(viewport);
-            for (var i = 0; i < 5; i++)
-            {
-                var actual = i < visibleCandidateCount ? candidates[i] : null;
-                var empty = actual == null;
-                var selectedCard = empty
-                    ? detailEquipmentPreviewId == EmptyEquipmentPreviewId && i == emptySelectionIndex
-                    : detailEquipmentPreviewId == actual.EquipmentInstanceId;
-                var card = new Rect(20f + i * 210f, 7f, 190f, 280f);
-                DrawCharacterDetailCModule(empty
-                        ? CharacterDetailCFormalArtContract.CarouselEmpty
-                        : selectedCard
-                            ? CharacterDetailCFormalArtContract.CarouselSelected
-                            : CharacterDetailCFormalArtContract.CarouselNormal,
-                    card, 190, 280);
-                if (actual != null)
-                {
-                    if (string.Equals(actual.TemplateId, "equipment.lanternHarborBlade",
-                            StringComparison.Ordinal))
-                        DrawCharacterDetailCTexture(CharacterDetailCFormalArtContract.WeaponCarousel,
-                            "equipment", new Rect(card.x + 20f, card.y + 21f, 150f, 180f), 150, 180);
-                    else
-                        DrawCharacterDetailCTexture(CharacterDetailCFormalArtContract.SlotIcon(
-                                equipmentCatalog.Get(actual.TemplateId).Slot),
-                            "equipment", new Rect(card.x + 43f, card.y + 59f, 104f, 104f), 104, 104);
-                    DrawDeckText(new Rect(card.x + 12f, card.y + 205f, 166f, 32f), T(actual.TemplateId), 17,
-                        ArchiveColor("F4E7C5"), TextAnchor.MiddleCenter, true);
-                    DrawDeckText(new Rect(card.x + 12f, card.y + 238f, 166f, 28f),
-                        EquipmentModifierText(equipmentCatalog.Get(actual.TemplateId).Modifier), 14,
-                        ArchiveColor("A8C5C5"), TextAnchor.MiddleCenter, false);
-                    if (deckEquipmentDraft != null && deckEquipmentDraft.IsEquippedTo(
-                            actual.EquipmentInstanceId, selected.CharacterInstanceId))
-                        DrawDeckText(new Rect(card.x + 10f, card.y + 8f, 82f, 28f),
-                            T("equipment.alreadyEquipped"), 13, ArchiveColor("E2B85C"),
-                            TextAnchor.MiddleLeft, true);
-                }
-                else if (i == emptySelectionIndex)
-                {
-                    DrawDeckText(new Rect(card.x + 20f, card.y + 205f, 150f, 38f), T("equipment.empty"), 17,
-                        ArchiveColor("A8C5C5"), TextAnchor.MiddleCenter, false);
-                }
-                if ((empty && i != emptySelectionIndex) ||
-                    !GUI.Button(card, GUIContent.none, GUIStyle.none)) continue;
-                PlayUiClick(UiAudioCueIds.Tap, "character-equipment-preview");
-                detailEquipmentPreviewId = empty
-                    ? EmptyEquipmentPreviewId
-                    : actual.EquipmentInstanceId;
-                detailEquipmentPreviewBySlot[detailEquipmentSlot] = detailEquipmentPreviewId;
-            }
-            GUI.EndGroup();
         }
 
         private void EnsureCharacterDetailCSelection(string characterInstanceId,
@@ -5942,27 +7439,6 @@ namespace SeekerAutoChess.Prototype
             }
         }
 
-        private void DrawCharacterDetailCSummary(OwnedCharacterState selected,
-            EquipmentInstanceState previewTarget, bool removeSelection)
-        {
-            DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.SelectionSummary,
-                new Rect(84f, 1532f, 912f, 100f), 912, 100);
-            var shown = previewTarget;
-            if (shown == null) shown = FindEquippedEquipment(selected.CharacterInstanceId, detailEquipmentSlot);
-            if (shown != null && string.Equals(shown.TemplateId, "equipment.lanternHarborBlade",
-                    StringComparison.Ordinal))
-                DrawCharacterDetailCTexture(CharacterDetailCFormalArtContract.WeaponSummary,
-                    "equipment", new Rect(104f, 1546f, 72f, 72f), 72, 72);
-            var title = shown == null ? T("equipment.noSelection") : T(shown.TemplateId);
-            if (removeSelection && shown != null) title = T("equipment.removePrefix") + title;
-            DrawDeckText(new Rect(196f, 1542f, 520f, 42f), title, 23,
-                Color.black, TextAnchor.MiddleLeft, true);
-            DrawDeckText(new Rect(196f, 1583f, 700f, 34f), shown == null
-                    ? T("equipment.previewHint")
-                    : EquipmentModifierText(equipmentCatalog.Get(shown.TemplateId).Modifier),
-                17, Color.black, TextAnchor.MiddleLeft, false);
-        }
-
         private bool CanConfirmCharacterDetailCSelection(OwnedCharacterState selected,
             EquipmentInstanceState target, bool removeSelection)
         {
@@ -5973,54 +7449,6 @@ namespace SeekerAutoChess.Prototype
             var assigned = deckEquipmentDraft.GetAssignedCharacterId(target.EquipmentInstanceId);
             if (string.Equals(assigned, selected.CharacterInstanceId, StringComparison.Ordinal)) return false;
             return string.IsNullOrEmpty(assigned);
-        }
-
-        private void DrawCharacterDetailCAttributeComparison(CombatStatBlock current,
-            CombatStatBlock after, CombatStatBlock breakdownBase,
-            EquipmentStatModifier selectedModifier)
-        {
-            var labels = new[] { T("stat.health"), T("stat.attack"), T("stat.armor"), T("detail.attackSpeed") };
-            var beforeValues = new[]
-            {
-                current.MaxHealth, current.AttackDamage, current.Armor, current.AttackSpeedBasisPoints
-            };
-            var afterValues = new[]
-            {
-                after.MaxHealth, after.AttackDamage, after.Armor, after.AttackSpeedBasisPoints
-            };
-            var baseValues = new[]
-            {
-                breakdownBase.MaxHealth, breakdownBase.AttackDamage, breakdownBase.Armor,
-                breakdownBase.AttackSpeedBasisPoints
-            };
-            var equipmentBonuses = selectedModifier == null
-                ? new[] { 0, 0, 0, 0 }
-                : new[]
-                {
-                    selectedModifier.MaxHealth, selectedModifier.AttackDamage,
-                    selectedModifier.Armor, 0
-                };
-            var x = new[] { 70f, 310f, 550f, 790f };
-            for (var i = 0; i < 4; i++)
-            {
-                var area = new Rect(x[i], 1855f, 220f, 100f);
-                DrawCharacterDetailCModule(CharacterDetailCFormalArtContract.AttributeCompare,
-                    area, 220, 100);
-                DrawDeckText(new Rect(area.x + 15f, area.y + 8f, 190f, 31f), labels[i], 17,
-                    ArchiveColor("A8C5C5"), TextAnchor.MiddleCenter, false);
-                var value = i == 3
-                    ? DetailTideWindowLayout.FormatAttackSpeed(afterValues[i])
-                    : equipmentBonuses[i] > 0
-                        ? baseValues[i] + "+" + equipmentBonuses[i]
-                        : afterValues[i].ToString();
-                var comparisonColor = afterValues[i] > beforeValues[i]
-                    ? ArchiveColor("74B7A8")
-                    : afterValues[i] < beforeValues[i]
-                        ? ArchiveColor("B77A6A")
-                        : ArchiveColor("F4E7C5");
-                DrawDeckText(new Rect(area.x + 15f, area.y + 40f, 190f, 48f), value, 24,
-                    comparisonColor, TextAnchor.MiddleCenter, true);
-            }
         }
 
         private CombatStatBlock CalculateEquipmentSelectionPreview(OwnedCharacterState selected,
@@ -6040,7 +7468,7 @@ namespace SeekerAutoChess.Prototype
                     equipmentCatalog.Get(target.TemplateId).Modifier);
             var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, selected.Quality,
-                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                OwnedAptitudeRoll(selected),
                 selected.ExternalStar);
             return ApplyLanternToStats(EquipmentDerivedStatCalculator.Calculate(rarityStats,
                 new EquipmentLoadoutSnapshot(null, modifier)), CurrentLanternSnapshot());
@@ -6084,7 +7512,7 @@ namespace SeekerAutoChess.Prototype
 
             var baseStats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, selected.Quality,
-                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId), 0);
+                OwnedAptitudeRoll(selected), 0);
             DrawDetailStat(panel, new Rect(574f, 393f, 250f, 137f),
                 PrototypeArtResourceIds.DetailStatHealth, T("stat.health"),
                 baseStats.MaxHealth.ToString(), ivory);
@@ -6142,7 +7570,7 @@ namespace SeekerAutoChess.Prototype
         {
             var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, selected.Quality,
-                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                OwnedAptitudeRoll(selected),
                 selected.ExternalStar);
             var loadout = deckEquipmentDraft == null
                 ? equipmentInventory.CreateSnapshot(selected.CharacterInstanceId)
@@ -6170,7 +7598,7 @@ namespace SeekerAutoChess.Prototype
         {
             var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, selected.Quality,
-                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                OwnedAptitudeRoll(selected),
                 selected.ExternalStar);
             return EquipmentDerivedStatCalculator.Calculate(rarityStats,
                 equipmentInventory.CreateSnapshot(selected.CharacterInstanceId));
@@ -6273,7 +7701,7 @@ namespace SeekerAutoChess.Prototype
             var definition = characterCatalog.Get(selected.DefinitionId);
             var rarityStats = CharacterRarityInstanceRules.CalculateCombatStats(
                 definition, definition.BasePower, 1, selected.Quality,
-                CharacterRarityInstanceRules.ComputeAptitudeRoll(selected.CharacterInstanceId),
+                OwnedAptitudeRoll(selected),
                 selected.ExternalStar);
             var derived = EquipmentDerivedStatCalculator.Calculate(rarityStats, snapshot);
             GUI.Label(new Rect(55f, 1430f, 970f, 40f),
@@ -6910,16 +8338,14 @@ namespace SeekerAutoChess.Prototype
 
         private void ActivatePreparationBattleItem(int backpackIndex, string itemId)
         {
-            var targetSlot = itemId == "I05" ? 0 : selectedRunSlot;
-            if (itemId != "I05" && (targetSlot < 0 || targetSlot >= runRoster.BoardCapacity ||
-                                    runRoster.Get(targetSlot) == null))
-            {
-                PlayUiClick(UiAudioCueIds.Disabled, "preparation-item-invalid-target");
-                statusKey = "status.selectItemTarget";
-                return;
-            }
+            var itemInstanceId = backpackIndex >= 0 &&
+                                 backpackIndex < expeditionEconomy.BackpackInstanceIds.Count
+                ? expeditionEconomy.BackpackInstanceIds[backpackIndex]
+                : string.Empty;
+            const int targetSlot = -1;
             var actionId = NewRunEconomyActionId("bind-item");
-            var receipt = runEconomyActions.Execute(actionId, runEconomyActions.StateVersion, () =>
+            var expectedVersion = runEconomyActions.StateVersion;
+            var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
             {
                 if (!expeditionFlow.CanPrepare) return RunEconomyResultCode.InvalidPhase;
                 return expeditionEconomy.TryActivateBattleItem(backpackIndex, targetSlot)
@@ -6928,6 +8354,7 @@ namespace SeekerAutoChess.Prototype
             });
             if (receipt.ResultCode == RunEconomyResultCode.Success)
             {
+                RecordFormalItemBinding(actionId, expectedVersion, itemInstanceId);
                 PlayUiClick(UiAudioCueIds.Tap, "preparation-item-activate");
                 statusKey = itemId == "I04" ? "status.itemActivatedSimplified" : "status.itemActivated";
             }
@@ -6941,8 +8368,13 @@ namespace SeekerAutoChess.Prototype
 
         private bool DiscardPreparationBattleItem(int backpackIndex)
         {
+            var itemInstanceId = backpackIndex >= 0 &&
+                                 backpackIndex < expeditionEconomy.BackpackInstanceIds.Count
+                ? expeditionEconomy.BackpackInstanceIds[backpackIndex]
+                : string.Empty;
             var actionId = NewRunEconomyActionId("discard-item");
-            var receipt = runEconomyActions.Execute(actionId, runEconomyActions.StateVersion, () =>
+            var expectedVersion = runEconomyActions.StateVersion;
+            var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
             {
                 if (!expeditionFlow.CanPrepare) return RunEconomyResultCode.InvalidPhase;
                 return expeditionEconomy.TryDiscardCombatItemAt(backpackIndex)
@@ -6951,6 +8383,7 @@ namespace SeekerAutoChess.Prototype
             });
             if (receipt.ResultCode == RunEconomyResultCode.Success)
             {
+                RecordFormalItemDiscard(actionId, expectedVersion, itemInstanceId);
                 PlayUiClick(UiAudioCueIds.Cancel, "preparation-item-discard");
                 statusKey = "status.itemDiscarded";
             }
@@ -6977,6 +8410,12 @@ namespace SeekerAutoChess.Prototype
 
         private int EnemyRosterIndexForFormationSlot(int formationSlot)
         {
+            if (currentEncounter != null && currentEncounter.GenerationVersion >= 3)
+            {
+                for (var index = 0; index < currentEncounter.Units.Count; index++)
+                    if (currentEncounter.Units[index].EnemySlot == formationSlot) return index;
+                return -1;
+            }
             var bossIndex = BossEnemyIndex();
             if (bossIndex < 0) return formationSlot < enemyUnits.Count ? formationSlot : -1;
             if (formationSlot == 1) return bossIndex;
@@ -6996,6 +8435,9 @@ namespace SeekerAutoChess.Prototype
 
         private int EnemyFormationSlotForRosterIndex(int enemyIndex)
         {
+            if (currentEncounter != null && currentEncounter.GenerationVersion >= 3 &&
+                enemyIndex >= 0 && enemyIndex < currentEncounter.Units.Count)
+                return currentEncounter.Units[enemyIndex].EnemySlot;
             var bossIndex = BossEnemyIndex();
             if (bossIndex < 0) return enemyIndex < 6 ? enemyIndex : -1;
             if (enemyIndex == bossIndex) return 1;
@@ -7112,7 +8554,8 @@ namespace SeekerAutoChess.Prototype
 
             DrawGroundShadow(FormationGroundShadowRect(
                 definitionId, battleRect.center.x, footY, 164f, 27f), opacity);
-            DrawPieceBase(new Vector2(battleRect.center.x, footY), opacity, visibleCharacterWidth);
+            DrawPieceBase(new Vector2(battleRect.center.x, footY), opacity,
+                visibleCharacterWidth, isPlayer);
             if (hasArt)
             {
                 GUI.color = WithOpacity(Color.white, opacity);
@@ -7131,7 +8574,7 @@ namespace SeekerAutoChess.Prototype
             DrawUnitLevelBadge(visibleCenterX, headTopY, qualityId, runLevel, opacity);
             var nameRect = FormationNameplateRect(caption, nameFontSize,
                 battleRect.center.x,
-                PieceBaseBottomY(stableFootY, visibleCharacterWidth));
+                PieceBaseBottomY(stableFootY, visibleCharacterWidth, isPlayer));
             DrawFormationUnitNameplate(nameRect, caption, opacity, nameFontSize);
         }
 
@@ -7647,16 +9090,28 @@ namespace SeekerAutoChess.Prototype
             else if (trashArea.Contains(preparationPointerPosition))
             {
                 var refund = 0;
+                var soldUnit = runRoster.Get(source);
                 var actionId = NewRunEconomyActionId("sell");
-                var receipt = runEconomyActions.Execute(actionId, runEconomyActions.StateVersion, () =>
+                var expectedVersion = runEconomyActions.StateVersion;
+                var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
                 {
                     if (!expeditionFlow.CanPrepare) return RunEconomyResultCode.InvalidPhase;
                     if (!runRoster.TrySellAt(source, out refund)) return RunEconomyResultCode.UnitNotFound;
                     coins += refund;
+                    if (soldUnit != null && expeditionEconomy.PendingPreparationId == "P08")
+                    {
+                        var improvedRefund = soldUnit.AcquisitionBasis * 3 / 4;
+                        var extraRefund = Mathf.Min(6, Mathf.Max(0, improvedRefund - refund));
+                        coins += extraRefund;
+                        refund += extraRefund;
+                        expeditionEconomy.TryConsumePreparation("P08");
+                    }
                     return RunEconomyResultCode.Success;
                 });
                 if (receipt.ResultCode == RunEconomyResultCode.Success)
                 {
+                    RecordFormalRosterSale(
+                        actionId, expectedVersion, soldUnit.RunUnitId);
                     statusKey = refund > 0 ? "status.sold" : "status.soldFree";
                     acceptedDrop = true;
                 }
@@ -7673,8 +9128,11 @@ namespace SeekerAutoChess.Prototype
                     if (destinationUnit != null && sourceUnit.DefinitionId == destinationUnit.DefinitionId &&
                         sourceUnit.RunLevel == destinationUnit.RunLevel)
                     {
+                        var thirdIndex = runRoster.FindManualMergeThirdIndex(source, destination);
+                        var thirdUnit = thirdIndex >= 0 ? runRoster.Get(thirdIndex) : null;
                         var actionId = NewRunEconomyActionId("merge");
-                        var receipt = runEconomyActions.Execute(actionId, runEconomyActions.StateVersion, () =>
+                        var expectedVersion = runEconomyActions.StateVersion;
+                        var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
                         {
                             if (!expeditionFlow.CanPrepare) return RunEconomyResultCode.InvalidPhase;
                             if (sourceUnit.RunLevel >= RunUnitRules.MaximumRunLevel)
@@ -7684,19 +9142,29 @@ namespace SeekerAutoChess.Prototype
                                 ? RunEconomyResultCode.Success
                                 : RunEconomyResultCode.MergeRequirementsNotMet;
                         });
+                        if (receipt.ResultCode == RunEconomyResultCode.Success)
+                            RecordFormalRosterMerge(
+                                actionId, expectedVersion,
+                                sourceUnit.RunUnitId, destinationUnit.RunUnitId,
+                                thirdUnit.RunUnitId, destinationUnit.RunUnitId);
                         ApplyRunEconomyStatus(receipt.ResultCode, "status.merged");
                         acceptedDrop = receipt.ResultCode == RunEconomyResultCode.Success;
                     }
                     else
                     {
                         var actionId = NewRunEconomyActionId("move");
-                        var receipt = runEconomyActions.Execute(actionId, runEconomyActions.StateVersion, () =>
+                        var expectedVersion = runEconomyActions.StateVersion;
+                        var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
                         {
                             if (!expeditionFlow.CanPrepare) return RunEconomyResultCode.InvalidPhase;
                             return runRoster.TryMoveOrSwap(source, destination)
                                 ? RunEconomyResultCode.Success
                                 : RunEconomyResultCode.InvalidTarget;
                         });
+                        if (receipt.ResultCode == RunEconomyResultCode.Success)
+                            RecordFormalRosterMove(
+                                actionId, expectedVersion, sourceUnit.RunUnitId,
+                                destination);
                         ApplyRunEconomyStatus(receipt.ResultCode, "status.recruit");
                         acceptedDrop = receipt.ResultCode == RunEconomyResultCode.Success;
                     }
@@ -7749,10 +9217,15 @@ namespace SeekerAutoChess.Prototype
         {
             var shopBackground = artCatalog.GetExpeditionUiV52Texture(
                 "battlefield-signal-yard-preparation-blur-v5.2");
+            Texture2D equippedBattlefield;
+            var useEquippedBattlefield = TryGetEquippedBattlefieldTexture(out equippedBattlefield);
             var previousMatrix = PushExpeditionUiV53Canvas();
             var canvas = new Rect(0f, 0f, ExpeditionUiV67Layout.ReferenceWidth,
                 ExpeditionUiV67Layout.ReferenceHeight);
-            AspectCoverTextureRenderer.Draw(canvas, shopBackground, 1f);
+            // DrawBackground already placed the accepted 1080x2400 equipped battlefield at
+            // native size. Do not cover it with the legacy blurred signal-yard background.
+            if (!useEquippedBattlefield)
+                AspectCoverTextureRenderer.Draw(canvas, shopBackground, 1f);
             DrawPreparationV67TopControls();
 
             if (preparationBackpackExpanded)
@@ -8523,7 +9996,7 @@ namespace SeekerAutoChess.Prototype
             }
 
             var level = ShopOfferLevel(offerIndex);
-            var cost = UnitCost(nameKey, level);
+            var cost = ShopOfferListedPrice(offerIndex, nameKey, level);
             var power = UnitBasePower(nameKey);
             var definition = characterCatalog.Get(nameKey);
             CharacterQuality quality;
@@ -9136,7 +10609,7 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
             var level = ShopOfferLevel(offerIndex);
-            var cost = UnitCost(nameKey, level);
+            var cost = ShopOfferListedPrice(offerIndex, nameKey, level);
             var power = UnitBasePower(nameKey);
             var definition = characterCatalog.Get(nameKey);
             CharacterQuality quality;
@@ -9434,7 +10907,7 @@ namespace SeekerAutoChess.Prototype
             var fullCanvas = new Rect(0f, 0f, DesignWidth, layoutCanvasHeight);
             var blurredBattlefield = artCatalog.GetExpeditionUiV52Texture(
                 "battlefield-signal-yard-preparation-blur-v5.2");
-            if (blurredBattlefield != null)
+            if (!DrawEquippedBattlefieldSkin(0.78f) && blurredBattlefield != null)
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.78f);
                 GUI.DrawTexture(fullCanvas, blurredBattlefield, ScaleMode.ScaleAndCrop, true);
@@ -9816,22 +11289,6 @@ namespace SeekerAutoChess.Prototype
             var width = baseRect.width * view.Scale;
             var height = baseRect.height * view.Scale;
             return new Rect(foot.x - width * 0.5f, foot.y - height + 5f, width, height);
-        }
-
-        private void DrawBattleTargetFrame(Rect area, BattleUnitPresentationState unit)
-        {
-            if (unit == null || battleVisual == null || battleVisual.TargetId != unit.Id) return;
-            var color = battleVisual.Type == BattleEventType.Heal
-                ? new Color(0.25f, 1f, 0.56f, 0.82f)
-                : new Color(1f, 0.40f, 0.22f, 0.82f);
-            color.a *= 0.55f + Mathf.Abs(Mathf.Sin(battleVisual.Progress * Mathf.PI * 3f)) * 0.45f;
-            GUI.color = WithOpacity(color, battleSceneOpacity);
-            var frame = new Rect(area.x - 8f, area.y - 8f, area.width + 16f, area.height + 16f);
-            GUI.DrawTexture(new Rect(frame.x, frame.y, frame.width, 8f), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(frame.x, frame.yMax - 8f, frame.width, 8f), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(frame.x, frame.y, 8f, frame.height), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(frame.xMax - 8f, frame.y, 8f, frame.height), Texture2D.whiteTexture);
-            GUI.color = Color.white;
         }
 
         private void DrawBattleOverlay()
@@ -11036,7 +12493,17 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
 
-            runRoster.TryMoveOrSwap(selectedRunSlot, destination);
+            var source = selectedRunSlot;
+            var sourceUnit = runRoster.Get(source);
+            var actionId = NewRunEconomyActionId("move");
+            var expectedVersion = runEconomyActions.StateVersion;
+            var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
+                runRoster.TryMoveOrSwap(source, destination)
+                    ? RunEconomyResultCode.Success
+                    : RunEconomyResultCode.InvalidTarget);
+            if (receipt.ResultCode == RunEconomyResultCode.Success)
+                RecordFormalRosterMove(
+                    actionId, expectedVersion, sourceUnit.RunUnitId, destination);
             selectedRunSlot = -1;
             statusKey = "status.recruit";
             SaveGame();
@@ -11093,18 +12560,29 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawUpgradeChoices(float y)
         {
-            var choiceSet = EnsureRoguelikeChoiceSet();
             GUI.Label(ExpeditionUiV46Layout.UpgradeTitle, T("upgrade.archiveTitle"),
                 ArchiveStyle(32, ArchiveInk(), TextAnchor.MiddleCenter, true));
             GUI.Label(ExpeditionUiV46Layout.UpgradeSubtitle,
                 T("upgrade.archiveSubtitle") + "  ·  " + T("upgrade.prompt"),
                 ArchiveStyle(19, ArchiveMutedInk(), TextAnchor.MiddleCenter));
 
-            if (choiceSet != null)
+            if (currentRoguelikeRuntimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration)
             {
-                DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[0], choiceSet.options[0]);
-                DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[1], choiceSet.options[1]);
-                DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[2], choiceSet.options[2]);
+                var choiceSetV11 = EnsureRoguelikeChoiceSetV11();
+                if (choiceSetV11 != null)
+                    for (var index = 0; index < choiceSetV11.options.Length; index++)
+                        DrawUpgradeButtonV11(ExpeditionUiV46Layout.UpgradeCards[index],
+                            choiceSetV11.options[index], ChapterOneRoguelikeChoiceSetV11.OptionId(index));
+            }
+            else
+            {
+                var choiceSet = EnsureRoguelikeChoiceSet();
+                if (choiceSet != null)
+                {
+                    DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[0], choiceSet.options[0]);
+                    DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[1], choiceSet.options[1]);
+                    DrawUpgradeButton(ExpeditionUiV46Layout.UpgradeCards[2], choiceSet.options[2]);
+                }
             }
             GUI.Label(ExpeditionUiV46Layout.UpgradeFooterRound,
                 string.Format(T("round"), round),
@@ -11113,13 +12591,23 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawPostBattleUpgradeScreen()
         {
-            var choiceSet = EnsureRoguelikeChoiceSet();
+            var choiceSet = currentRoguelikeRuntimeGeneration ==
+                ChapterOneRoguelikeV11State.RuntimeGeneration ? null : EnsureRoguelikeChoiceSet();
+            var choiceSetV11 = currentRoguelikeRuntimeGeneration ==
+                ChapterOneRoguelikeV11State.RuntimeGeneration ? EnsureRoguelikeChoiceSetV11() : null;
             var blurredBattlefield = artCatalog.GetExpeditionUiV55Texture(
                 "battlefield-signal-yard-roguelike-blur-v5.5");
-            DrawFullBleedTexture(blurredBattlefield);
+            Texture2D equippedBattlefield;
+            var useEquippedBattlefield = TryGetEquippedBattlefieldTexture(out equippedBattlefield);
+            if (!useEquippedBattlefield) DrawFullBleedTexture(blurredBattlefield);
             var previousMatrix = PushExpeditionUiV46FullCanvas(ExpeditionUiV551Layout.ReferenceHeight);
             var canvas = ExpeditionUiV551Layout.Canvas;
-            if (blurredBattlefield != null)
+            if (useEquippedBattlefield)
+            {
+                // The native-size battlefield was already drawn before entering this scaled
+                // 841-wide page canvas. Leaving it untouched preserves the formal 1:1 asset.
+            }
+            else if (blurredBattlefield != null)
             {
                 AspectCoverTextureRenderer.Draw(canvas, blurredBattlefield, 1f);
             }
@@ -11159,6 +12647,13 @@ namespace SeekerAutoChess.Prototype
                 DrawUpgradeV551Card(ExpeditionUiV551Layout.BenefitRows[0], choiceSet.options[0]);
                 DrawUpgradeV551Card(ExpeditionUiV551Layout.BenefitRows[1], choiceSet.options[1]);
                 DrawUpgradeV551Card(ExpeditionUiV551Layout.BenefitRows[2], choiceSet.options[2]);
+            }
+            else if (choiceSetV11 != null && choiceSetV11.options != null &&
+                     choiceSetV11.options.Length == 3)
+            {
+                for (var index = 0; index < choiceSetV11.options.Length; index++)
+                    DrawUpgradeV551CardV11(ExpeditionUiV551Layout.BenefitRows[index],
+                        choiceSetV11.options[index], ChapterOneRoguelikeChoiceSetV11.OptionId(index));
             }
             GUI.Label(ExpeditionUiV551Layout.BottomHint, T("upgrade.chooseHint"),
                 ArchiveStyle(28, ArchiveInk(), TextAnchor.MiddleCenter, true));
@@ -11237,6 +12732,60 @@ namespace SeekerAutoChess.Prototype
             if (GUI.Button(area, GUIContent.none, GUIStyle.none))
             {
                 ApplyUpgrade(option.optionId);
+            }
+        }
+
+        private void DrawUpgradeV551CardV11(Rect area,
+            ChapterOneRoguelikeCandidate option, string optionId)
+        {
+            var rarity = (ExpeditionBuffRarity)Mathf.Clamp(option.RarityId, 0, 4);
+            var rarityIndex = Mathf.Clamp((int)rarity, 0, 4);
+            var cardAtlas = artCatalog.GetExpeditionUiV55Texture("roguelike-quality-cards-v5.5.1");
+            DrawAtlasSlice(cardAtlas, area,
+                new Rect(133f, 15f + rarityIndex * 250f, 757f, 230f));
+
+            // V11 reuses the accepted V5.5 icon and rarity atlases. The first V11
+            // integration drew only text, leaving the formal icon plate and quality
+            // badge empty even though the approved resources were already present.
+            var iconAtlas = artCatalog.GetExpeditionUiV55Texture("roguelike-benefit-icons-v5.5.2");
+            DrawAtlasSlice(iconAtlas, OffsetRect(area, ExpeditionUiV551Layout.BenefitIcon),
+                RoguelikeV11IconSource(option.Id));
+            var qualityAtlas = artCatalog.GetExpeditionUiV55Texture("roguelike-quality-badges-v5.5.1");
+            DrawAtlasSlice(qualityAtlas, OffsetRect(area, ExpeditionUiV551Layout.QualityBadge),
+                new Rect(16f, 18f + rarityIndex * 58f, 142f, 50f));
+            var qualityLabelStyle = ArchiveStyle(language == GameLanguage.English ? 11 : 28,
+                ArchiveColor("F4F0DD"), TextAnchor.MiddleLeft, true);
+            DrawCenteredAtlasIconTextGroup(qualityAtlas,
+                OffsetRect(area, ExpeditionUiV551Layout.QualityBadge),
+                new Rect(190f, 19f + rarityIndex * 58f, 40f, 40f),
+                T(RarityLocalizationKey(rarity)), qualityLabelStyle,
+                new Vector2(40f, 40f), 3f, language == GameLanguage.English ? 9 : 18);
+
+            GUI.Label(OffsetRect(area, ExpeditionUiV551Layout.BenefitName),
+                T(RoguelikeV11NameKey(option.Id)), ArchiveStyle(language == GameLanguage.English ? 20 : 36,
+                    ArchiveInk(), TextAnchor.MiddleLeft, true));
+            DrawUpgradeV551Description(
+                OffsetRect(area, ExpeditionUiV551Layout.BenefitDescription),
+                RoguelikeV11CardDescription(option));
+            var selectArea = OffsetRect(area, ExpeditionUiV551Layout.SelectButton);
+            DrawUpgradeV551SelectButton(selectArea);
+            GUI.Label(selectArea, T("upgrade.choose"),
+                ArchiveStyle(28, ArchiveColor("F4F0DD"), TextAnchor.MiddleCenter, true));
+            if (GUI.Button(area, GUIContent.none, GUIStyle.none)) ApplyUpgradeV11(optionId);
+        }
+
+        private static Rect RoguelikeV11IconSource(string effectId)
+        {
+            switch (effectId)
+            {
+                case "B02": case "B03": case "B07": case "B08":
+                case "B09": case "B12": case "B14":
+                case "K01": case "K02": case "K05":
+                    return new Rect(203f, 11f, 170f, 170f);
+                case "B16": case "K09":
+                    return new Rect(395f, 11f, 170f, 170f);
+                default:
+                    return new Rect(11f, 11f, 170f, 170f);
             }
         }
 
@@ -11382,13 +12931,7 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawExpeditionResultScreen()
         {
-            var resultY = 280f + AdaptivePortraitLayout.ExpandedPageOffset(layoutContentHeight, 0.5f);
-            GUI.color = new Color(0.01f, 0.035f, 0.045f, 0.72f);
-            GUI.DrawTexture(new Rect(55f, resultY, 970f, 900f), Texture2D.whiteTexture);
-            GUI.color = new Color(0.48f, 0.82f, 0.78f, 0.50f);
-            DrawRectOutline(new Rect(55f, resultY, 970f, 900f), 4f);
-            GUI.color = Color.white;
-            DrawRunResult(resultY + 70f);
+            DrawFormalExpeditionSettlementScreen();
         }
 
         private void DrawUpgradeButton(Rect area, RoguelikeChoiceOption option)
@@ -11415,6 +12958,23 @@ namespace SeekerAutoChess.Prototype
             {
                 ApplyUpgrade(option.optionId);
             }
+        }
+
+        private void DrawUpgradeButtonV11(Rect area,
+            ChapterOneRoguelikeCandidate option, string optionId)
+        {
+            var rarity = (ExpeditionBuffRarity)Mathf.Clamp(option.RarityId, 0, 4);
+            DrawExpeditionUiV46Texture(area, "buff-card-" + RarityAssetKey(rarity) + "-v4.6",
+                ScaleMode.ScaleToFit);
+            GUI.Label(OffsetRect(area, 261f, 40f, 286f, 50f), T(RoguelikeV11NameKey(option.Id)),
+                ArchiveStyle(26, ArchiveInk(), TextAnchor.MiddleLeft, true));
+            GUI.Label(OffsetRect(area, 261f, 111f, 314f, 72f),
+                RoguelikeV11CardDescription(option),
+                ArchiveStyle(19, ArchiveInk(), TextAnchor.MiddleLeft));
+            var selectArea = OffsetRect(area, 534f, 149f, 179f, 61f);
+            GUI.Label(selectArea, T("upgrade.choose"),
+                ArchiveStyle(26, ArchiveColor("F4E9D0"), TextAnchor.MiddleCenter, true));
+            if (GUI.Button(selectArea, GUIContent.none, GUIStyle.none)) ApplyUpgradeV11(optionId);
         }
 
         private static string RarityAssetKey(ExpeditionBuffRarity rarity)
@@ -11710,9 +13270,15 @@ namespace SeekerAutoChess.Prototype
                 expeditionMapDiagnosticNodeIndex, 0, expeditionMap.Nodes.Count - 1);
             var inspectedNode = expeditionMap.Nodes[expeditionMapDiagnosticNodeIndex];
             var inspectedEncounter = IsBattleNode(inspectedNode.Type)
-                ? ChapterOneEncounterRules.Generate(
-                    expeditionMapSeed, inspectedNode,
-                    inspectedNode.Type == ExpeditionNodeType.NormalBattle && !HasCompletedNormalBattle())
+                ? expeditionRewardSnapshot != null && string.Equals(
+                    expeditionRewardSnapshot.RulesVersion,
+                    ChapterOneDifficultyRules.RulesVersion, StringComparison.Ordinal)
+                    ? ChapterOneDifficultyRules.GenerateEncounter(
+                        expeditionMapSeed, inspectedNode, expeditionRewardSnapshot.DifficultyId,
+                        CompletedBattleCount(), CurrentEncounterTableVersion())
+                    : ChapterOneEncounterRules.Generate(
+                        expeditionMapSeed, inspectedNode,
+                        inspectedNode.Type == ExpeditionNodeType.NormalBattle && !HasCompletedNormalBattle())
                 : null;
             var summary = ExpeditionMapDiagnostics.CreateEncounterEconomySummary(
                 ClientVersionLabel, expeditionMap, inspectedNode.Id, inspectedEncounter,
@@ -11783,7 +13349,9 @@ namespace SeekerAutoChess.Prototype
         private string CreateRunEconomyDiagnosticSummary()
         {
             var summary = new System.Text.StringBuilder();
-            summary.Append("runEconomyRulesVersion=").Append(RunEconomyRulesVersion).Append('\n');
+            summary.Append("runEconomyRulesVersion=").Append(currentRunEconomyRulesVersion).Append('\n');
+            summary.Append("qualityRecruitPriceRulesVersion=")
+                .Append(qualityRecruitPriceRulesVersion).Append('\n');
             summary.Append("runId=").Append(runId ?? string.Empty).Append('\n');
             summary.Append("runStateVersion=").Append(runEconomyActions.StateVersion).Append('\n');
             summary.Append("roster=").Append(runRoster.BoardCount).Append('/')
@@ -11798,9 +13366,12 @@ namespace SeekerAutoChess.Prototype
                 var listed = shopOfferListedPrices != null && index < shopOfferListedPrices.Length
                     ? shopOfferListedPrices[index]
                     : 0;
+                var quality = ShopOfferQuality(definitionId);
                 summary.Append("offer[").Append(index).Append("]=")
                     .Append(shopOfferIds != null && index < shopOfferIds.Length ? shopOfferIds[index] : string.Empty)
-                    .Append(',').Append(definitionId ?? "sold").Append(",L").Append(level)
+                    .Append(',').Append(definitionId ?? "sold").Append(',')
+                    .Append(definitionId == null ? "sold" : quality.ToString().ToLowerInvariant())
+                    .Append(",L").Append(level)
                     .Append(',').Append(listed).Append("->")
                     .Append(definitionId == null ? 0 : expeditionEconomy.QuoteRecruitmentPrice(listed))
                     .Append('\n');
@@ -11909,10 +13480,22 @@ namespace SeekerAutoChess.Prototype
 
             DrawAtlasSlice(topIcons, ExpeditionMapUiV62Layout.BackIcon, new Rect(8f, 8f, 128f, 128f));
 
-            GUI.Label(ExpeditionMapUiV62Layout.HeaderTitle, T("map.chapterTitle"),
-                ArchiveStyle(44, ArchiveInk(), TextAnchor.MiddleLeft, true));
-            GUI.Label(ExpeditionMapUiV62Layout.HeaderSubtitle, T("map.chapterPrompt"),
-                ArchiveStyle(26, ArchiveMutedInk(), TextAnchor.MiddleLeft));
+            var mapTitle = T("map.chapterTitle");
+            var mapTitleStyle = CommonConfirmTextStyle(mapTitle,
+                ExpeditionMapUiV62Layout.HeaderTitle,
+                language == GameLanguage.English ? 34 : 40, 24,
+                ArchiveInk(), true, false);
+            mapTitleStyle.alignment = TextAnchor.MiddleLeft;
+            mapTitleStyle.font = SourceHanSerifFont(true);
+            GUI.Label(ExpeditionMapUiV62Layout.HeaderTitle, mapTitle, mapTitleStyle);
+            var mapSubtitle = T("map.chapterPrompt");
+            var mapSubtitleStyle = CommonConfirmTextStyle(mapSubtitle,
+                ExpeditionMapUiV62Layout.HeaderSubtitle,
+                language == GameLanguage.English ? 22 : 26, 18,
+                ArchiveMutedInk(), false, false);
+            mapSubtitleStyle.alignment = TextAnchor.MiddleLeft;
+            mapSubtitleStyle.font = SourceHanSerifFont(false);
+            GUI.Label(ExpeditionMapUiV62Layout.HeaderSubtitle, mapSubtitle, mapSubtitleStyle);
 
             var legendKeys = new[]
             {
@@ -12078,8 +13661,63 @@ namespace SeekerAutoChess.Prototype
                 DrawEventFamilyShopChoices(node);
             else if (effectiveType == ExpeditionNodeType.Rest)
                 DrawEventFamilyRestChoices(node);
+            else if (effectiveType == ExpeditionNodeType.Supply)
+                DrawEventFamilySupplyChoices(node);
             else
                 DrawEventFamilyTreasureChoices(node);
+        }
+
+        private void DrawEventFamilySupplyChoices(ExpeditionMapNode node)
+        {
+            var coinAmount = ChapterOneExpeditionEconomy.SupplyCoinAmount(node.JourneyProgress);
+            if (DrawEventFamilyOption(0, "treasure", T("node.supply.coins"),
+                    "+" + coinAmount + " " + T("coins"),
+                    "ART-UI-PREPARATION-ICON-COIN-V6.7.0", T("upgrade.choose"), true))
+            {
+                if (TryChooseNonBattleAction(node, "coins"))
+                {
+                    coins += coinAmount;
+                    FinishNonBattleNode();
+                }
+            }
+
+            var recruitTicket = ResolveSupplyRecruitTicket(node);
+            if (DrawEventFamilyOption(1, "treasure", T("node.supply.recruits"),
+                    RecruitTicketDisplay(recruitTicket),
+                    "ART-UI-PREPARATION-ICON-REFRESH-V6.7.0", T("upgrade.choose"), true))
+            {
+                if (TryChooseNonBattleAction(node, "recruits"))
+                {
+                    EnqueueRecruitTicket(recruitTicket);
+                    FinishNonBattleNode();
+                }
+            }
+
+            var preparationId = ResolveSupplyPreparationId(node);
+            var hasPendingPreparation = !string.IsNullOrEmpty(expeditionEconomy.PendingPreparationId);
+            var shownPreparationId = hasPendingPreparation
+                ? expeditionEconomy.PendingPreparationId
+                : preparationId;
+            var canTakePreparation = !hasPendingPreparation &&
+                                     !string.IsNullOrEmpty(shownPreparationId);
+            if (DrawEventFamilyOption(2, "treasure", T("preparation." + shownPreparationId),
+                    hasPendingPreparation
+                        ? T("preparation.ready") + "\n" + T("preparation." + shownPreparationId + ".description")
+                        : T("preparation." + shownPreparationId + ".description"),
+                    "ART-UI-PREPARATION-ICON-PROFESSIONOUTPUT-V6.7.0",
+                    hasPendingPreparation ? T("preparation.ready") : T("upgrade.choose"),
+                    canTakePreparation))
+            {
+                if (TryChooseNonBattleAction(node, "preparation:" + shownPreparationId) &&
+                    expeditionEconomy.TryAcquirePreparation(shownPreparationId))
+                {
+                    LockP12RecruitTarget(node, shownPreparationId);
+                    FinishNonBattleNode();
+                }
+            }
+            DrawEventFamilyFooterHint(hasPendingPreparation
+                ? T("preparation.occupiedHint")
+                : canTakePreparation ? T(statusKey) : T("preparation.noneEligible"));
         }
 
         private void DrawEventFamilyTopChrome()
@@ -12152,9 +13790,9 @@ namespace SeekerAutoChess.Prototype
         {
             var labels = new[]
             {
-                T("node.event." + eventId + ".a"),
-                T("node.event." + eventId + ".b"),
-                T("node.event.leave")
+                T("node.event." + eventId + ".1"),
+                T("node.event." + eventId + ".2"),
+                T("node.event." + eventId + ".3")
             };
             var icons = new[]
             {
@@ -12169,9 +13807,7 @@ namespace SeekerAutoChess.Prototype
                 SplitEventFamilyOptionCopy(labels[index], out optionTitle, out optionDescription);
                 if (!DrawEventFamilyOption(index, "event", optionTitle, optionDescription,
                         icons[index], T("upgrade.choose"), true)) continue;
-                if (index == 0) ResolveEventChoice(node, eventId, true);
-                else if (index == 1) ResolveEventChoice(node, eventId, false);
-                else if (TryChooseNonBattleAction(node, eventId + ":leave")) FinishNonBattleNode();
+                ResolveEventChoice(node, eventId, index);
             }
             DrawEventFamilyFooterHint(T(statusKey));
         }
@@ -12251,7 +13887,9 @@ namespace SeekerAutoChess.Prototype
             }
             eventFamilyTacticalSelection = Mathf.Clamp(eventFamilyTacticalSelection, 0, itemIds.Length - 1);
             var selectedItemId = itemIds[eventFamilyTacticalSelection];
-            var canTakeItem = expeditionEconomy.Backpack.Count < ExpeditionEconomyState.BackpackCapacity;
+            var canTakeItem = ExpeditionEconomyAuthorityPolicy.AllowsClientSideItemMutation(
+                                  IsCurrentFormalExpeditionRunBound()) &&
+                              expeditionEconomy.Backpack.Count < ExpeditionEconomyState.BackpackCapacity;
             if (DrawEventFamilyOption(2, "treasure", T("economy.item." + selectedItemId),
                     T("economy.item." + selectedItemId + ".description"),
                     "ART-UI-PREPARATION-ICON-PROFESSIONOUTPUT-V6.7.0",
@@ -12269,39 +13907,36 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawEventFamilyShopChoices(ExpeditionMapNode node)
         {
-            var generatedOffers = ChapterOneExpeditionEconomy.GenerateShopItemIds(
-                expeditionMapSeed, node.Id, node.JourneyProgress, expeditionEconomy.Morale,
-                expeditionEconomy.HasResolvedAction("run:shop:I06"));
-            string lockedOffers;
-            if (expeditionEconomy.GetOrLockNodeContent(
-                    "shop:" + node.Id, string.Join(",", generatedOffers), out lockedOffers)) SaveGame();
-            var offers = lockedOffers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var offers = GenerateAndLockMerchantOffers(node);
             for (var index = 0; index < ExpeditionEventFamilyV126Layout.OptionCards.Length; index++)
             {
                 if (index >= offers.Length) continue;
                 var item = ChapterOneExpeditionEconomy.GetItem(offers[index]);
-                var actionId = item.Id == "I06" ? "run:shop:I06" : node.Id + ":shop:" + item.Id;
+                var actionId = node.Id + ":shop:" + index + ":" + item.Id;
                 var purchased = expeditionEconomy.HasResolvedAction(actionId);
-                var enabled = !purchased && coins >= item.Cost;
+                var price = CurrentMerchantItemPrice(item.Cost);
+                var enabled = !purchased && coins >= price;
                 var description = T("economy.item." + item.Id + ".description") +
-                                  "\n" + T("price") + " " + item.Cost;
+                                  "\n" + T("price") + " " + price;
                 if (DrawEventFamilyOption(index, "shop", T("economy.item." + item.Id),
                         description, EventFamilyShopIcon(item.Id),
                         purchased ? T("eventFamily.sold") : T("eventFamily.buy"), enabled))
                     PurchaseExpeditionItem(node, item, actionId);
             }
             if (DrawEventFamilyPrimaryButton(
-                    new Rect(321.5f, 1772f, 198f, 76f), T("node.continue"), true))
+                    ExpeditionEventFamilyV126Layout.ShopCompleteButton, T("node.continue"), true))
+            {
+                expeditionEconomy.TryConsumePreparation("P07");
                 FinishNonBattleNode();
+            }
         }
 
         private bool DrawEventFamilyOption(int index, string theme, string title,
             string description, string foregroundIconResource, string buttonLabel, bool enabled)
         {
             var card = ExpeditionEventFamilyV126Layout.OptionCards[index];
-            var cardTexture = artCatalog.GetExpeditionEventFamilyTexture(
-                ExpeditionEventFamilyV126Layout.OptionCardResource);
-            DrawStandaloneNineSlice(cardTexture, card, ExpeditionEventFamilyV126Layout.OptionCardBorder);
+            DrawEventFamilyTexture(card, ExpeditionEventFamilyV126Layout.OptionCardResource,
+                ScaleMode.ScaleToFit);
             DrawEventFamilyTexture(OffsetRect(card, ExpeditionEventFamilyV126Layout.IconPlateLocal),
                 ExpeditionEventFamilyV126Layout.IconPlateResource, ScaleMode.ScaleToFit);
 
@@ -12317,9 +13952,7 @@ namespace SeekerAutoChess.Prototype
             DrawEventFamilyOptionCopy(copy, title, description);
 
             var buttonArea = OffsetRect(card, ExpeditionEventFamilyV126Layout.PrimaryButtonLocal);
-            return theme == "shop"
-                ? DrawEventFamilyRecruitButton(buttonArea, buttonLabel, enabled)
-                : DrawEventFamilyPrimaryButton(buttonArea, buttonLabel, enabled);
+            return DrawEventFamilyPrimaryButton(buttonArea, buttonLabel, enabled);
         }
 
         private void DrawEventFamilyOptionCopy(Rect copy, string title, string description)
@@ -12375,26 +14008,12 @@ namespace SeekerAutoChess.Prototype
             return clicked;
         }
 
-        private bool DrawEventFamilyRecruitButton(Rect area, string label, bool enabled)
-        {
-            DrawV67HorizontalThreeSlice(area,
-                "ART-UI-PREPARATION-PRIMARY-BUTTON-9SLICE-V6.7.0", 28f, 28f);
-            GUI.Label(area, label,
-                ArchiveStyle(language == GameLanguage.English ? 15 : 25,
-                    enabled ? ArchiveColor("F4F0DD") : ArchiveColor("68747A"),
-                    TextAnchor.MiddleCenter, true));
-            GUI.enabled = enabled;
-            var clicked = GUI.Button(area, GUIContent.none, GUIStyle.none);
-            GUI.enabled = true;
-            return clicked;
-        }
-
         private void DrawEventFamilyTacticalSelector(int cardIndex, int itemCount)
         {
             if (itemCount <= 1) return;
             var card = ExpeditionEventFamilyV126Layout.OptionCards[cardIndex];
-            var previous = new Rect(card.x + 230f, card.y + 292f, 42f, 34f);
-            var next = new Rect(card.x + 470f, card.y + 292f, 42f, 34f);
+            var previous = new Rect(card.x + 230f, card.y + 190f, 42f, 34f);
+            var next = new Rect(card.x + 470f, card.y + 190f, 42f, 34f);
             if (GUI.Button(previous, "‹", ArchiveStyle(28, ArchiveInk(), TextAnchor.MiddleCenter, true)))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "event-tactical-previous");
@@ -12419,24 +14038,39 @@ namespace SeekerAutoChess.Prototype
         {
             var texture = artCatalog.GetExpeditionEventFamilyTexture(resourceId);
             if (texture == null) return;
+            if (Mathf.RoundToInt(area.width) != texture.width ||
+                Mathf.RoundToInt(area.height) != texture.height)
+            {
+                Debug.LogError("Event-family formal texture must render 1:1: " + resourceId +
+                               " expected=" + texture.width + "x" + texture.height +
+                               " actual=" + area.width + "x" + area.height);
+                return;
+            }
             GUI.color = Color.white;
             GUI.DrawTexture(area, texture, scaleMode, true);
         }
 
         private string ResolveEventFamilyEventId(ExpeditionMapNode node)
         {
-            var generatedEventId = ChapterOneExpeditionEconomy.GenerateEventId(
-                expeditionMapSeed, node.Id, node.JourneyProgress,
-                expeditionEconomy.Morale, expeditionEconomy.Backpack.Count > 0);
+            var generatedEventId = ChapterOneExpeditionEventRules.Generate(
+                expeditionMapSeed, runId, node.Id, runEconomyActions.StateVersion,
+                CreateEventEligibility(node),
+                id => expeditionEconomy.HasResolvedAction("event:seen:" + id));
             string eventId;
             if (expeditionEconomy.GetOrLockNodeContent(
-                    "event:" + node.Id, generatedEventId, out eventId)) SaveGame();
+                    "event:" + node.Id, generatedEventId, out eventId))
+            {
+                expeditionEconomy.AddRuleMarker("event:seen:" + eventId);
+                SaveGame();
+            }
             return eventId;
         }
 
         private static string EventFamilyTheme(ExpeditionNodeType type)
         {
-            if (EffectiveNodeType(type) == ExpeditionNodeType.Treasure) return "treasure";
+            var effectiveType = EffectiveNodeType(type);
+            if (effectiveType == ExpeditionNodeType.Treasure ||
+                effectiveType == ExpeditionNodeType.Supply) return "treasure";
             if (type == ExpeditionNodeType.Shop) return "shop";
             if (type == ExpeditionNodeType.Rest) return "rest";
             return "event";
@@ -12494,49 +14128,26 @@ namespace SeekerAutoChess.Prototype
 
         private void DrawEventChoices(ExpeditionMapNode node, float nodeOffset)
         {
-            var generatedEventId = ChapterOneExpeditionEconomy.GenerateEventId(
-                expeditionMapSeed, node.Id, node.JourneyProgress,
-                expeditionEconomy.Morale, expeditionEconomy.Backpack.Count > 0);
-            string eventId;
-            if (expeditionEconomy.GetOrLockNodeContent(
-                    "event:" + node.Id, generatedEventId, out eventId)) SaveGame();
+            var eventId = ResolveEventFamilyEventId(node);
             GUI.Label(new Rect(390f, 405f + nodeOffset, 300f, 45f), T("node.event." + eventId),
                 Style(23, new Color(0.92f, 0.78f, 0.38f), TextAnchor.MiddleCenter));
-            if (ChoiceButton(0, nodeOffset, T("node.event." + eventId + ".a")))
-                ResolveEventChoice(node, eventId, true);
-            if (ChoiceButton(1, nodeOffset, T("node.event." + eventId + ".b")))
-                ResolveEventChoice(node, eventId, false);
-            if (ChoiceButton(2, nodeOffset, T("node.event.leave")))
-            {
-                if (TryChooseNonBattleAction(node, eventId + ":leave")) FinishNonBattleNode();
-            }
+            for (var index = 0; index < 3; index++)
+                if (ChoiceButton(index, nodeOffset,
+                        T("node.event." + eventId + "." + (index + 1))))
+                    ResolveEventChoice(node, eventId, index);
         }
 
-        private void ResolveEventChoice(ExpeditionMapNode node, string eventId, bool firstChoice)
+        private void ResolveEventChoice(ExpeditionMapNode node, string eventId, int choiceIndex)
         {
-            var actionId = eventId + (firstChoice ? ":a" : ":b");
-            var cost = 0;
-            if (eventId == "V01" && !firstChoice) cost = 2;
-            if (eventId == "V02" && firstChoice) cost = 2;
-            if (eventId == "V03" && firstChoice) cost = 2;
-            if (eventId == "V05" && !firstChoice) cost = 2;
-            if (eventId == "V06") cost = 3;
-            if (eventId == "V07") cost = firstChoice ? 4 : 2;
+            var actionId = ChapterOneExpeditionEventRules.ChoiceId(eventId, choiceIndex);
+            var cost = ChapterOneExpeditionEventRules.ChoiceCost(eventId, choiceIndex);
             if (coins < cost)
             {
                 statusKey = "status.coins";
                 return;
             }
 
-            var grantsCombatItem = (eventId == "V01" && !firstChoice) ||
-                                   (eventId == "V05" && !firstChoice) ||
-                                   (eventId == "V07" && !firstChoice);
-            if (grantsCombatItem && expeditionEconomy.Backpack.Count >= ExpeditionEconomyState.BackpackCapacity)
-            {
-                statusKey = "status.backpackFull";
-                return;
-            }
-            if (eventId == "V05" && firstChoice && expeditionEconomy.Backpack.Count == 0)
+            if (eventId == "E03" && expeditionEconomy.Backpack.Count == 0)
             {
                 statusKey = "status.backpackEmpty";
                 return;
@@ -12546,47 +14157,98 @@ namespace SeekerAutoChess.Prototype
 
             switch (eventId)
             {
-                case "V01":
-                    if (firstChoice) coins += ChapterOneExpeditionEconomy.SupplyCoinAmount(node.JourneyProgress);
-                    else expeditionEconomy.TryAddCombatItem("I01");
+                case "E01":
+                    expeditionEconomy.AddRuleMarker(
+                        ChapterOneExpeditionEventRules.PendingMarker(eventId, choiceIndex));
                     break;
-                case "V02":
-                    if (firstChoice) expeditionEconomy.SetNextBattlePreparation("scout2");
-                    else coins += 2;
-                    break;
-                case "V03":
-                    if (firstChoice) expeditionEconomy.SetRecruitmentDiscount(3, false);
-                    else expeditionEconomy.AddRerollVoucher(ref coins);
-                    break;
-                case "V04":
-                    if (firstChoice)
+                case "E02":
+                    if (choiceIndex == 0) coins += 3;
+                    else if (choiceIndex == 1)
+                        expeditionEconomy.AddRuleMarker("event:pending:E02B");
+                    else
                     {
-                        expeditionEconomy.AddMorale(-1);
-                        coins += 8;
-                    }
-                    else expeditionEconomy.SetNextBattlePreparation("scout1");
-                    break;
-                case "V05":
-                    if (firstChoice)
-                    {
-                        expeditionEconomy.TryDiscardFirstCombatItem();
                         coins += 7;
+                        expeditionEconomy.AddRuleMarker("event:pending:E02C");
                     }
-                    else expeditionEconomy.TryAddCombatItem("I02");
                     break;
-                case "V06":
-                    expeditionEconomy.SetNextBattlePreparation(firstChoice ? "fortify10" : "action8");
+                case "E03":
+                    if (choiceIndex < 2)
+                    {
+                        var itemIndex = LowestPriceBackpackItemIndex();
+                        expeditionEconomy.TryDiscardCombatItemAt(itemIndex);
+                        if (choiceIndex == 0) coins += 7;
+                        else expeditionEconomy.AddRuleMarker("event:pending:E03B");
+                    }
+                    else expeditionEconomy.AddRuleMarker("event:pending:E03C");
                     break;
-                case "V07":
-                    if (firstChoice) expeditionEconomy.AddMorale(1);
-                    else expeditionEconomy.TryAddCombatItem("I01");
+                case "E04":
+                    var target = ResolveEventRecruitTarget(node, choiceIndex == 0);
+                    expeditionEconomy.AddRuleMarker(
+                        choiceIndex == 2 ? "event:pending:E04C" :
+                        "event:pending:E04" + (choiceIndex == 0 ? "A:" : "B:") + target);
                     break;
-                case "V08":
-                    if (firstChoice) expeditionEconomy.SetNextBattlePreparation("scoutBoss");
-                    else coins += 3;
+                case "E05":
+                    expeditionEconomy.AddRuleMarker(
+                        ChapterOneExpeditionEventRules.PendingMarker(eventId, choiceIndex));
+                    if (choiceIndex > 0)
+                        expeditionEconomy.AddRuleMarker("prep:acquired:EXTRA_GROWTH_PREP");
                     break;
             }
             FinishNonBattleNode();
+        }
+
+        private ChapterOneEventEligibility CreateEventEligibility(ExpeditionMapNode node)
+        {
+            var profession = ResolveEventRecruitTarget(node, true);
+            var faction = ResolveEventRecruitTarget(node, false);
+            return new ChapterOneEventEligibility
+            {
+                HasLaterBattle = node != null && node.JourneyProgress < 96.3f,
+                NextBattleHasBaseGold = node != null && node.JourneyProgress < 96.3f,
+                NextBattleIsBoss = false,
+                HasBackpackItem = expeditionEconomy.Backpack.Count > 0,
+                HasPendingP05 = expeditionEconomy.PendingPreparationId == "P05",
+                HasPendingP06 = expeditionEconomy.PendingPreparationId == "P06",
+                HasNaturalRecruitRefresh = node != null && node.JourneyProgress < 96.3f,
+                HasRecruitProfessionTarget = !string.IsNullOrEmpty(profession),
+                HasRecruitFactionTarget = !string.IsNullOrEmpty(faction),
+                HasEligibleNormalEnhancement = node != null && node.JourneyProgress < 83.5f,
+                ExtraGrowthAvailable = expeditionEconomy.CanAcquirePreparation("P09") ||
+                                       expeditionEconomy.CanAcquirePreparation("P11"),
+                Coins = coins
+            };
+        }
+
+        private string ResolveEventRecruitTarget(ExpeditionMapNode node, bool profession)
+        {
+            var deployed = new List<string>();
+            if (runRoster != null)
+                for (var slot = 0; slot < runRoster.BoardCapacity; slot++)
+                {
+                    var unit = runRoster.Get(slot);
+                    if (unit != null) deployed.Add(unit.DefinitionId);
+                }
+            return ChapterOneExpeditionEconomy.MostRepresentedRecruitTarget(
+                expeditionMapSeed, runId, node == null ? currentMapNodeId : node.Id,
+                characterCatalog, deployed, runDeck.UnitDefinitionIds, profession);
+        }
+
+        private int LowestPriceBackpackItemIndex()
+        {
+            var selected = 0;
+            var price = int.MaxValue;
+            for (var index = 0; index < expeditionEconomy.Backpack.Count; index++)
+            {
+                var definition = ChapterOneExpeditionEconomy.GetItem(
+                    expeditionEconomy.Backpack[index]);
+                var candidate = definition == null ? int.MaxValue : definition.Cost;
+                if (candidate < price)
+                {
+                    selected = index;
+                    price = candidate;
+                }
+            }
+            return selected;
         }
 
         private void DrawExpeditionItemShop(ExpeditionMapNode node, float nodeOffset)
@@ -12595,18 +14257,13 @@ namespace SeekerAutoChess.Prototype
                 Style(24, new Color(1f, 0.82f, 0.30f), TextAnchor.MiddleCenter, FontStyle.Normal));
             GUI.Label(new Rect(85f, 390f + nodeOffset, 320f, 48f), T("node.shop.prompt"),
                 Style(21, Color.white, TextAnchor.MiddleLeft, FontStyle.Normal));
-            var generatedOffers = ChapterOneExpeditionEconomy.GenerateShopItemIds(
-                expeditionMapSeed, node.Id, node.JourneyProgress, expeditionEconomy.Morale,
-                expeditionEconomy.HasResolvedAction("run:shop:I06"));
-            string lockedOffers;
-            if (expeditionEconomy.GetOrLockNodeContent(
-                    "shop:" + node.Id, string.Join(",", generatedOffers), out lockedOffers)) SaveGame();
-            var offers = lockedOffers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var offers = GenerateAndLockMerchantOffers(node);
             for (var index = 0; index < offers.Length; index++)
             {
                 var item = ChapterOneExpeditionEconomy.GetItem(offers[index]);
-                var actionId = item.Id == "I06" ? "run:shop:I06" : node.Id + ":shop:" + item.Id;
+                var actionId = node.Id + ":shop:" + index + ":" + item.Id;
                 var purchased = expeditionEconomy.HasResolvedAction(actionId);
+                var price = CurrentMerchantItemPrice(item.Cost);
                 var area = new Rect(65f + index * 250f, 475f + nodeOffset, 220f, 360f);
                 DrawFloatingCardSurface(area, new Color(0.32f, 0.70f, 0.68f), 0.56f);
                 GUI.Label(new Rect(area.x + 12f, area.y + 34f, area.width - 24f, 44f),
@@ -12615,9 +14272,10 @@ namespace SeekerAutoChess.Prototype
                     T("economy.item." + item.Id + ".description"),
                     Style(15, new Color(0.76f, 0.86f, 0.88f), TextAnchor.MiddleCenter));
                 GUI.Label(new Rect(area.x + 12f, area.y + 235f, area.width - 24f, 36f),
-                    purchased ? T("shop.sold") : T("price") + " " + item.Cost,
+                    purchased ? T("shop.sold") : T("price") + " " + price,
                     Style(18, new Color(0.96f, 0.78f, 0.28f), TextAnchor.MiddleCenter));
-                GUI.enabled = !purchased && coins >= item.Cost;
+                GUI.enabled = !purchased && coins >= price &&
+                              expeditionEconomy.Backpack.Count < ExpeditionEconomyState.BackpackCapacity;
                 if (GUI.Button(new Rect(area.x + 15f, area.yMax - 65f, area.width - 30f, 48f),
                         T("shop.buy"), ButtonStyle(UiButtonSemantic.Reward, 17)))
                     PurchaseExpeditionItem(node, item, actionId);
@@ -12629,6 +14287,7 @@ namespace SeekerAutoChess.Prototype
                     ButtonStyle(UiButtonSemantic.Primary, 22)))
             {
                 PlayUiClick(UiAudioCueIds.Tap, "node-shop-continue");
+                expeditionEconomy.TryConsumePreparation("P07");
                 FinishNonBattleNode();
             }
         }
@@ -12636,35 +14295,73 @@ namespace SeekerAutoChess.Prototype
         private void PurchaseExpeditionItem(
             ExpeditionMapNode node, ExpeditionItemDefinition item, string actionId)
         {
-            if (item == null || coins < item.Cost || expeditionEconomy.HasResolvedAction(actionId))
+            var price = item == null ? 0 : CurrentMerchantItemPrice(item.Cost);
+            if (item == null || coins < price || expeditionEconomy.HasResolvedAction(actionId))
             {
                 PlayUiClick(UiAudioCueIds.Disabled, "node-item-purchase-unavailable");
                 return;
             }
-            if (item.Kind == ExpeditionItemKind.Combat && !expeditionEconomy.TryAddCombatItem(item.Id))
+            var expectedVersion = runEconomyActions.StateVersion;
+            var itemInstanceId = StableRunEconomyId(
+                "item", runId, node.Id, actionId, item.Id);
+            var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
             {
-                PlayUiClick(UiAudioCueIds.Disabled, "node-item-purchase-backpack-full");
-                statusKey = "status.backpackFull";
+                if (item.Kind == ExpeditionItemKind.Combat &&
+                    !expeditionEconomy.TryAddCombatItem(item.Id, itemInstanceId))
+                    return RunEconomyResultCode.RosterFull;
+                if (!expeditionEconomy.TryResolveAction(actionId))
+                    return RunEconomyResultCode.OfferNotFoundOrSold;
+                coins -= price;
+                return RunEconomyResultCode.Success;
+            });
+            if (receipt.ResultCode != RunEconomyResultCode.Success)
+            {
+                PlayUiClick(UiAudioCueIds.Disabled, "node-item-purchase-failed");
+                statusKey = expeditionEconomy.Backpack.Count >= ExpeditionEconomyState.BackpackCapacity
+                    ? "status.backpackFull" : "status.itemPurchased";
                 return;
             }
-            if (!expeditionEconomy.TryResolveAction(actionId))
-            {
-                PlayUiClick(UiAudioCueIds.Disabled, "node-item-purchase-duplicate");
-                return;
-            }
+            RecordFormalMerchantPurchase(actionId, expectedVersion, item.Id, itemInstanceId);
             PlayUiClick(UiAudioCueIds.Purchase, "node-item-purchase");
-            coins -= item.Cost;
-            if (item.Id == "I06") expeditionEconomy.AddMorale(1);
-            if (item.Id == "I07") expeditionEconomy.SetNextBattlePreparation("scout1");
-            if (item.Id == "I08") expeditionEconomy.SetRecruitmentDiscount(3, false);
             statusKey = "status.itemPurchased";
             SaveGame();
+        }
+
+        private int CurrentMerchantItemPrice(int basePrice)
+        {
+            return expeditionEconomy != null && expeditionEconomy.PendingPreparationId == "P07"
+                ? Mathf.Max(1, basePrice - 2)
+                : Mathf.Max(0, basePrice);
+        }
+
+        private string[] GenerateAndLockMerchantOffers(ExpeditionMapNode node)
+        {
+            string firstMerchantInventory;
+            var hasFirstMerchant = expeditionEconomy.TryGetLockedNodeContent(
+                "shop:first-inventory", out firstMerchantInventory);
+            var previousOffers = hasFirstMerchant
+                ? firstMerchantInventory.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                : null;
+            var generatedOffers = ChapterOneExpeditionEconomy.GenerateShopItemIds(
+                expeditionMapSeed, node.Id, node.JourneyProgress, expeditionEconomy.Morale,
+                expeditionEconomy.HasResolvedAction("run:shop:I06"), previousOffers);
+            string lockedOffers;
+            var changed = expeditionEconomy.GetOrLockNodeContent(
+                "shop:" + node.Id, string.Join(",", generatedOffers), out lockedOffers);
+            if (!hasFirstMerchant)
+            {
+                string ignored;
+                changed |= expeditionEconomy.GetOrLockNodeContent(
+                    "shop:first-inventory", lockedOffers, out ignored);
+            }
+            if (changed) SaveGame();
+            return lockedOffers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         private void DrawSupplyChoices(ExpeditionMapNode node, float nodeOffset)
         {
             var coinAmount = ChapterOneExpeditionEconomy.SupplyCoinAmount(node.JourneyProgress);
-            var recruitCoinAmount = ChapterOneExpeditionEconomy.SupplyRecruitCoinAmount(node.JourneyProgress);
+            var recruitTicket = ResolveSupplyRecruitTicket(node);
             if (ChoiceButton(0, nodeOffset, T("node.supply.coins") + "\n+" + coinAmount + " " + T("coins")))
             {
                 if (TryChooseNonBattleAction(node, "coins"))
@@ -12673,20 +14370,107 @@ namespace SeekerAutoChess.Prototype
                     FinishNonBattleNode();
                 }
             }
-            if (ChoiceButton(1, nodeOffset, T("node.supply.recruits") + "\n+" + recruitCoinAmount + " " +
-                    T("coins") + " / " + T("shop.refresh") + " ×1"))
+            if (ChoiceButton(1, nodeOffset, T("node.supply.recruits") + "\n" +
+                    RecruitTicketDisplay(recruitTicket)))
             {
                 if (TryChooseNonBattleAction(node, "recruits"))
                 {
-                    coins += recruitCoinAmount;
-                    expeditionEconomy.AddRerollVoucher(ref coins);
+                    EnqueueRecruitTicket(recruitTicket);
                     FinishNonBattleNode();
                 }
             }
-            var itemCount = ChapterOneExpeditionEconomy.ProgressBand(node.JourneyProgress) >= 4 ? 3 : 2;
-            DrawTacticalCandidateCard(node, nodeOffset, "supply", T("node.supply.tactical"),
-                ChapterOneExpeditionEconomy.GenerateCombatItemIds(
-                    expeditionMapSeed, node.Id, node.JourneyProgress, itemCount, "supply"));
+            var preparationId = ResolveSupplyPreparationId(node);
+            var hasPendingPreparation = !string.IsNullOrEmpty(expeditionEconomy.PendingPreparationId);
+            var shownPreparationId = hasPendingPreparation
+                ? expeditionEconomy.PendingPreparationId
+                : preparationId;
+            GUI.enabled = !hasPendingPreparation && !string.IsNullOrEmpty(shownPreparationId);
+            if (ChoiceButton(2, nodeOffset,
+                    T("preparation." + shownPreparationId) + "\n" +
+                    (hasPendingPreparation ? T("preparation.ready") :
+                        T("preparation." + shownPreparationId + ".description"))))
+            {
+                if (TryChooseNonBattleAction(node, "preparation:" + shownPreparationId) &&
+                    expeditionEconomy.TryAcquirePreparation(shownPreparationId))
+                {
+                    LockP12RecruitTarget(node, shownPreparationId);
+                    FinishNonBattleNode();
+                }
+            }
+            GUI.enabled = true;
+        }
+
+        private string ResolveSupplyPreparationId(ExpeditionMapNode node)
+        {
+            if (node == null || expeditionEconomy == null) return string.Empty;
+            if (!string.IsNullOrEmpty(expeditionEconomy.PendingPreparationId))
+                return expeditionEconomy.PendingPreparationId;
+            var eligibility = new ExpeditionPreparationEligibility
+            {
+                HasValidLantern = expeditionLanternSnapshot != null &&
+                                  !expeditionLanternSnapshot.IsNone,
+                HasBackpackItem = expeditionEconomy.Backpack.Count > 0,
+                HasLaterCombat = node.JourneyProgress < 96.3f,
+                HasFutureMerchant = node.JourneyProgress < 85f,
+                HasEligibleCharacterSale = runRoster != null && runRoster.TotalCount > 0,
+                HasEligibleNormalEnhancement = currentRoguelikeRuntimeGeneration ==
+                                               ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                                               node.JourneyProgress < 83.5f,
+                HasNaturalRecruitRefresh = node.JourneyProgress < 96.3f &&
+                                           runRoster != null && runRoster.TotalCount > 0
+            };
+            var generated = ChapterOneExpeditionPreparationRules.Generate(
+                string.IsNullOrEmpty(runId) ? "local-" + expeditionMapSeed : runId,
+                node.Id, eligibility, expeditionEconomy.CanAcquirePreparation);
+            string locked;
+            if (expeditionEconomy.GetOrLockNodeContent(
+                    "preparation:" + node.Id, generated, out locked)) SaveGame();
+            return locked;
+        }
+
+        private string ResolveSupplyRecruitTicket(ExpeditionMapNode node)
+        {
+            var generated = ChapterOneExpeditionEconomy.GenerateTargetedRecruitTicket(
+                expeditionMapSeed, runId, node.Id, characterCatalog,
+                runDeck.UnitDefinitionIds);
+            string locked;
+            if (expeditionEconomy.GetOrLockNodeContent(
+                    "recruit-ticket:" + node.Id, generated, out locked)) SaveGame();
+            return locked;
+        }
+
+        private void EnqueueRecruitTicket(string ticket)
+        {
+            var separator = string.IsNullOrEmpty(ticket) ? -1 : ticket.IndexOf('=');
+            if (separator <= 0 || separator >= ticket.Length - 1) return;
+            expeditionEconomy.EnqueueTargetedRecruitTicket(
+                ticket.Substring(0, separator), ticket.Substring(separator + 1));
+        }
+
+        private string RecruitTicketDisplay(string ticket)
+        {
+            var separator = string.IsNullOrEmpty(ticket) ? -1 : ticket.IndexOf('=');
+            if (separator <= 0 || separator >= ticket.Length - 1) return T("preparation.noneEligible");
+            return (ticket.StartsWith("profession=", StringComparison.Ordinal)
+                ? T("supply.ticket.profession") : T("supply.ticket.faction")) + " · " +
+                   T(ticket.Substring(separator + 1));
+        }
+
+        private void LockP12RecruitTarget(ExpeditionMapNode node, string preparationId)
+        {
+            if (preparationId != "P12") return;
+            var dimensionSeed = ChapterOneEncounterRules.Mix(
+                expeditionMapSeed, runId + ":" + node.Id + ":P12", 12);
+            var profession = (dimensionSeed & 1u) == 0u;
+            var target = ResolveEventRecruitTarget(node, profession);
+            if (string.IsNullOrEmpty(target))
+            {
+                profession = !profession;
+                target = ResolveEventRecruitTarget(node, profession);
+            }
+            if (!string.IsNullOrEmpty(target))
+                expeditionEconomy.AddRuleMarker(
+                    "preparation:P12-target:" + (profession ? "profession=" : "faction=") + target);
         }
 
         private void DrawRestChoices(ExpeditionMapNode node, float nodeOffset)
@@ -12751,7 +14535,10 @@ namespace SeekerAutoChess.Prototype
             for (var index = 0; index < itemIds.Length; index++)
             {
                 var itemId = itemIds[index];
-                GUI.enabled = expeditionEconomy.Backpack.Count < ExpeditionEconomyState.BackpackCapacity;
+                GUI.enabled = ExpeditionEconomyAuthorityPolicy.AllowsClientSideItemMutation(
+                                  IsCurrentFormalExpeditionRunBound()) &&
+                              expeditionEconomy.Backpack.Count <
+                              ExpeditionEconomyState.BackpackCapacity;
                 if (GUI.Button(new Rect(area.x + 28f, area.y + 86f + index * (height + 10f),
                         area.width - 56f, height), T("economy.item." + itemId),
                         ButtonStyle(UiButtonSemantic.Secondary, 15)))
@@ -12783,7 +14570,15 @@ namespace SeekerAutoChess.Prototype
 
         private bool TryChooseNonBattleAction(ExpeditionMapNode node, string choiceId)
         {
-            return node != null && expeditionEconomy.TryResolveAction(node.Id + ":choice:" + choiceId);
+            if (node == null) return false;
+            var resolvedActionId = node.Id + ":choice:" + choiceId;
+            if (!expeditionEconomy.TryResolveAction(resolvedActionId)) return false;
+            RecordFormalNodeChoice(
+                NewFormalExpeditionActionId("choice"),
+                runEconomyActions.StateVersion,
+                node.Id,
+                choiceId);
+            return true;
         }
 
         private static string NodeActionKey(ExpeditionNodeType type)
@@ -13036,7 +14831,7 @@ namespace SeekerAutoChess.Prototype
                 case ExpeditionNodeType.Event: return "map.node.event";
                 case ExpeditionNodeType.Rest: return "map.node.rest";
                 case ExpeditionNodeType.Shop: return "map.node.shop";
-                case ExpeditionNodeType.Supply:
+                case ExpeditionNodeType.Supply: return "map.node.supply";
                 case ExpeditionNodeType.Treasure: return "map.node.treasure";
                 case ExpeditionNodeType.Boss: return "map.node.boss";
                 default: return "map.node.normal";
@@ -13074,6 +14869,26 @@ namespace SeekerAutoChess.Prototype
             {
                 GUI.Label(new Rect(70f, y + 120f, 940f, 54f), T("run.score") + "  " + finalScore, Style(25, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal));
             }
+            if (UsesServerAuthoritativeExpedition && expeditionEntryCommitted)
+            {
+                GUI.Label(new Rect(70f, y + 180f, 940f, 72f),
+                    T(HasPendingFormalExpeditionSettlement
+                        ? "run.authoritativeSettlementPending"
+                        : "run.authoritativeSettlementReady"),
+                    Style(20, new Color(1f, 0.78f, 0.25f),
+                        TextAnchor.MiddleCenter, FontStyle.Normal));
+                GUI.enabled = !formalExpeditionSettlementClaimInProgress;
+                if (GUI.Button(new Rect(55f, y + 300f, 970f, 100f),
+                        T("run.claimAuthoritativeSettlement"),
+                        ButtonStyle(UiButtonSemantic.Reward, 24)))
+                {
+                    PlayUiClick(UiAudioCueIds.Reward,
+                        "run-result-authoritative-claim");
+                    ClaimFormalSettlementAndReturnHomeAsync();
+                }
+                GUI.enabled = true;
+                return;
+            }
             var rewards = expeditionRewards.CreateSnapshot();
             GUI.Label(new Rect(70f, y + 180f, 940f, 38f),
                 T(currentExpeditionRewardsEnabled ? "run.localTreasure" : "run.freeNoRewards"),
@@ -13082,7 +14897,8 @@ namespace SeekerAutoChess.Prototype
                 T("warehouse.crystal") + " " + rewards.TideCrystals,
                 Style(15, new Color(0.82f, 0.88f, 0.90f), TextAnchor.MiddleCenter));
             GUI.Label(new Rect(70f, y + 252f, 940f, 30f),
-                T("run.equipmentCount") + " " + rewards.EquipmentTemplateIds.Count,
+                T("run.equipmentCount") + " " + rewards.EquipmentTemplateIds.Count +
+                (runWon && currentExpeditionRewardsEnabled ? " · " + T("run.lanternCount") + " 1" : string.Empty),
                 Style(15, new Color(0.82f, 0.88f, 0.90f), TextAnchor.MiddleCenter));
             var canStoreRewards = CanStoreExpeditionRewards(rewards);
             var actionKey = expeditionRewards.IsClaimed
@@ -13102,7 +14918,6 @@ namespace SeekerAutoChess.Prototype
                 {
                     if (ClaimExpeditionRewards())
                     {
-                        homeNoticeKey = "home.notice.treasureClaimed";
                         currentView = ScreenView.Home;
                     }
                 }
@@ -13119,7 +14934,7 @@ namespace SeekerAutoChess.Prototype
                 return;
             }
             var level = ShopOfferLevel(offerIndex);
-            var cost = UnitCost(nameKey, level);
+            var cost = ShopOfferListedPrice(offerIndex, nameKey, level);
             var power = UnitBasePower(nameKey);
             CharacterQuality quality;
             var stats = CalculateShopOfferStats(nameKey, power, level, out quality);
@@ -13149,6 +14964,9 @@ namespace SeekerAutoChess.Prototype
         {
             var actionId = NewRunEconomyActionId("buy");
             var expectedVersion = runEconomyActions.StateVersion;
+            var purchasedOfferId = offerIndex >= 0 && offerIndex < shopOfferIds.Length
+                ? shopOfferIds[offerIndex] : null;
+            string purchasedRunUnitId = null;
             var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
             {
                 if (!CanRecruitNow()) return RunEconomyResultCode.InvalidPhase;
@@ -13162,6 +14980,7 @@ namespace SeekerAutoChess.Prototype
                 var payableCost = expeditionEconomy.QuoteRecruitmentPrice(lockedListedPrice);
                 if (coins < payableCost) return RunEconomyResultCode.InsufficientCoins;
                 var runUnitId = StableRunEconomyId("unit", runId, actionId, nameKey, level.ToString());
+                purchasedRunUnitId = runUnitId;
                 var quality = CharacterQuality.Common;
                 var sourceBusinessId = runUnitId;
                 var externalStar = 0;
@@ -13189,6 +15008,10 @@ namespace SeekerAutoChess.Prototype
                 shopOffers[offerIndex] = null;
                 return RunEconomyResultCode.Success;
             });
+            if (receipt.ResultCode == RunEconomyResultCode.Success)
+                RecordFormalShopPurchase(
+                    actionId, expectedVersion, purchasedOfferId,
+                    purchasedRunUnitId);
             PlayUiClick(receipt.ResultCode == RunEconomyResultCode.Success
                     ? UiAudioCueIds.Purchase
                     : UiAudioCueIds.Disabled,
@@ -13272,8 +15095,32 @@ namespace SeekerAutoChess.Prototype
             ApplyRunBonuses(unit);
             ApplyFormationSynergies(unit, definition);
             ApplyNextBattlePreparation(unit);
+            var preLanternMaxHealth = unit.MaxHealth;
+            var preLanternArmor = unit.Armor;
+            var preLanternAttackDamage = unit.AttackDamage;
+            var preLanternHealAmount = unit.HealAmount;
+            var preLanternAttackSpeed = unit.AttackSpeedBasisPoints;
             ApplyLanternCombatStats(unit, expeditionLanternSnapshot);
+            if (expeditionEconomy != null && expeditionEconomy.PendingPreparationId == "P04")
+            {
+                unit.MaxHealth += ScalePreparationLanternDelta(unit.MaxHealth - preLanternMaxHealth);
+                unit.Armor += ScalePreparationLanternDelta(unit.Armor - preLanternArmor);
+                unit.AttackDamage += ScalePreparationLanternDelta(unit.AttackDamage - preLanternAttackDamage);
+                unit.HealAmount += ScalePreparationLanternDelta(unit.HealAmount - preLanternHealAmount);
+                unit.AttackSpeedBasisPoints += ScalePreparationLanternDelta(
+                    unit.AttackSpeedBasisPoints - preLanternAttackSpeed);
+            }
+            if (expeditionEconomy != null && expeditionEconomy.PendingPreparationId == "P01")
+                unit.OpeningShield += Mathf.Max(1, Mathf.CeilToInt(unit.MaxHealth * 0.15f));
             return unit;
+        }
+
+        private static int ScalePreparationLanternDelta(int delta)
+        {
+            if (delta == 0) return 0;
+            return delta > 0
+                ? Mathf.CeilToInt(delta * 0.30f)
+                : Mathf.FloorToInt(delta * 0.30f);
         }
 
         private UnitData CreateRunUnitEffectiveView(RunUnitState runUnit)
@@ -13388,6 +15235,10 @@ namespace SeekerAutoChess.Prototype
                 case "action8":
                     unit.AttackDamage = Mathf.Max(1, Mathf.CeilToInt(unit.AttackDamage * 1.08f));
                     unit.HealAmount = Mathf.CeilToInt(unit.HealAmount * 1.08f);
+                    break;
+                case "P01":
+                    break;
+                case "P02":
                     break;
             }
         }
@@ -13510,7 +15361,7 @@ namespace SeekerAutoChess.Prototype
             string[] offerIds;
             int[] listedPrices;
             bool[] sold;
-            GenerateShopOfferSnapshot(shopRefreshSerial + 1, out offers, out levels, out offerIds,
+            GenerateShopOfferSnapshot(shopRefreshSerial + 1, true, out offers, out levels, out offerIds,
                 out listedPrices, out sold);
             shopRefreshSerial++;
             shopOffers = offers;
@@ -13522,6 +15373,7 @@ namespace SeekerAutoChess.Prototype
 
         private void GenerateShopOfferSnapshot(
             int refreshSerial,
+            bool naturalRefresh,
             out string[] offers,
             out int[] levels,
             out string[] offerIds,
@@ -13533,18 +15385,72 @@ namespace SeekerAutoChess.Prototype
             offerIds = new string[ShopOfferCount];
             listedPrices = new int[ShopOfferCount];
             sold = new bool[ShopOfferCount];
-            var random = new System.Random(unchecked((int)expeditionMapSeed ^ round * 7919 ^ refreshSerial * 104729));
             var node = expeditionMap == null ? null : expeditionMap.GetNode(currentMapNodeId);
             var progress = node == null ? 0f : node.JourneyProgress;
+            var target = naturalRefresh
+                ? NaturalRecruitTargetMarker()
+                : expeditionEconomy.PeekTargetedRecruitTicket();
+            var guaranteedCount = naturalRefresh &&
+                                  (target.StartsWith("profession=", StringComparison.Ordinal) ||
+                                   target.StartsWith("faction=", StringComparison.Ordinal))
+                ? (expeditionEconomy.FindRuleMarker("event:pending:E04A:").Length > 0 ||
+                   expeditionEconomy.FindRuleMarker("event:pending:E04B:").Length > 0 ? 2 : 1)
+                : string.IsNullOrEmpty(target) ? 0 : 1;
+            var matchingDeckIndexes = new List<int>();
+            for (var deckIndex = 0; deckIndex < runDeck.UnitDefinitionIds.Count; deckIndex++)
+                if (ChapterOneExpeditionEconomy.MatchesRecruitTarget(
+                        characterCatalog, runDeck.GetPrototypeOffer(deckIndex), target))
+                    matchingDeckIndexes.Add(deckIndex);
             for (var i = 0; i < ShopOfferCount; i++)
             {
-                offers[i] = runDeck.GetPrototypeOffer(random.Next(runDeck.UnitDefinitionIds.Count));
+                var definitionIndex = i < guaranteedCount && matchingDeckIndexes.Count > 0
+                    ? matchingDeckIndexes[ChapterOneExpeditionEconomy.RecruitOfferDefinitionIndex(
+                        expeditionMapSeed, round, refreshSerial, i, matchingDeckIndexes.Count)]
+                    : ChapterOneExpeditionEconomy.RecruitOfferDefinitionIndex(
+                        expeditionMapSeed, round, refreshSerial, i, runDeck.UnitDefinitionIds.Count);
+                offers[i] = runDeck.GetPrototypeOffer(definitionIndex);
                 levels[i] = ChapterOneExpeditionEconomy.RecruitOfferLevel(
                     expeditionMapSeed, currentMapNodeId, refreshSerial, i, progress);
                 listedPrices[i] = UnitCost(offers[i], levels[i]);
+                if (naturalRefresh && expeditionEconomy.HasResolvedAction("event:pending:E04C"))
+                    listedPrices[i] = Mathf.Max(1, listedPrices[i] - 3);
                 offerIds[i] = StableRunEconomyId("offer", runId, currentMapNodeId,
                     refreshSerial.ToString(), i.ToString());
             }
+            if (naturalRefresh)
+            {
+                ConsumeNaturalRecruitEffects();
+            }
+            else if (!string.IsNullOrEmpty(target))
+            {
+                expeditionEconomy.ConsumeTargetedRecruitTicket(target);
+            }
+        }
+
+        private string NaturalRecruitTargetMarker()
+        {
+            var marker = expeditionEconomy.FindRuleMarker("event:pending:E04A:");
+            if (!string.IsNullOrEmpty(marker))
+                return "profession=" + marker.Substring("event:pending:E04A:".Length);
+            marker = expeditionEconomy.FindRuleMarker("event:pending:E04B:");
+            if (!string.IsNullOrEmpty(marker))
+                return "faction=" + marker.Substring("event:pending:E04B:".Length);
+            marker = expeditionEconomy.FindRuleMarker("preparation:P12-target:");
+            return string.IsNullOrEmpty(marker)
+                ? string.Empty
+                : marker.Substring("preparation:P12-target:".Length);
+        }
+
+        private void ConsumeNaturalRecruitEffects()
+        {
+            var marker = expeditionEconomy.FindRuleMarker("event:pending:E04A:");
+            if (!string.IsNullOrEmpty(marker)) expeditionEconomy.ConsumeRuleMarker(marker);
+            marker = expeditionEconomy.FindRuleMarker("event:pending:E04B:");
+            if (!string.IsNullOrEmpty(marker)) expeditionEconomy.ConsumeRuleMarker(marker);
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E04C");
+            marker = expeditionEconomy.FindRuleMarker("preparation:P12-target:");
+            if (!string.IsNullOrEmpty(marker)) expeditionEconomy.ConsumeRuleMarker(marker);
+            expeditionEconomy.TryConsumePreparation("P12");
         }
 
         private void RefreshShopOffers(bool spendCoins)
@@ -13559,6 +15465,9 @@ namespace SeekerAutoChess.Prototype
 
             var actionId = NewRunEconomyActionId("refresh");
             var expectedVersion = runEconomyActions.StateVersion;
+            var refreshId = StableRunEconomyId(
+                "refresh", runId, currentMapNodeId,
+                (shopRefreshSerial + 1).ToString());
             var receipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
             {
                 if (!CanRecruitNow()) return RunEconomyResultCode.InvalidPhase;
@@ -13570,7 +15479,7 @@ namespace SeekerAutoChess.Prototype
                 string[] offerIds;
                 int[] listedPrices;
                 bool[] sold;
-                GenerateShopOfferSnapshot(shopRefreshSerial + 1, out offers, out levels, out offerIds,
+                GenerateShopOfferSnapshot(shopRefreshSerial + 1, false, out offers, out levels, out offerIds,
                     out listedPrices, out sold);
                 coins -= expeditionEconomy.ConsumeManualRerollCost();
                 shopRefreshSerial++;
@@ -13581,6 +15490,9 @@ namespace SeekerAutoChess.Prototype
                 shopOfferSold = sold;
                 return RunEconomyResultCode.Success;
             });
+            if (receipt.ResultCode == RunEconomyResultCode.Success)
+                RecordFormalShopRefresh(
+                    actionId, expectedVersion, refreshId);
             ApplyRunEconomyStatus(receipt.ResultCode, "status.shopRefreshed");
             SaveGame();
         }
@@ -13592,25 +15504,7 @@ namespace SeekerAutoChess.Prototype
 
         private static string StableRunEconomyId(string prefix, params string[] parts)
         {
-            unchecked
-            {
-                uint hash = 2166136261;
-                if (parts != null)
-                {
-                    foreach (var part in parts)
-                    {
-                        var value = part ?? string.Empty;
-                        for (var i = 0; i < value.Length; i++)
-                        {
-                            hash ^= value[i];
-                            hash *= 16777619;
-                        }
-                        hash ^= 0xFF;
-                        hash *= 16777619;
-                    }
-                }
-                return (prefix ?? "id") + "-" + hash.ToString("X8");
-            }
+            return RunEconomyIdentity.StableId(prefix, parts);
         }
 
         private void ApplyRunEconomyStatus(RunEconomyResultCode result, string successStatusKey)
@@ -13647,8 +15541,46 @@ namespace SeekerAutoChess.Prototype
 
         private int UnitCost(string nameKey, int level = 1)
         {
-            var multiplier = level <= 1 ? 1 : level == 2 ? 3 : 9;
-            return characterCatalog.Get(nameKey).ShopCost * multiplier;
+            var definition = characterCatalog.Get(nameKey);
+            return QualityRecruitPriceRules.QuoteListedPrice(
+                definition.ShopCost,
+                ShopOfferQuality(nameKey),
+                Mathf.Clamp(level, 1, RunUnitRules.MaximumRunLevel),
+                qualityRecruitPriceRulesVersion);
+        }
+
+        private int ShopOfferListedPrice(int offerIndex, string definitionId, int runLevel)
+        {
+            if (shopOfferListedPrices != null && offerIndex >= 0 &&
+                offerIndex < shopOfferListedPrices.Length && shopOfferListedPrices[offerIndex] > 0)
+                return shopOfferListedPrices[offerIndex];
+            return UnitCost(definitionId, runLevel);
+        }
+
+        private CharacterQuality ShopOfferQuality(string definitionId)
+        {
+            if (string.IsNullOrEmpty(definitionId)) return CharacterQuality.Common;
+            if (SkillDiagnosticActive) return ResolveDiagnosticQuality(definitionId);
+            if (qualityRecruitPriceRulesVersion ==
+                QualityRecruitPriceRules.QualityScaledRulesVersion)
+            {
+                var lockedInstanceId = runDeck == null
+                    ? null
+                    : runDeck.GetCharacterInstanceId(definitionId);
+                OwnedCharacterState exactLockedCharacter;
+                if (string.IsNullOrEmpty(lockedInstanceId) || playerCollection == null ||
+                    !playerCollection.TryGetByInstanceId(lockedInstanceId, out exactLockedCharacter) ||
+                    exactLockedCharacter.DefinitionId != definitionId)
+                {
+                    throw new InvalidOperationException(
+                        "Current quality recruitment pricing requires an exact locked deck instance.");
+                }
+                return exactLockedCharacter.Quality;
+            }
+            OwnedCharacterState lockedCharacter;
+            return TryGetLockedRunCharacter(definitionId, out lockedCharacter)
+                ? lockedCharacter.Quality
+                : CharacterQuality.Common;
         }
 
         private int UnitBasePower(string nameKey)
@@ -13836,8 +15768,10 @@ namespace SeekerAutoChess.Prototype
                 MaxHealth = unit.MaxHealth,
                 AttackDamage = unit.AttackDamage,
                 HealAmount = unit.HealAmount,
-                Armor = unit.Armor,
-                Shield = unit.OpeningShield,
+                Armor = unit.Armor + (isPlayer && expeditionEconomy.ActiveBattleItemId == "I01" ? 8 : 0),
+                Shield = isPlayer && expeditionEconomy.ActiveBattleItemId == "I03"
+                    ? Mathf.CeilToInt(unit.OpeningShield * 1.25f)
+                    : unit.OpeningShield,
                 SpeedTier = unit.SpeedTier,
                 BaseAttackSpeedBasisPoints = unit.AttackSpeedBasisPoints,
                 IsHealer = unit.IsHealer,
@@ -13852,6 +15786,13 @@ namespace SeekerAutoChess.Prototype
 
         private IEnumerator BeginFormationToBattle()
         {
+            if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                    UsesServerAuthoritativeExpedition) &&
+                !IsCurrentFormalExpeditionRunBound())
+            {
+                statusKey = "status.authoritativeExpeditionRequired";
+                yield break;
+            }
             var elapsed = 0f;
             while (elapsed < FormationBattleV94Layout.TransitionDurationSeconds)
             {
@@ -13899,7 +15840,9 @@ namespace SeekerAutoChess.Prototype
             CreateCombatTeams();
             yield return WaitForBattleSeconds(0.24f);
 
-            var result = DeterministicBattle.Run(CreateBattleInput());
+            var battleInput = CreateBattleInput();
+            var result = DeterministicBattle.Run(battleInput);
+            RecordFormalBattleResolution(battleInput, result);
             lastBattleEventCount = result.Events.Count;
             lastBattleHash = ComputeBattleHash(result.Events);
             for (var eventIndex = 0; eventIndex < result.Events.Count;)
@@ -13920,12 +15863,36 @@ namespace SeekerAutoChess.Prototype
             battlePresentation.EndCue();
 
             var playerWon = result.PlayerWon;
+            var activatedBattleItemId = expeditionEconomy.ActiveBattleItemId;
+            var activatedBattleItemInstanceId = expeditionEconomy.ActiveBattleItemInstanceId;
             if (playerWon)
             {
+                var completedNode = expeditionMap == null ? null : expeditionMap.GetNode(currentMapNodeId);
                 var completedBattleNode = AwardCompletedBattleNode();
-                if (!SkillDiagnosticActive && completedBattleNode) coins += encounterReward;
-                expeditionEconomy.ConsumeNextBattlePreparation();
+                if (!SkillDiagnosticActive && completedBattleNode &&
+                    !expeditionEconomy.HasResolvedAction("event:pending:E02C"))
+                    coins += encounterReward;
+                if (!SkillDiagnosticActive && completedBattleNode &&
+                    expeditionEconomy.HasResolvedAction("event:pending:E02B"))
+                    coins += 8;
+                if (!SkillDiagnosticActive && completedBattleNode && encounterReward > 0 &&
+                    completedNode != null && completedNode.Type != ExpeditionNodeType.Boss &&
+                    expeditionEconomy.TryConsumePreparation("P05"))
+                    coins += encounterReward;
+                if (!string.IsNullOrEmpty(activatedBattleItemId) &&
+                    expeditionEconomy.PendingPreparationId == "P06")
+                {
+                    expeditionEconomy.TryAddCombatItem(
+                        activatedBattleItemId, activatedBattleItemInstanceId);
+                }
+                if (!string.IsNullOrEmpty(activatedBattleItemId) &&
+                    expeditionEconomy.HasResolvedAction("event:pending:E03C"))
+                    expeditionEconomy.TryAddCombatItem(
+                        activatedBattleItemId, activatedBattleItemInstanceId);
                 expeditionEconomy.ClearActiveBattleItem();
+                // P06 binds to the next combat and expires at that combat's end,
+                // even when the player chooses not to activate a backpack item.
+                expeditionEconomy.TryConsumePreparation("P06");
                 if (round >= FinalRound)
                 {
                     runWon = true;
@@ -13945,13 +15912,41 @@ namespace SeekerAutoChess.Prototype
                     statusKey = "status.loss";
                 }
             }
-            yield return WaitForBattleSeconds(0.42f);
             var runEnded = health == 0 || (playerWon && round >= FinalRound);
+            if (!playerWon && runEnded)
+            {
+                expeditionEconomy.ClearActiveBattleItem();
+                expeditionEconomy.TryConsumePreparation("P06");
+            }
+            // A failed non-terminal attempt retries the same bound encounter.
+            // Battle preparations, event effects and the committed item therefore
+            // remain unchanged until victory or terminal failure.
+            if (playerWon || runEnded)
+            {
+                expeditionEconomy.TryConsumePreparation("P01");
+                expeditionEconomy.TryConsumePreparation("P02");
+                expeditionEconomy.TryConsumePreparation("P03");
+                expeditionEconomy.TryConsumePreparation("P04");
+                CompleteEventBattleContracts(runEnded);
+            }
+            yield return WaitForBattleSeconds(0.42f);
+            if (UsesServerAuthoritativeExpedition)
+                yield return CommitFormalBattleAuthority(playerWon, runEnded);
+            else
+                formalExpeditionAuthorityCommitSucceeded = true;
+            if (!formalExpeditionAuthorityCommitSucceeded)
+            {
+                ReturnAfterFormalAuthorityCommitFailure();
+                yield break;
+            }
+            PersistFormalBattleResolution();
             if (runEnded)
             {
                 expeditionEconomy.ConsumeNextBattlePreparation();
                 expeditionEconomy.ClearActiveBattleItem();
             }
+            if (runEnded && !UsesServerAuthoritativeExpedition)
+                PrepareLocalExpeditionSettlement(playerWon && round >= FinalRound);
             expeditionFlow.TryFinishBattle(playerWon, runEnded);
             if (runEnded) ReleaseRunEquipmentLocks();
 
@@ -14085,7 +16080,16 @@ namespace SeekerAutoChess.Prototype
                 input.EnemyUnits.Add(ToBattleUnitState(
                     enemyUnits[index], "enemy-" + index, formationSlot, false, null));
             }
-            input.PlayerRoguelikeEffects.AddRange(roguelikeBuild.AcquiredEffects);
+            if (currentRoguelikeRuntimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration)
+            {
+                input.PlayerRoguelikeRuntimeGeneration = ChapterOneRoguelikeV11State.RuntimeGeneration;
+                input.PlayerKeystoneId = roguelikeBuildV11.SelectedKeystoneId;
+                input.PlayerRoguelikeEffects.AddRange(roguelikeBuildV11.NormalEffects);
+            }
+            else
+            {
+                input.PlayerRoguelikeEffects.AddRange(roguelikeBuild.AcquiredEffects);
+            }
             return input;
         }
 
@@ -14098,25 +16102,40 @@ namespace SeekerAutoChess.Prototype
             CharacterQuality quality = CharacterQuality.Common)
         {
             var definition = characterCatalog.Get(unit.NameKey);
+            var eventArmor = isPlayer && expeditionEconomy.HasResolvedAction("event:pending:E01A")
+                ? 20 : isPlayer && expeditionEconomy.HasResolvedAction("event:pending:E03B") ? 12 : 0;
+            var eventHealthMultiplier = isPlayer &&
+                                        expeditionEconomy.HasResolvedAction("event:pending:E01C")
+                ? 0.85f : 1f;
+            var eventAttackMultiplier = isPlayer &&
+                                        expeditionEconomy.HasResolvedAction("event:pending:E01B")
+                ? 1.20f : 1f;
+            var eventHealMultiplier = isPlayer &&
+                                      expeditionEconomy.HasResolvedAction("event:pending:E01B")
+                ? 0.75f : 1f;
+            var eventSpeed = isPlayer && expeditionEconomy.HasResolvedAction("event:pending:E01A")
+                ? -1000 : isPlayer && expeditionEconomy.HasResolvedAction("event:pending:E01C")
+                    ? 2500 : 0;
             return new BattleUnitState
             {
                 Id = id,
                 DefinitionId = unit.NameKey,
                 IsPlayer = isPlayer,
                 Slot = slot,
-                Health = unit.MaxHealth,
-                MaxHealth = unit.MaxHealth,
-                AttackDamage = unit.AttackDamage,
-                HealAmount = unit.HealAmount,
-                Armor = unit.Armor,
+                Health = Mathf.Max(1, Mathf.CeilToInt(unit.MaxHealth * eventHealthMultiplier)),
+                MaxHealth = Mathf.Max(1, Mathf.CeilToInt(unit.MaxHealth * eventHealthMultiplier)),
+                AttackDamage = Mathf.Max(0, Mathf.CeilToInt(unit.AttackDamage * eventAttackMultiplier)),
+                HealAmount = Mathf.Max(0, Mathf.CeilToInt(unit.HealAmount * eventHealMultiplier)),
+                Armor = unit.Armor + eventArmor,
                 Shield = unit.OpeningShield,
                 SpeedTier = unit.SpeedTier,
                 BaseAttackSpeedBasisPoints = unit.AttackSpeedBasisPoints > 0
                     ? unit.AttackSpeedBasisPoints
                     : DeterministicBattle.AttackSpeedBasisPoints(unit.SpeedTier),
-                AttackSpeedBonusBasisPoints = isPlayer &&
-                    expeditionEconomy.ActiveBattleItemId == "I02" &&
-                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 1500 : 0,
+                AttackSpeedBonusBasisPoints = isPlayer && expeditionEconomy.PendingPreparationId == "P02"
+                    ? 2500 + eventSpeed
+                    : isPlayer ? eventSpeed
+                    : !isPlayer && expeditionEconomy.ActiveBattleItemId == "I09" ? -1500 : 0,
                 IsHealer = unit.IsHealer,
                 LowHealthActionPercent = isPlayer && synergy.IsFactionActive("faction.wild") &&
                                          definition.FactionId == "faction.wild" ? 15 : 0,
@@ -14126,18 +16145,58 @@ namespace SeekerAutoChess.Prototype
                                        definition.ProfessionId == "profession.output" ? 12 :
                     unit.NameKey == "enemy.n4.skirmisher" ? 15 :
                     unit.NameKey == "enemy.e2.hunter" || unit.NameKey == "enemy.b2.hunter" ? 25 : 0,
-                ArmorPenetration = isPlayer && expeditionEconomy.ActiveBattleItemId == "I03" &&
-                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 15 : 0,
-                DamageTakenPercent = !isPlayer && expeditionEconomy.ActiveBattleItemId == "I05" &&
-                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 12 : 0,
-                DamageTakenBoostHitsRemaining = !isPlayer && expeditionEconomy.ActiveBattleItemId == "I05" &&
-                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 5 : 0,
-                TemporarySpeedActions = isPlayer && expeditionEconomy.ActiveBattleItemId == "I02" &&
-                    expeditionEconomy.ActiveBattleTargetSlot == slot ? 2 : 0,
+                ArmorPenetration = isPlayer
+                    ? (expeditionEconomy.ActiveBattleItemId == "I04" ? 10 : 0) +
+                      (expeditionEconomy.PendingPreparationId == "P03" ? 15 : 0)
+                    : 0,
+                MerchantDirectDamageTakenReductionBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I02" ? 1500 : 0,
+                MerchantDirectDamageReductionExpiresAt = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I02" ? 12000 : 0,
+                MerchantShieldGainBonusBasisPoints = isPlayer
+                    ? (expeditionEconomy.ActiveBattleItemId == "I03" ? 2500 : 0) +
+                      (expeditionEconomy.HasResolvedAction("event:pending:E03B") ? 2000 : 0)
+                    : 0,
+                MerchantLowHealthDirectDamageBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I05" ? 2000 : 0,
+                MerchantDirectAttackDamageBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I06" ? 4000 : 0,
+                MerchantDirectAttackBonusHitsRemaining = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I06" ? 3 : 0,
+                MerchantActiveHealingBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I07" ? 2500 : 0,
+                MerchantActiveActionBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I08" ? 3000 : 0,
+                MerchantActiveActionBonusActionsRemaining = isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I08" ? 3 : 0,
+                MerchantTimedAttackSpeedBonusBasisPoints = isPlayer &&
+                    expeditionEconomy.PendingPreparationId == "P02" ? 2500 :
+                    !isPlayer && expeditionEconomy.ActiveBattleItemId == "I09" ? -1500 : 0,
+                MerchantAttackSpeedBonusExpiresAt = (isPlayer &&
+                    expeditionEconomy.PendingPreparationId == "P02") || (!isPlayer &&
+                    expeditionEconomy.ActiveBattleItemId == "I09") ? 12000 : 0,
                 FactionId = definition.FactionId,
                 ProfessionId = definition.ProfessionId,
                 Quality = quality
             };
+        }
+
+        private void CompleteEventBattleContracts(bool runEnded)
+        {
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E01A");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E01B");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E01C");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E02B");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E02C");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E03B");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E03C");
+            if (!runEnded) return;
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E04C");
+            expeditionEconomy.ConsumeRuleMarker(expeditionEconomy.FindRuleMarker("event:pending:E04A:"));
+            expeditionEconomy.ConsumeRuleMarker(expeditionEconomy.FindRuleMarker("event:pending:E04B:"));
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05A");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05B");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05C");
         }
 
         private void ApplyBattleEvent(BattleEvent battleEvent)
@@ -15353,6 +17412,15 @@ namespace SeekerAutoChess.Prototype
             if (target == null || target.State == null)
                 return target == null ? Vector2.zero : target.GetAnchor(BattlePresentationIds.FeetAnchor);
 
+            Texture2D equippedTexture;
+            if (TryGetEquippedBaseTexture(target.State.IsPlayer, out equippedTexture))
+            {
+                var equippedCenterOffset = StoreCosmeticFormalArtContract.BaseHeight * 0.5f -
+                                           StoreCosmeticFormalArtContract.BaseFootAnchorY;
+                return target.GetAnchor(BattlePresentationIds.FeetAnchor) +
+                       Vector2.up * equippedCenterOffset;
+            }
+
             var baseWidth = BattleBaseWidthFor(target.State);
             var baseHeight = baseWidth * PieceBasePresentationContract.CanvasHeight /
                              (float)PieceBasePresentationContract.CanvasWidth;
@@ -15364,6 +17432,9 @@ namespace SeekerAutoChess.Prototype
         private float BattleBaseWidthFor(BattleUnitPresentationState unit)
         {
             if (unit == null) return PieceBasePresentationContract.DefaultDisplayWidth;
+            Texture2D equippedTexture;
+            if (TryGetEquippedBaseTexture(unit.IsPlayer, out equippedTexture))
+                return StoreCosmeticFormalArtContract.BaseWidth;
 
             CharacterArtDefinition artDefinition;
             Sprite sprite;
@@ -15472,7 +17543,147 @@ namespace SeekerAutoChess.Prototype
             PlayUiClick(UiAudioCueIds.Upgrade, "upgrade-choice");
             expeditionFlow.TryChooseUpgrade();
             roguelikeBuild.CompleteSelection();
+            RecordFormalUpgradeSelection(actionId, expectedVersion, optionId);
             SaveGame();
+        }
+
+        private void ApplyUpgradeV11(string optionId)
+        {
+            if (!expeditionFlow.CanChooseUpgrade) return;
+            var choiceSet = EnsureRoguelikeChoiceSetV11();
+            if (choiceSet == null) return;
+            if (choiceSet.requiredSelectionCount == 2 &&
+                string.IsNullOrEmpty(pendingP09FirstOptionId))
+            {
+                pendingP09FirstOptionId = optionId;
+                PlayUiClick(UiAudioCueIds.Upgrade, "upgrade-v11-first-choice");
+                return;
+            }
+            if (choiceSet.requiredSelectionCount == 2 &&
+                string.Equals(pendingP09FirstOptionId, optionId, StringComparison.Ordinal))
+            {
+                PlayUiClick(UiAudioCueIds.Disabled, "upgrade-v11-duplicate-choice");
+                return;
+            }
+
+            var actionId = NewRunEconomyActionId("boon-v11");
+            var expectedVersion = choiceSet.expectedRunStateVersion;
+            ChapterOneRoguelikeSelectionReceipt choiceReceipt = null;
+            var selectedOptionIds = choiceSet.requiredSelectionCount == 2
+                ? new[] { pendingP09FirstOptionId, optionId }
+                : new[] { optionId };
+            var runReceipt = runEconomyActions.Execute(actionId, expectedVersion, () =>
+            {
+                choiceReceipt = roguelikeBuildV11.SelectManyAtomic(
+                    choiceSet.choiceSetId, selectedOptionIds, actionId, expectedVersion);
+                var code = (ChapterOneRoguelikeSelectionCode)choiceReceipt.resultCode;
+                return code == ChapterOneRoguelikeSelectionCode.Success
+                    ? RunEconomyResultCode.Success
+                    : code == ChapterOneRoguelikeSelectionCode.StaleVersion
+                        ? RunEconomyResultCode.StaleVersion
+                        : RunEconomyResultCode.InvalidTarget;
+            });
+            if (runReceipt.ResultCode != RunEconomyResultCode.Success || choiceReceipt == null)
+            {
+                PlayUiClick(UiAudioCueIds.Disabled, "upgrade-v11-choice-failed");
+                return;
+            }
+
+            if (expeditionEconomy.PendingPreparationId == "P09" ||
+                expeditionEconomy.PendingPreparationId == "P10" ||
+                expeditionEconomy.PendingPreparationId == "P11" &&
+                choiceReceipt.acquiredStackCount >= 2)
+                expeditionEconomy.TryConsumePreparation(expeditionEconomy.PendingPreparationId);
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05A");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05B");
+            expeditionEconomy.ConsumeRuleMarker("event:pending:E05C");
+            pendingP09FirstOptionId = null;
+            roguelikeBuildV11.CompleteSelection();
+            expeditionFlow.TryChooseUpgrade();
+            RecordFormalUpgradeSelection(actionId, expectedVersion,
+                string.Join(",", selectedOptionIds));
+            PlayUiClick(UiAudioCueIds.Upgrade, "upgrade-v11-choice");
+            SaveGame();
+        }
+
+        private ChapterOneRoguelikeChoiceSetV11 EnsureRoguelikeChoiceSetV11()
+        {
+            if (!expeditionFlow.CanChooseUpgrade) return null;
+            roguelikeBuildV11.SynchronizeRunStateVersion(runEconomyActions.StateVersion);
+            var node = expeditionMap == null ? null : expeditionMap.GetNode(currentMapNodeId);
+            var preparation = expeditionEconomy.PendingPreparationId;
+            var eventP10 = expeditionEconomy.HasResolvedAction("event:pending:E05A");
+            var eventP11 = expeditionEconomy.HasResolvedAction("event:pending:E05B");
+            var eventP09 = expeditionEconomy.HasResolvedAction("event:pending:E05C");
+            return roguelikeBuildV11.EnsureChoiceSet(runId, currentMapNodeId,
+                node != null && node.Type == ExpeditionNodeType.Boss,
+                node == null ? 0 : Mathf.RoundToInt(node.JourneyProgress * 100f),
+                currentEncounterIsElite, CreateRoguelikeEligibilityV11(),
+                ChapterOneLanternRoute.None,
+                preparation == "P09" || eventP09,
+                preparation == "P10" || eventP10,
+                preparation == "P11" || eventP11);
+        }
+
+        private ChapterOneRoguelikeEligibility CreateRoguelikeEligibilityV11()
+        {
+            var result = new ChapterOneRoguelikeEligibility();
+            for (var slot = 0; slot < runRoster.BoardCapacity; slot++)
+            {
+                var runUnit = runRoster.Get(slot);
+                if (runUnit == null) continue;
+                result.HasAnyAlly = true;
+                var definition = characterCatalog.Get(runUnit.DefinitionId);
+                var view = CreateRunUnitView(runUnit);
+                if (view.AttackDamage > 0) result.DirectAttackerCount++;
+                result.HasSteelOrGuardian |= definition.FactionId == "faction.steel" ||
+                                             definition.ProfessionId == "profession.guardian";
+                result.HasGuard |= definition.ProfessionId == "profession.guardian";
+                result.HasOutput |= definition.ProfessionId == "profession.output";
+                result.HasSupport |= definition.ProfessionId == "profession.support";
+                result.HasActiveHeal |= view.IsHealer || view.HealAmount > 0;
+                result.HasShieldSource |= view.OpeningShield > 0 ||
+                                          definition.ProfessionId == "profession.guardian";
+                result.HasFireSource |= runUnit.DefinitionId == "unit.starpriest";
+                if (slot < 3 && runRoster.Get(slot + 3) != null)
+                    result.HasFrontAndSameColumnBack = true;
+            }
+            return result;
+        }
+
+        private static string RoguelikeV11NameKey(string id)
+        {
+            return id != null && id.StartsWith("K", StringComparison.Ordinal)
+                ? ChapterOneRoguelikeV11Rules.GetKeystone(id).NameKey
+                : ChapterOneRoguelikeV11Rules.GetNormal(id).NameKey;
+        }
+
+        private string RoguelikeV11CardDescription(ChapterOneRoguelikeCandidate option)
+        {
+            if (option.Id.StartsWith("K", StringComparison.Ordinal))
+                return T("rogue." + option.Id + ".description") + "\n" +
+                       T("rogue.keystone.unique");
+            var definition = ChapterOneRoguelikeV11Rules.GetNormal(option.Id);
+            var value = definition.Value((RoguelikeRarity)option.RarityId);
+            var secondaryValue = definition.SecondaryValue((RoguelikeRarity)option.RarityId);
+            var stacks = RoguelikeEnhancementRules.StackCount(
+                roguelikeBuildV11.NormalEffects, option.Id);
+            string effect;
+            if (option.Id == "B03" || option.Id == "B10")
+                effect = string.Format(T("rogue." + option.Id + ".description"), value);
+            else if (option.Id == "B09")
+                effect = string.Format(T("rogue.B09.description"),
+                    RoguelikePercent(value), RoguelikePercent(secondaryValue));
+            else
+                effect = string.Format(T("rogue." + option.Id + ".description"),
+                    RoguelikePercent(value));
+            return effect + "\n" +
+                   T("rogue.stack") + " " + stacks + "/" + definition.MaximumStacks;
+        }
+
+        private static string RoguelikePercent(int basisPoints)
+        {
+            return (basisPoints / 100f).ToString("0.##");
         }
 
         private RoguelikeChoiceSet EnsureRoguelikeChoiceSet()
@@ -15536,6 +17747,7 @@ namespace SeekerAutoChess.Prototype
             var selected = expeditionMap.GetNode(nodeId);
             if (selected == null || !ContainsNode(expeditionMap.GetAvailableNext(currentMapNodeId), nodeId)) return;
 
+            var sourceNodeId = currentMapNodeId;
             confirmAbandon = false;
             encounterPowerBonus = 0;
             encounterReward = 0;
@@ -15559,6 +17771,7 @@ namespace SeekerAutoChess.Prototype
                 if (!expeditionFlow.TryEnterNode()) return;
                 statusKey = "status.node";
             }
+            RecordFormalRouteSelection(sourceNodeId, selected.Id);
             SaveGame();
         }
 
@@ -15580,6 +17793,18 @@ namespace SeekerAutoChess.Prototype
         {
             var node = expeditionMap == null ? null : expeditionMap.GetNode(currentMapNodeId);
             if (node == null || expeditionRewards.HasCompletedNode(node.Id)) return false;
+            var formalRun = IsCurrentFormalExpeditionRunBound();
+            if (UsesServerAuthoritativeExpedition && !formalRun) return false;
+
+            // The client still needs a local completion marker so the bound run can
+            // advance and award run-scoped coins. Persistent rewards and lighthouse
+            // progression remain server-authoritative and therefore stay at zero.
+            if (formalRun)
+                return ExpeditionProgression.TryCompleteNode(
+                    expeditionRewards, node.Id, 0, null);
+
+            if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                    UsesServerAuthoritativeExpedition)) return false;
             var tideCrystals = 1;
             string equipmentTemplateId = null;
             switch (node.Type)
@@ -15617,19 +17842,27 @@ namespace SeekerAutoChess.Prototype
 
         private bool CanStoreExpeditionRewards(ExpeditionRewardSnapshot rewards)
         {
+            if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                    UsesServerAuthoritativeExpedition)) return false;
+            var includesCompletionLantern = runWon && currentExpeditionRewardsEnabled;
             return rewards != null && WarehouseStorageRules.CanAccept(
                 equipmentInventory.Instances.Count,
-                rewards.EquipmentTemplateIds.Count,
+                CompetitionDemoRules.IncomingRewardSlots(
+                    rewards.EquipmentTemplateIds.Count, includesCompletionLantern),
                 lanternInventory.Instances.Count);
         }
 
         private bool ClaimExpeditionRewards()
         {
+            if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                    UsesServerAuthoritativeExpedition)) return false;
             var pending = expeditionRewards.CreateSnapshot();
             if (!CanStoreExpeditionRewards(pending)) return false;
             ExpeditionRewardSnapshot claimed;
             if (!expeditionRewards.TryClaim(out claimed)) return false;
+            var localPlan = EnsureLocalExpeditionSettlementPlan();
             tideCrystalBalance += claimed.TideCrystals;
+            CreditLocalSettlementMaterials(localPlan);
             foreach (var templateId in claimed.EquipmentTemplateIds)
             {
                 var instanceId = "local.reward." + nextLocalEquipmentSerial++;
@@ -15639,12 +17872,22 @@ namespace SeekerAutoChess.Prototype
                     instanceId = "local.reward." + nextLocalEquipmentSerial++;
                 }
             }
+            if (runWon && currentExpeditionRewardsEnabled)
+            {
+                var lantern = CompetitionDemoRules.CreateCompletionLantern(runId, expeditionMapSeed);
+                lanternInventory.TryAdd(lantern);
+            }
             SaveGame();
             return true;
         }
 
         private void RestartRun()
         {
+            if (!ExpeditionEconomyAuthorityPolicy.AllowsLocalRewardMutation(
+                    UsesServerAuthoritativeExpedition))
+            {
+                return;
+            }
             RestartExpeditionState("status.recruit");
             var energy = ExpeditionEnergyRules.BeginExpedition(expeditionEnergy);
             expeditionEnergy = energy.RemainingEnergy;
@@ -15654,6 +17897,23 @@ namespace SeekerAutoChess.Prototype
         }
 
         private void AbandonRun()
+        {
+            if (IsCurrentFormalExpeditionRunBound())
+            {
+                if (formalExpeditionAuthorityCommitInProgress) return;
+                if (!CanCommitCurrentFormalAbandonment())
+                {
+                    statusKey = "status.authoritativeAbandonUnavailable";
+                    confirmAbandon = false;
+                    return;
+                }
+                StartCoroutine(CommitFormalAbandonment());
+                return;
+            }
+            CompleteLocalAbandonRun();
+        }
+
+        private void CompleteLocalAbandonRun()
         {
             StopAllCoroutines();
             battlePresentation.Reset();
@@ -15680,8 +17940,9 @@ namespace SeekerAutoChess.Prototype
             ResetPreparationPointer();
             statusKey = "status.abandoned";
             expeditionFlow.TryAbandon();
+            PrepareLocalExpeditionSettlement(false);
             ReleaseRunEquipmentLocks();
-            currentView = ScreenView.Home;
+            currentView = ScreenView.Expedition;
             SaveGame();
         }
 
@@ -15697,28 +17958,41 @@ namespace SeekerAutoChess.Prototype
             EnsureRunEconomyIdentity();
             ReconcileUnavailableLanternSnapshots();
             ReconcileUnavailableEquipmentSnapshots();
+            ReconcileWarehouseLayout();
             var data = new PrototypeRunSaveData
             {
                 saveVersion = SaveSchemaVersion,
-                runEconomyRulesVersion = RunEconomyRulesVersion,
+                runEconomyRulesVersion = currentRunEconomyRulesVersion,
+                qualityRecruitPriceRulesVersion = qualityRecruitPriceRulesVersion,
                 runId = runId,
                 runStateVersion = runEconomyActions.StateVersion,
                 coins = coins,
                 health = health,
                 round = round,
                 mapSeed = unchecked((int)expeditionMapSeed),
-                mapGenerationVersion = ExpeditionMapGraph.MapGenerationVersion,
+                mapGenerationVersion = expeditionMap == null
+                    ? ExpeditionMapGraph.MapGenerationVersion
+                    : expeditionMap.GenerationVersion,
                 mapVisualGenerationVersion = ExpeditionMapVisualSelector.VisualGenerationVersion,
                 currentMapNodeId = currentMapNodeId,
                 runAttackBonus = runAttackBonus,
                 runHealthBonus = runHealthBonus,
                 roguelikeRulesVersion = RoguelikeRulesVersion,
                 attackSpeedRulesVersion = AttackSpeedRulesVersion,
-                roguelikeRunStateVersion = roguelikeBuild.StateVersion,
-                roguelikeChoiceOrdinal = roguelikeBuild.ChoiceOrdinal,
+                roguelikeRunStateVersion = currentRoguelikeRuntimeGeneration ==
+                    ChapterOneRoguelikeV11State.RuntimeGeneration
+                    ? roguelikeBuildV11.StateVersion : roguelikeBuild.StateVersion,
+                roguelikeChoiceOrdinal = currentRoguelikeRuntimeGeneration ==
+                    ChapterOneRoguelikeV11State.RuntimeGeneration
+                    ? roguelikeBuildV11.ChoiceOrdinal : roguelikeBuild.ChoiceOrdinal,
                 pendingRoguelikeChoiceSet = roguelikeBuild.PendingChoiceSet,
                 acquiredRoguelikeEffects = roguelikeBuild.CopyAcquiredEffects(),
                 roguelikeChoiceReceipts = roguelikeBuild.CopyReceipts(),
+                roguelikeRuntimeGeneration = currentRoguelikeRuntimeGeneration,
+                selectedRoguelikeKeystoneId = roguelikeBuildV11.SelectedKeystoneId,
+                pendingRoguelikeChoiceSetV11 = roguelikeBuildV11.PendingChoiceSet,
+                acquiredRoguelikeEffectsV11 = roguelikeBuildV11.CopyNormalEffects(),
+                roguelikeChoiceReceiptsV11 = roguelikeBuildV11.CopyReceipts(),
                 encounterPowerBonus = encounterPowerBonus,
                 encounterReward = encounterReward,
                 currentEncounterIsElite = currentEncounterIsElite,
@@ -15732,6 +18006,11 @@ namespace SeekerAutoChess.Prototype
                 expeditionRewardsEnabled = currentExpeditionRewardsEnabled,
                 expeditionEntryCommitted = expeditionEntryCommitted,
                 tideCrystalBalance = tideCrystalBalance,
+                localLampGlowBalance = localLampGlowBalance,
+                localTideIronBalance = localTideIronBalance,
+                localMistLeatherBalance = localMistLeatherBalance,
+                localStarSandBalance = localStarSandBalance,
+                localBountyTicketBalance = localBountyTicketBalance,
                 nextLocalEquipmentSerial = nextLocalEquipmentSerial,
                 pendingTideCrystals = expeditionRewards.TideCrystals,
                 pendingEquipmentTemplateIds = CopyIds(expeditionRewards.EquipmentTemplateIds),
@@ -15757,8 +18036,11 @@ namespace SeekerAutoChess.Prototype
                 expeditionMorale = expeditionEconomy.Morale,
                 nextBattlePreparationId = expeditionEconomy.NextBattlePreparationId,
                 expeditionBackpackItemIds = CopyIds(expeditionEconomy.Backpack),
+                expeditionBackpackItemInstanceIds = CopyIds(expeditionEconomy.BackpackInstanceIds),
+                targetedRecruitTickets = CopyIds(expeditionEconomy.TargetedRecruitTickets),
                 resolvedEconomyActionIds = expeditionEconomy.CopyResolvedActionIds(),
                 activeBattleItemId = expeditionEconomy.ActiveBattleItemId,
+                activeBattleItemInstanceId = expeditionEconomy.ActiveBattleItemInstanceId,
                 activeBattleTargetSlot = expeditionEconomy.ActiveBattleTargetSlot,
                 lockedEconomyContentKeys = expeditionEconomy.CopyLockedNodeContentKeys(),
                 lockedEconomyContentValues = expeditionEconomy.CopyLockedNodeContentValues(),
@@ -15773,6 +18055,8 @@ namespace SeekerAutoChess.Prototype
                 storeEpicPitySkr = storeEpicPitySkr,
                 storeLegendaryPitySkr = storeLegendaryPitySkr,
                 ownedBasePackIds = ownedBasePackIds.ToArray(),
+                equippedBasePackProductId = equippedBasePackProductId,
+                equippedBattlefieldProductId = equippedBattlefieldProductId,
                 storeOpeningActive = storeOpeningActive,
                 storeOpeningProgress = storeOpeningProgress,
                 pendingStoreOrderId = pendingStoreOrderId,
@@ -15780,7 +18064,15 @@ namespace SeekerAutoChess.Prototype
                 pendingStoreDefinitionIds = CopyIds(pendingStoreDefinitionIds),
                 pendingStoreQualities = pendingStoreQualities == null
                     ? new int[0] : (int[])pendingStoreQualities.Clone(),
+                pendingStoreAptitudeRolls = pendingStoreAptitudeRolls == null
+                    ? new int[0] : (int[])pendingStoreAptitudeRolls.Clone(),
+                pendingStoreRevealAlreadyGranted = pendingStoreRevealAlreadyGranted,
+                pendingStarterGrantId = pendingStarterGrantId,
+                acknowledgedStarterGrantId = acknowledgedStarterGrantId,
                 equipment = new PrototypeEquipmentSaveData[equipmentInventory.Instances.Count],
+                warehouseSlotTokens = (string[])warehouseSlotTokens.Clone(),
+                warehouseAcquisitionOrder = warehouseAcquisitionOrder.ToArray(),
+                warehouseSortMode = (int)warehouseSortMode,
                 activeRunLoadouts = new PrototypeLoadoutSnapshotSaveData[runEquipmentSnapshots.Count],
                 defenseUnits = new PrototypeUnitSaveData[defenseSlots.Length],
                 arenaRating = arenaRating,
@@ -15818,7 +18110,8 @@ namespace SeekerAutoChess.Prototype
                     copyCount = owned.CopyCount,
                     externalStar = owned.ExternalStar,
                     quality = (int)owned.Quality,
-                    acquiredAtUtcTicks = owned.AcquiredAtUtcTicks
+                    acquiredAtUtcTicks = owned.AcquiredAtUtcTicks,
+                    aptitudeRoll = owned.AptitudeRoll
                 };
             }
             for (var i = 0; i < equipmentInventory.Instances.Count; i++)
@@ -15932,6 +18225,7 @@ namespace SeekerAutoChess.Prototype
             RestoreRunEquipmentSnapshots(data.activeRunLoadouts);
             RestoreDefense(data.defenseUnits);
             RestoreLanternContracts(data);
+            RestoreWarehouseLayout(data);
             ReconcileUnavailableEquipmentSnapshots(HasMarketLockedEquipment());
             pendingDefenseRemovedCount = ReconcileDefenseWithActiveDeck();
             arenaRating = data.saveVersion >= 32 && data.arenaRating > 0
@@ -15968,10 +18262,25 @@ namespace SeekerAutoChess.Prototype
             pendingStoreInstanceIds = data.pendingStoreInstanceIds ?? new string[0];
             pendingStoreDefinitionIds = data.pendingStoreDefinitionIds ?? new string[0];
             pendingStoreQualities = data.pendingStoreQualities ?? new int[0];
+            pendingStoreAptitudeRolls = data.pendingStoreAptitudeRolls ?? new int[0];
+            pendingStoreRevealAlreadyGranted = data.pendingStoreRevealAlreadyGranted;
+            pendingStarterGrantId = data.pendingStarterGrantId;
+            acknowledgedStarterGrantId = data.acknowledgedStarterGrantId;
+            if (storeOpeningActive &&
+                pendingStoreAptitudeRolls.Length != StoreRules.DrawCountPerCharacterPack &&
+                pendingStoreInstanceIds.Length == StoreRules.DrawCountPerCharacterPack)
+            {
+                pendingStoreAptitudeRolls = new int[StoreRules.DrawCountPerCharacterPack];
+                for (var index = 0; index < pendingStoreAptitudeRolls.Length; index++)
+                    pendingStoreAptitudeRolls[index] =
+                        CharacterRarityInstanceRules.ComputeAptitudeRoll(
+                            pendingStoreInstanceIds[index]);
+            }
             if (storeOpeningActive &&
                 (pendingStoreInstanceIds.Length != StoreRules.DrawCountPerCharacterPack ||
                  pendingStoreDefinitionIds.Length != StoreRules.DrawCountPerCharacterPack ||
-                 pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack))
+                 pendingStoreQualities.Length != StoreRules.DrawCountPerCharacterPack ||
+                 pendingStoreAptitudeRolls.Length != StoreRules.DrawCountPerCharacterPack))
             {
                 storeOpeningActive = false;
                 storeOpeningProgress = 0f;
@@ -15979,7 +18288,12 @@ namespace SeekerAutoChess.Prototype
                 pendingStoreInstanceIds = new string[0];
                 pendingStoreDefinitionIds = new string[0];
                 pendingStoreQualities = new int[0];
+                pendingStoreAptitudeRolls = new int[0];
+                pendingStoreRevealAlreadyGranted = false;
+                pendingStarterGrantId = null;
             }
+            if (pendingStoreRevealAlreadyGranted)
+                ClearPendingStarterGrantReveal(pendingStarterGrantId);
             ownedBasePackIds.Clear();
             if (data.ownedBasePackIds != null)
             {
@@ -15990,12 +18304,21 @@ namespace SeekerAutoChess.Prototype
                         ownedBasePackIds.Add(data.ownedBasePackIds[i]);
                 }
             }
+            equippedBasePackProductId = StoreCosmeticRules.NormalizeEquipped(
+                data.equippedBasePackProductId, StoreProductType.BasePack, ownedBasePackIds);
+            equippedBattlefieldProductId = StoreCosmeticRules.NormalizeEquipped(
+                data.equippedBattlefieldProductId, StoreProductType.Battlefield, ownedBasePackIds);
             expeditionEntryCommitted = data.saveVersion >= 22
                 ? data.expeditionEntryCommitted
                 : data.expeditionEnergy < ExpeditionEnergyRules.InitialEnergy ||
                   data.round > 1 || data.coins != 10 || data.health != 10 ||
                   data.phase != (int)ExpeditionPhase.Route;
             tideCrystalBalance = Mathf.Max(0, data.tideCrystalBalance);
+            localLampGlowBalance = Mathf.Max(0, data.localLampGlowBalance);
+            localTideIronBalance = Mathf.Max(0, data.localTideIronBalance);
+            localMistLeatherBalance = Mathf.Max(0, data.localMistLeatherBalance);
+            localStarSandBalance = Mathf.Max(0, data.localStarSandBalance);
+            localBountyTicketBalance = Mathf.Max(0, data.localBountyTicketBalance);
             nextLocalEquipmentSerial = Mathf.Max(1, data.nextLocalEquipmentSerial);
             if (data.saveVersion < MinimumCompatibleSaveVersion)
             {
@@ -16007,12 +18330,26 @@ namespace SeekerAutoChess.Prototype
                 return true;
             }
 
-            if (data.mapGenerationVersion != ExpeditionMapGraph.MapGenerationVersion)
+            if (data.mapGenerationVersion != ExpeditionMapGraph.MapGenerationVersion &&
+                data.mapGenerationVersion !=
+                    ExpeditionMapGraph.LegacyFiveTypeMapGenerationVersion)
             {
                 // A topology algorithm change must never silently rewrite an active
                 // run beneath the player's current node. Preserve account inventory,
                 // collection and loadouts, but start a new locally generated route.
                 RestartExpeditionState("status.mapUpdated");
+                SaveGame();
+                return true;
+            }
+
+            if (data.roguelikeRuntimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration &&
+                !ChapterOneRoguelikeV11State.IsPendingChoiceCompatible(
+                    data.pendingRoguelikeChoiceSetV11))
+            {
+                // A pending choice generated by an older balance contract cannot be selected
+                // deterministically under the current rules. Preserve account-wide state loaded
+                // above, but repair only the active expedition instead of blocking application boot.
+                RestartExpeditionState("status.repaired");
                 SaveGame();
                 return true;
             }
@@ -16037,14 +18374,34 @@ namespace SeekerAutoChess.Prototype
             return true;
         }
 
+        private void RestoreWarehouseLayout(PrototypeRunSaveData data)
+        {
+            Array.Clear(warehouseSlotTokens, 0, warehouseSlotTokens.Length);
+            warehouseAcquisitionOrder.Clear();
+            if (data != null && data.saveVersion >= 40)
+            {
+                if (data.warehouseSlotTokens != null)
+                    Array.Copy(data.warehouseSlotTokens, warehouseSlotTokens,
+                        Mathf.Min(data.warehouseSlotTokens.Length, warehouseSlotTokens.Length));
+                if (data.warehouseAcquisitionOrder != null)
+                {
+                    foreach (var token in data.warehouseAcquisitionOrder)
+                        if (!string.IsNullOrEmpty(token) && !warehouseAcquisitionOrder.Contains(token))
+                            warehouseAcquisitionOrder.Add(token);
+                }
+                if (Enum.IsDefined(typeof(WarehouseSortMode), data.warehouseSortMode))
+                    warehouseSortMode = (WarehouseSortMode)data.warehouseSortMode;
+            }
+            ReconcileWarehouseLayout();
+        }
+
         private void RestoreLanternContracts(PrototypeRunSaveData data)
         {
             if (data.saveVersion >= 33)
             {
                 lanternInventory = PrototypeLanternSaveCodec.RestoreInventory(
                     data.lanternInventory, data.activeLanternInstanceId);
-                FirstChapterLanternFixtures.EnsureFirstClearCommon(lanternInventory);
-                EnsureDevelopmentLanternQualitySet();
+                RemoveLegacyLocalLanternFixtures();
                 expeditionLanternSnapshot = PrototypeLanternSaveCodec.RestoreSnapshot(
                     data.expeditionLanternSnapshot,
                     LanternLegacyMigrationResult.LegacyNoneRulesVersion);
@@ -16073,8 +18430,6 @@ namespace SeekerAutoChess.Prototype
                 data.chapterOneLighthouseRepaired,
                 HasSavedDefense(data.defenseUnits));
             lanternInventory = new LanternInventory();
-            FirstChapterLanternFixtures.EnsureFirstClearCommon(lanternInventory);
-            EnsureDevelopmentLanternQualitySet();
             expeditionLanternSnapshot = migrated.ExpeditionLanternSnapshot;
             expeditionRewardSnapshot = CreateLegacyLocalRewardSnapshot();
             chapterOneLighthouse.Restore(
@@ -16115,6 +18470,12 @@ namespace SeekerAutoChess.Prototype
             FirstChapterLanternEconomyRules.EnsureDevelopmentQualitySet(lanternInventory);
         }
 
+        private void RemoveLegacyLocalLanternFixtures()
+        {
+            if (lanternInventory == null) return;
+            lanternInventory.TryCompleteMarketSale(FirstChapterLanternFixtures.FirstClearInstanceId);
+        }
+
         private static bool HasSavedDefense(PrototypeUnitSaveData[] savedDefense)
         {
             if (savedDefense == null) return false;
@@ -16126,13 +18487,26 @@ namespace SeekerAutoChess.Prototype
         private void RestoreExpedition(PrototypeRunSaveData data)
         {
             runRoster.Clear();
+            currentRunEconomyRulesVersion = data.runEconomyRulesVersion >= 1 &&
+                                            data.runEconomyRulesVersion <= RunEconomyRulesVersion
+                ? data.runEconomyRulesVersion
+                : 1;
+            qualityRecruitPriceRulesVersion = data.saveVersion >= 41 &&
+                                              (data.qualityRecruitPriceRulesVersion ==
+                                                   QualityRecruitPriceRules.QualityScaledRulesVersion ||
+                                               data.qualityRecruitPriceRulesVersion ==
+                                                   QualityRecruitPriceRules.CurrentRulesVersion)
+                ? data.qualityRecruitPriceRulesVersion
+                : QualityRecruitPriceRules.LegacyRulesVersion;
             coins = data.coins;
-            health = data.health;
+            health = ChapterOneExpeditionLifeRules.NormalizePersistedLife(
+                data.health, data.saveVersion < FiveLifeSaveSchemaVersion);
             round = Mathf.Clamp(data.round, 1, FinalRound);
             expeditionMapSeed = data.mapSeed == 0
                 ? unchecked((uint)(0x51EA2C31 + round * 7919))
                 : unchecked((uint)data.mapSeed);
-            expeditionMap = ExpeditionMapGraph.CreateChapterOne(expeditionMapSeed);
+            expeditionMap = ExpeditionMapGraph.CreateChapterOne(
+                expeditionMapSeed, data.mapGenerationVersion);
             runId = !string.IsNullOrEmpty(data.runId)
                 ? data.runId
                 : StableRunEconomyId("run", expeditionMapSeed.ToString(), "v24-migration");
@@ -16166,6 +18540,20 @@ namespace SeekerAutoChess.Prototype
             {
                 roguelikeBuild.Reset();
             }
+            currentRoguelikeRuntimeGeneration = data.saveVersion >= 43
+                ? data.roguelikeRuntimeGeneration : 0;
+            if (currentRoguelikeRuntimeGeneration == ChapterOneRoguelikeV11State.RuntimeGeneration)
+            {
+                roguelikeBuildV11.Restore(currentRoguelikeRuntimeGeneration,
+                    data.roguelikeRunStateVersion, data.roguelikeChoiceOrdinal,
+                    data.selectedRoguelikeKeystoneId, data.pendingRoguelikeChoiceSetV11,
+                    data.acquiredRoguelikeEffectsV11, data.roguelikeChoiceReceiptsV11);
+            }
+            else
+            {
+                roguelikeBuildV11.Reset();
+            }
+            pendingP09FirstOptionId = null;
             encounterPowerBonus = data.encounterPowerBonus;
             encounterReward = data.encounterReward == 0 ? 4 : data.encounterReward;
             currentEncounterIsElite = data.currentEncounterIsElite;
@@ -16216,7 +18604,10 @@ namespace SeekerAutoChess.Prototype
                     data.activeBattleItemId,
                     data.activeBattleTargetSlot,
                     data.lockedEconomyContentKeys,
-                    data.lockedEconomyContentValues);
+                    data.lockedEconomyContentValues,
+                    data.expeditionBackpackItemInstanceIds,
+                    data.activeBattleItemInstanceId,
+                    data.targetedRecruitTickets);
             }
             else
             {
@@ -16307,21 +18698,29 @@ namespace SeekerAutoChess.Prototype
                     for (var copy = 0; copy < copyCount; copy++)
                     {
                         var expandedInstanceId = copy == 0 ? instanceId : instanceId + ".copy." + (copy + 1);
+                        var aptitudeRoll = data.saveVersion >= 44
+                            ? Mathf.Clamp(saved.aptitudeRoll, -1,
+                                CharacterRarityInstanceRules.RollScale)
+                            : -1;
                         restored.Add(new OwnedCharacterState(expandedInstanceId, saved.definitionId, 1,
-                            Mathf.Max(0, saved.externalStar), quality, acquiredAtUtcTicks + copy));
+                            Mathf.Max(0, saved.externalStar), quality, acquiredAtUtcTicks + copy,
+                            aptitudeRoll));
                     }
                 }
             }
             var nextAcquiredAtUtcTicks = PlayerCollection.NextAcquiredAtUtcTicks(
                 restored, legacyAcquiredAtUtcTicks);
-            foreach (var definition in characterCatalog.Definitions)
+            if (!CompetitionDemoMode)
             {
-                if (!definition.IsCollectible || ContainsOwnedCharacter(restored, definition.DefinitionId)) continue;
-                restored.Add(new OwnedCharacterState("character." + definition.DefinitionId,
-                    definition.DefinitionId, 1, 0, CharacterQuality.Common,
-                    nextAcquiredAtUtcTicks++));
+                foreach (var definition in characterCatalog.Definitions)
+                {
+                    if (!definition.IsCollectible || ContainsOwnedCharacter(restored, definition.DefinitionId)) continue;
+                    restored.Add(new OwnedCharacterState("character." + definition.DefinitionId,
+                        definition.DefinitionId, 1, 0, CharacterQuality.Common,
+                        nextAcquiredAtUtcTicks++));
+                }
+                restored = PlayerCollection.AddMissingFormalQualityVariants(characterCatalog, restored);
             }
-            restored = PlayerCollection.AddMissingFormalQualityVariants(characterCatalog, restored);
             playerCollection = restored.Count > 0
                 ? new PlayerCollection(characterCatalog, restored)
                 : PlayerCollection.CreatePrototype(characterCatalog);
@@ -16379,6 +18778,10 @@ namespace SeekerAutoChess.Prototype
                     {
                         continue;
                     }
+                    if (saved.equipmentInstanceId.StartsWith("prototype.",
+                            StringComparison.Ordinal) ||
+                        string.Equals(saved.seasonId, "prototype-season",
+                            StringComparison.Ordinal)) continue;
                     restoredIds.Add(saved.equipmentInstanceId);
                     var quality = Enum.IsDefined(typeof(EquipmentQuality), saved.quality)
                         ? (EquipmentQuality)saved.quality
@@ -16398,16 +18801,6 @@ namespace SeekerAutoChess.Prototype
                 }
             }
 
-            var defaults = EquipmentInventory.CreatePrototype(equipmentCatalog);
-            foreach (var instance in defaults.Instances)
-            {
-                if (!restoredIds.Add(instance.EquipmentInstanceId)) continue;
-                restored.Add(new EquipmentInstanceState(
-                    instance.EquipmentInstanceId,
-                    instance.TemplateId,
-                    instance.Quality,
-                    instance.SeasonId));
-            }
             equipmentInventory = new EquipmentInventory(equipmentCatalog, restored);
         }
 
@@ -16568,12 +18961,15 @@ namespace SeekerAutoChess.Prototype
             LockRunEquipmentSnapshots();
             runRoster.Clear();
             coins = 10;
-            health = 10;
+            health = ChapterOneExpeditionLifeRules.InitialLife;
             round = 1;
             CreateNewExpeditionMap();
             runAttackBonus = 0;
             runHealthBonus = 0;
             roguelikeBuild.Reset();
+            roguelikeBuildV11.Reset();
+            currentRoguelikeRuntimeGeneration = ChapterOneRoguelikeV11State.RuntimeGeneration;
+            pendingP09FirstOptionId = null;
             encounterPowerBonus = 0;
             encounterReward = 4;
             currentEncounterIsElite = false;
@@ -16603,6 +18999,7 @@ namespace SeekerAutoChess.Prototype
             finalScore = 0;
             expeditionEntryCommitted = false;
             expeditionRewards.Reset();
+            pendingLocalExpeditionSettlementPlan = null;
             statusKey = "status.route";
             CreateEnemies();
             RefreshAllShopOffers();
@@ -16675,12 +19072,16 @@ namespace SeekerAutoChess.Prototype
 
         private void ApplyActiveBattleItemToPresentationUnit(UnitData unit, bool isPlayer, int slot)
         {
-            if (unit == null || expeditionEconomy.ActiveBattleTargetSlot != slot) return;
+            if (unit == null) return;
             if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I01")
-                unit.OpeningShield += Mathf.Max(1, Mathf.CeilToInt(unit.MaxHealth * 0.15f));
-            if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I02")
+                unit.Armor += 8;
+            if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I03")
+                unit.OpeningShield = Mathf.CeilToInt(unit.OpeningShield * 1.25f);
+            if (isPlayer && expeditionEconomy.ActiveBattleItemId == "I07")
+                unit.HealAmount = Mathf.CeilToInt(unit.HealAmount * 1.25f);
+            if (!isPlayer && expeditionEconomy.ActiveBattleItemId == "I09")
                 unit.AttackSpeedBasisPoints = ContinuousAttackSpeedRules.CalculateFinal(
-                    unit.AttackSpeedBasisPoints, 1500);
+                    unit.AttackSpeedBasisPoints, -1500);
         }
 
         private BattleUnitPresentationState CreateBattleUnitPresentation(
@@ -16837,6 +19238,7 @@ namespace SeekerAutoChess.Prototype
         private enum ScreenView
         {
             Home,
+            Profile,
             Store,
             Deck,
             Arena,
@@ -16853,7 +19255,9 @@ namespace SeekerAutoChess.Prototype
         {
             All,
             Equipment,
-            Lantern
+            Lantern,
+            Materials,
+            Other
         }
 
         private enum DeckCharacterDetailMode

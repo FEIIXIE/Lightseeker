@@ -2,6 +2,21 @@ using System;
 
 namespace SeekerAutoChess.Core
 {
+    public static class ChapterOneExpeditionLifeRules
+    {
+        public const int InitialLife = 5;
+        public const int LegacyInitialLife = 10;
+        public const string ContractId = "chapter01.expedition-life.v2";
+
+        public static int NormalizePersistedLife(int persistedLife, bool usesLegacyTenLifeRule)
+        {
+            var normalized = usesLegacyTenLifeRule
+                ? persistedLife - (LegacyInitialLife - InitialLife)
+                : persistedLife;
+            return Math.Max(0, Math.Min(InitialLife, normalized));
+        }
+    }
+
     public enum ExpeditionPhase
     {
         Preparation = 0,

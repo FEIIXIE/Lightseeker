@@ -5,12 +5,15 @@ namespace SeekerAutoChess.EditorTools
 {
     internal sealed class FormalLanternTextureImporter : AssetPostprocessor
     {
-        private const string RuntimeRoot =
+        private const string LegacyRuntimeRoot =
             "Assets/Resources/Art/Lanterns/Chapter01/GuardTideCircular/";
+        private const string HomeModularRuntimeRoot =
+            "Assets/Resources/Art/HomeLanternModular/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(RuntimeRoot, System.StringComparison.Ordinal)) return;
+            if (!assetPath.StartsWith(LegacyRuntimeRoot, System.StringComparison.Ordinal) &&
+                !assetPath.StartsWith(HomeModularRuntimeRoot, System.StringComparison.Ordinal)) return;
 
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;

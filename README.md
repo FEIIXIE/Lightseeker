@@ -1,8 +1,8 @@
 # 寻灯者｜Unity 工程源代码快照
 
-文档版本：`v0.3`
-快照版本：`v0.43.184`
-状态：`PRIVATE_REPOSITORY_SNAPSHOT / VALIDATED_BASELINE`
+文档版本：`v0.4`
+快照版本：`v0.43.413`
+状态：`PRIVATE_REPOSITORY_SNAPSHOT / SIGNED_CANDIDATE_VALIDATED`
 
 ## 内容范围
 
@@ -19,12 +19,12 @@
 ## 验证基线
 
 - Unity：`2022.3.62f3c1`
-- 工程版本：`v0.43.184`
-- Android bundle version：`0.43.184`
-- Android version code：`422`
-- EditMode：`302/302 PASS`
-- 核心烟测：`26/26 PASS`
-- 音频烟测：`10/10 PASS`
+- 工程版本：`v0.43.413`
+- Android bundle version：`0.43.413`
+- Android version code：`651`
+- 核心烟测：`65/65 PASS`
+- Windows PowerShell 5.1 构建包装器验证：`PASS`
+- Android ARM64 非调试签名候选包构建与证书检查：`PASS`（APK 不进入源码仓库）
 
 ## 打开方式
 
@@ -46,3 +46,4 @@
 | v0.1 | 2026-09-28 | 创建脱敏的 v0.43.96 早期源代码快照说明。 |
 | v0.2 | 2026-09-28 | 增加 Unity 版本、打开方式、缓存排除和第三方署名提示。 |
 | v0.3 | 2026-10-01 | 更新为 v0.43.184 私有仓库验证基线，补充当前测试结果与第三方资源说明。 |
+| v0.4 | 2026-10-12 | 更新为 v0.43.413 赛前候选源码快照，记录 Android 651、核心烟测和签名候选包验证结果。 |

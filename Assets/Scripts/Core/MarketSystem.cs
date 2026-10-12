@@ -26,7 +26,7 @@ namespace SeekerAutoChess.Core
 
     public static class MarketRules
     {
-        public const string RulesVersion = "market.fixed-price.v2";
+        public const string RulesVersion = "market.fixed-price.v3";
         public const string LocalPlayerId = "current-player";
         public const long MicroSkrPerSkr = 1000000L;
         public const int MinimumListingPriceSkr = 10;
@@ -36,6 +36,8 @@ namespace SeekerAutoChess.Core
         public const int TeamFeeBasisPoints = 250;
         public const int SlotsPerShopLease = 5;
         public const int ShopLeasePriceSkr = 100;
+        public const int MaximumShopLeasePurchasesPerSeason = 1;
+        public const int MaximumListingSlots = 10;
 
         public static long ToMicroSkr(int skr)
         {
@@ -174,7 +176,11 @@ namespace SeekerAutoChess.Core
         public int ReceiptSerial { get { return receiptSerial; } }
         public int ListingCapacity
         {
-            get { return MarketRules.InitialListingSlots + ShopLeaseCount * MarketRules.SlotsPerShopLease; }
+            get
+            {
+                return Math.Min(MarketRules.MaximumListingSlots,
+                    MarketRules.InitialListingSlots + ShopLeaseCount * MarketRules.SlotsPerShopLease);
+            }
         }
 
         public int CountActiveListings(string sellerId)
@@ -267,7 +273,8 @@ namespace SeekerAutoChess.Core
         {
             var price = MarketRules.ToMicroSkr(MarketRules.ShopLeasePriceSkr);
             updatedBuyerBalanceMicroSkr = buyerBalanceMicroSkr;
-            if (buyerBalanceMicroSkr < price) return false;
+            if (ShopLeaseCount >= MarketRules.MaximumShopLeasePurchasesPerSeason ||
+                buyerBalanceMicroSkr < price) return false;
             updatedBuyerBalanceMicroSkr -= price;
             ShopLeaseCount++;
             StateVersion++;
@@ -290,7 +297,8 @@ namespace SeekerAutoChess.Core
             receipts.Clear();
             if (restoredListings != null) listings.AddRange(restoredListings);
             if (restoredReceipts != null) receipts.AddRange(restoredReceipts);
-            ShopLeaseCount = Math.Max(0, shopLeaseCount);
+            ShopLeaseCount = Math.Max(0, Math.Min(
+                MarketRules.MaximumShopLeasePurchasesPerSeason, shopLeaseCount));
             StateVersion = Math.Max(0, stateVersion);
             BurnPoolMicroSkr = Math.Max(0L, burnPoolMicroSkr);
             TeamRevenueMicroSkr = Math.Max(0L, teamRevenueMicroSkr);

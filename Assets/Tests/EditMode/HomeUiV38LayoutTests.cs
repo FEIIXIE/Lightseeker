@@ -6,44 +6,38 @@ namespace SeekerAutoChess.Tests.EditMode
     public sealed class HomeLighthouseV140LayoutTests
     {
         [Test]
-        public void DynamicRectsMatchApprovedV140Contract()
+        public void DynamicRectsMatchApprovedHomeLeftV110Contract()
         {
             AssertRect(HomeLighthouseV140Layout.FullCanvas, 0f, 0f, 1080f, 2400f);
-            AssertRect(HomeLighthouseV140Layout.PlayerName, 180f, 56f, 220f, 52f);
-            AssertRect(HomeLighthouseV140Layout.PlayerPower, 222f, 103f, 220f, 40f);
-            AssertRect(HomeLighthouseV140Layout.EnergyValue, 666f, 50f, 42f, 44f);
-            AssertRect(HomeLighthouseV140Layout.SkrValue, 815f, 50f, 64f, 44f);
-            AssertRect(HomeLighthouseV140Layout.TideValue, 976f, 52f, 52f, 44f);
-            AssertRect(HomeLighthouseV140Layout.AffairsLabel, 746f, 213f, 106f, 38f);
-            AssertRect(HomeLighthouseV140Layout.WarehouseLabel, 880f, 213f, 106f, 38f);
+            AssertRect(HomeLighthouseV140Layout.ProfileClick, 46f, 64f, 142f, 150f);
+            AssertRect(HomeLighthouseV140Layout.AffairsClick, 54f, 288f, 126f, 126f);
+            AssertRect(HomeLighthouseV140Layout.WarehouseClick, 54f, 466f, 126f, 126f);
+            AssertRect(HomeLighthouseV140Layout.EnergyValue, 666f, 114f, 42f, 44f);
+            AssertRect(HomeLighthouseV140Layout.SkrValue, 815f, 114f, 64f, 44f);
+            AssertRect(HomeLighthouseV140Layout.TideValue, 976f, 114f, 52f, 44f);
             AssertRect(HomeLighthouseV140Layout.Chapter, 250f, 340f, 580f, 62f);
             AssertRect(HomeLighthouseV140Layout.IslandName, 390f, 438f, 300f, 50f);
             AssertRect(HomeLighthouseV140Layout.PanelTitle, 330f, 1595f, 420f, 48f);
             AssertRect(HomeLighthouseV140Layout.LanternLabel, 398f, 1692f, 310f, 34f);
-            AssertRect(HomeLighthouseV140Layout.LanternName, 398f, 1726f, 310f, 48f);
-            AssertRect(HomeLighthouseV140Layout.LanternDetails, 398f, 1774f, 330f, 44f);
+            AssertRect(HomeLighthouseV140Layout.LanternName, 398f, 1726f, 286f, 48f);
+            AssertRect(HomeLighthouseV140Layout.LanternDetails, 398f, 1774f, 286f, 72f);
             AssertRect(HomeLighthouseV140Layout.LanternChange, 702f, 1727f, 182f, 52f);
             AssertRect(HomeLighthouseV140Layout.ExpeditionLabel, 260f, 1928f, 560f, 72f);
         }
 
         [Test]
-        public void ModulePlacementsMatchApprovedV140Manifest()
+        public void ModulePlacementsMatchApprovedHomeLeftV110Manifest()
         {
             AssertRect(HomeLighthouseV140Layout.BackgroundModule, 0f, 0f, 1080f, 2400f);
             AssertRect(HomeLighthouseV140Layout.TowerModule, 215f, 640f, 650f, 770f);
             AssertRect(HomeLighthouseV140Layout.LitOverlayModule, 0f, 0f, 1080f, 2400f);
             AssertRect(HomeLighthouseV140Layout.ChapterOrnamentModule, 145f, 333f, 790f, 160f);
-            AssertRect(HomeLighthouseV140Layout.PlayerNameLineModule, 170f, 55f, 275f, 63f);
-            AssertRect(HomeLighthouseV140Layout.PlayerMedallionModule, 56f, 45f, 122f, 122f);
-            AssertRect(HomeLighthouseV140Layout.PlayerPowerBadgeModule, 188f, 105f, 32f, 32f);
-            AssertRect(HomeLighthouseV140Layout.EnergyGlyphModule, 612f, 37f, 46f, 68f);
-            AssertRect(HomeLighthouseV140Layout.ResourceSeparatorOneModule, 714f, 39f, 6f, 64f);
-            AssertRect(HomeLighthouseV140Layout.SkrBadgeModule, 750f, 40f, 62f, 62f);
-            AssertRect(HomeLighthouseV140Layout.ResourceSeparatorTwoModule, 882f, 39f, 6f, 64f);
-            AssertRect(HomeLighthouseV140Layout.TideCrystalModule, 906f, 43f, 64f, 64f);
-            AssertRect(HomeLighthouseV140Layout.AffairsModule, 756f, 126f, 86f, 86f);
-            AssertRect(HomeLighthouseV140Layout.ResourceSeparatorThreeModule, 863f, 137f, 6f, 64f);
-            AssertRect(HomeLighthouseV140Layout.WarehouseModule, 890f, 126f, 86f, 86f);
+            AssertRect(HomeLighthouseV140Layout.LeftCompleteModule, 32f, 0f, 170f, 981f);
+            AssertRect(HomeLighthouseV140Layout.EnergyGlyphModule, 612f, 102f, 46f, 68f);
+            AssertRect(HomeLighthouseV140Layout.ResourceSeparatorOneModule, 714f, 104f, 6f, 64f);
+            AssertRect(HomeLighthouseV140Layout.SkrBadgeModule, 750f, 105f, 62f, 62f);
+            AssertRect(HomeLighthouseV140Layout.ResourceSeparatorTwoModule, 882f, 104f, 6f, 64f);
+            AssertRect(HomeLighthouseV140Layout.TideCrystalModule, 906f, 104f, 64f, 64f);
             AssertRect(HomeLighthouseV140Layout.LanternMedallionModule, 201f, 1685f, 142f, 142f);
             AssertRect(HomeLighthouseV140Layout.LanternPanelModule, 108f, 1534f, 864f, 351f);
             AssertRect(HomeLighthouseV140Layout.ExpeditionNormalModule, 170f, 1900f, 740f, 132f);
@@ -78,10 +72,8 @@ namespace SeekerAutoChess.Tests.EditMode
         }
 
         [Test]
-        public void HudTextSlotsDoNotOverlapTheirNeighbouringArtModules()
+        public void HudResourceTextSlotsDoNotOverlapTheirNeighbouringArtModules()
         {
-            Assert.That(Overlaps(HomeLighthouseV140Layout.PlayerPower,
-                HomeLighthouseV140Layout.PlayerPowerBadgeModule), Is.False);
             Assert.That(Overlaps(HomeLighthouseV140Layout.EnergyValue,
                 HomeLighthouseV140Layout.EnergyGlyphModule), Is.False);
             Assert.That(Overlaps(HomeLighthouseV140Layout.EnergyValue,
@@ -92,10 +84,6 @@ namespace SeekerAutoChess.Tests.EditMode
                 HomeLighthouseV140Layout.ResourceSeparatorTwoModule), Is.False);
             Assert.That(Overlaps(HomeLighthouseV140Layout.TideValue,
                 HomeLighthouseV140Layout.TideCrystalModule), Is.False);
-            Assert.That(Overlaps(HomeLighthouseV140Layout.AffairsLabel,
-                HomeLighthouseV140Layout.AffairsModule), Is.False);
-            Assert.That(Overlaps(HomeLighthouseV140Layout.WarehouseLabel,
-                HomeLighthouseV140Layout.WarehouseModule), Is.False);
         }
 
         [TestCase(true, false, false, 5, HomeExpeditionButtonVisualState.Normal)]
@@ -113,6 +101,8 @@ namespace SeekerAutoChess.Tests.EditMode
         public void LighthouseV140CompositionUsesNativeModulesInsideLockedPortraitCanvas()
         {
             Assert.That(HomeLighthouseV140Layout.Version, Is.EqualTo("home-lighthouse-v1.5.0"));
+            Assert.That(HomeLighthouseV140Layout.LeftCompleteVersion,
+                Is.EqualTo("home-left-complete-v1.1.0"));
             Assert.That(HomeLighthouseV140Layout.ReferenceWidth, Is.EqualTo(1080f));
             Assert.That(HomeLighthouseV140Layout.ReferenceHeight, Is.EqualTo(2400f));
             var modules = new[]
@@ -121,17 +111,12 @@ namespace SeekerAutoChess.Tests.EditMode
                 HomeLighthouseV140Layout.TowerModule,
                 HomeLighthouseV140Layout.LitOverlayModule,
                 HomeLighthouseV140Layout.ChapterOrnamentModule,
-                HomeLighthouseV140Layout.PlayerNameLineModule,
-                HomeLighthouseV140Layout.PlayerMedallionModule,
-                HomeLighthouseV140Layout.PlayerPowerBadgeModule,
+                HomeLighthouseV140Layout.LeftCompleteModule,
                 HomeLighthouseV140Layout.EnergyGlyphModule,
                 HomeLighthouseV140Layout.ResourceSeparatorOneModule,
                 HomeLighthouseV140Layout.SkrBadgeModule,
                 HomeLighthouseV140Layout.ResourceSeparatorTwoModule,
                 HomeLighthouseV140Layout.TideCrystalModule,
-                HomeLighthouseV140Layout.AffairsModule,
-                HomeLighthouseV140Layout.ResourceSeparatorThreeModule,
-                HomeLighthouseV140Layout.WarehouseModule,
                 HomeLighthouseV140Layout.LanternMedallionModule,
                 HomeLighthouseV140Layout.LanternPanelModule,
                 HomeLighthouseV140Layout.ExpeditionNormalModule,

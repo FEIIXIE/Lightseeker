@@ -55,6 +55,77 @@ namespace SeekerAutoChess.Core
         }
     }
 
+    public static class HomeLanternModularArtContract
+    {
+        public const int NativeSize = 142;
+        public const int AppearanceCount = 6;
+        public const string PackageVersion = "home-lantern-modular-combination-v1.1.0";
+        public const string StarCompassTemplateId = "lantern.star_compass.ch1";
+        public const string DeepSeaPrismTemplateId = "lantern.deep_sea_prism.ch1";
+        public const string DawnTideCrownTemplateId = "lantern.dawn_tide_crown.ch1";
+        public const string QualityBackgroundRoot =
+            "Art/HomeLanternModular/V110/quality-backgrounds/";
+        public const string PatternRoot = "Art/HomeLanternModular/V110/lantern-patterns/";
+
+        public static string QualityBackgroundResourceId(LanternQuality quality)
+        {
+            if (!Enum.IsDefined(typeof(LanternQuality), quality))
+                throw new ArgumentOutOfRangeException(nameof(quality));
+            return QualityBackgroundRoot +
+                   "ART-UI-HOME-LANTERN-SLOT-INNER-BG-CHART-" +
+                   quality.ToString().ToUpperInvariant() + "-142-v1.1.0";
+        }
+
+        public static string PatternResourceId(string appearanceId)
+        {
+            if (!IsValidAppearanceId(appearanceId))
+                throw new ArgumentOutOfRangeException(nameof(appearanceId));
+            return PatternRoot + "ART-UI-HOME-LANTERN-PATTERN-" +
+                   appearanceId + "-142-v1.1.0";
+        }
+
+        public static string ResolveAppearanceId(string templateId)
+        {
+            if (string.Equals(templateId, LanternArtContract.LayeredShellTemplateId,
+                    StringComparison.Ordinal))
+                return "L02";
+            if (string.Equals(templateId, LanternArtContract.TideEchoTemplateId,
+                    StringComparison.Ordinal))
+                return "L03";
+            if (string.Equals(templateId, StarCompassTemplateId, StringComparison.Ordinal))
+                return "L04";
+            if (string.Equals(templateId, DeepSeaPrismTemplateId, StringComparison.Ordinal))
+                return "L05";
+            if (string.Equals(templateId, DawnTideCrownTemplateId, StringComparison.Ordinal))
+                return "L06";
+            return "L01";
+        }
+
+        public static string TemplateIdForAppearanceId(string appearanceId)
+        {
+            if (!IsValidAppearanceId(appearanceId))
+                throw new ArgumentOutOfRangeException(nameof(appearanceId));
+            switch (appearanceId)
+            {
+                case "L01": return FirstChapterLanternFixtures.GuardTideTemplateId;
+                case "L02": return LanternArtContract.LayeredShellTemplateId;
+                case "L03": return LanternArtContract.TideEchoTemplateId;
+                case "L04": return StarCompassTemplateId;
+                case "L05": return DeepSeaPrismTemplateId;
+                case "L06": return DawnTideCrownTemplateId;
+                default: throw new ArgumentOutOfRangeException(nameof(appearanceId));
+            }
+        }
+
+        public static bool IsValidAppearanceId(string appearanceId)
+        {
+            if (string.IsNullOrEmpty(appearanceId) || appearanceId.Length != 3 ||
+                appearanceId[0] != 'L') return false;
+            int index;
+            return int.TryParse(appearanceId.Substring(1), out index) && index >= 1 && index <= 6;
+        }
+    }
+
     public enum LanternQuality
     {
         Common = 0,
@@ -118,7 +189,7 @@ namespace SeekerAutoChess.Core
             string rewardReceiptId,
             string rulesVersion,
             LanternUsageLock usageLocks = LanternUsageLock.None,
-            string baseFlameStatId = "maxHealthBps",
+            string baseFlameStatId = "team.max_health_bps",
             int baseFlameValue = 0,
             int contractStage = 0)
         {
@@ -250,7 +321,7 @@ namespace SeekerAutoChess.Core
             string coreEffectId,
             IEnumerable<LanternModifierRoll> modifierRolls,
             string rulesVersion,
-            string baseFlameStatId = "maxHealthBps",
+            string baseFlameStatId = "team.max_health_bps",
             int baseFlameValue = 0,
             int contractStage = 0)
         {
@@ -299,12 +370,18 @@ namespace SeekerAutoChess.Core
         public const string FirstClearRewardReceiptId = "local-first-clear-test-LGT-C-000001";
         public const string GuardTideTemplateId = "lantern.guard_tide.ch1";
         public const string TideShellInitialCoreEffectId = "lantern.core.tide_shell.initial";
-        public const string ArmorModifierId = "lantern.modifier.armor";
-        public const string MaxHealthModifierId = "lantern.modifier.max_health";
-        public const string AttackModifierId = "lantern.modifier.attack";
-        public const string HealingModifierId = "lantern.modifier.healing";
-        public const string AttackSpeedModifierId = "lantern.modifier.attack_speed";
-        public const string MaxHealthBasisPointsStatId = "maxHealthBps";
+        public const string ArmorModifierId = "armor_flat";
+        public const string MaxHealthModifierId = "max_health_bps";
+        public const string AttackModifierId = "attack_bps";
+        public const string HealingModifierId = "healing_bps";
+        public const string AttackSpeedModifierId = "precise_attack_speed_bps";
+        public const string MaxHealthBasisPointsStatId = "team.max_health_bps";
+        public const string LegacyArmorModifierId = "lantern.modifier.armor";
+        public const string LegacyMaxHealthModifierId = "lantern.modifier.max_health";
+        public const string LegacyAttackModifierId = "lantern.modifier.attack";
+        public const string LegacyHealingModifierId = "lantern.modifier.healing";
+        public const string LegacyAttackSpeedModifierId = "lantern.modifier.attack_speed";
+        public const string LegacyMaxHealthBasisPointsStatId = "maxHealthBps";
         public const int FirstClearBaseFlameValue = 1300;
         public const int FirstClearArmorValue = 3;
 
@@ -356,11 +433,19 @@ namespace SeekerAutoChess.Core
     /// </summary>
     public static class FirstChapterLanternEconomyRules
     {
-        public const string RulesVersion = "guard-tide-initial.v0.8";
+        public const string RulesVersion = "chapter01.guard_tide.initial.v0.3";
 
         private static readonly int[] BaseFlameMinimum = { 1000, 1500, 2000, 2500, 3000 };
         private static readonly int[] BaseFlameMaximum = { 1500, 2000, 2500, 3000, 3500 };
         private static readonly int[] GlyphCounts = { 1, 1, 2, 2, 3 };
+        private static readonly string[] GlyphIds =
+        {
+            FirstChapterLanternFixtures.MaxHealthModifierId,
+            FirstChapterLanternFixtures.AttackModifierId,
+            FirstChapterLanternFixtures.HealingModifierId,
+            FirstChapterLanternFixtures.AttackSpeedModifierId,
+            FirstChapterLanternFixtures.ArmorModifierId
+        };
 
         public static int BaseFlameMinimumFor(LanternQuality quality)
         {
@@ -388,36 +473,73 @@ namespace SeekerAutoChess.Core
             if (modifier == null) return false;
             int minimum;
             int maximum;
-            var percentage = true;
-            var index = QualityIndex(quality);
-            switch (modifier.ModifierId)
-            {
-                case FirstChapterLanternFixtures.MaxHealthModifierId:
-                    minimum = new[] { 300, 400, 500, 700, 900 }[index];
-                    maximum = new[] { 500, 600, 800, 1000, 1200 }[index];
-                    break;
-                case FirstChapterLanternFixtures.AttackModifierId:
-                    minimum = new[] { 250, 400, 600, 800, 1050 }[index];
-                    maximum = new[] { 400, 600, 800, 1050, 1300 }[index];
-                    break;
-                case FirstChapterLanternFixtures.HealingModifierId:
-                    minimum = new[] { 300, 450, 600, 800, 1000 }[index];
-                    maximum = new[] { 500, 650, 850, 1100, 1400 }[index];
-                    break;
-                case FirstChapterLanternFixtures.AttackSpeedModifierId:
-                    minimum = new[] { 150, 200, 300, 450, 600 }[index];
-                    maximum = new[] { 250, 350, 500, 700, 900 }[index];
-                    break;
-                case FirstChapterLanternFixtures.ArmorModifierId:
-                    percentage = false;
-                    minimum = new[] { 2, 3, 5, 7, 10 }[index];
-                    maximum = new[] { 4, 5, 7, 10, 13 }[index];
-                    break;
-                default:
-                    return false;
-            }
+            int step;
+            if (!TryGetGlyphRange(quality, modifier.ModifierId, out minimum, out maximum,
+                    out step)) return false;
             return modifier.Value >= minimum && modifier.Value <= maximum &&
-                   (!percentage || modifier.Value % 10 == 0);
+                   (modifier.Value - minimum) % step == 0;
+        }
+
+        /// <summary>
+        /// Creates one replay-stable lantern instance after the authoritative reward table has
+        /// already selected its quality. Appearance, base flame and glyph rolls are independent
+        /// deterministic rolls derived from the settlement seed; client code never invents
+        /// quality probabilities here.
+        /// </summary>
+        public static LanternInstanceState CreateGeneratedInstance(
+            string instanceId,
+            LanternQuality quality,
+            string generationSeed,
+            string rewardReceiptId,
+            string seasonId = "season-0",
+            string chapterId = "chapter-1",
+            string difficultyId = "D0")
+        {
+            if (string.IsNullOrWhiteSpace(generationSeed))
+                throw new ArgumentException("A replay-stable generation seed is required.",
+                    nameof(generationSeed));
+
+            var state = StableSeed(generationSeed);
+            var appearanceId = "L" + (Next(ref state,
+                HomeLanternModularArtContract.AppearanceCount) + 1).ToString("00");
+            var templateId = HomeLanternModularArtContract.TemplateIdForAppearanceId(appearanceId);
+
+            var minimumBaseFlame = BaseFlameMinimumFor(quality);
+            var maximumBaseFlame = BaseFlameMaximumFor(quality);
+            var baseFlame = minimumBaseFlame + Next(ref state,
+                (maximumBaseFlame - minimumBaseFlame) / 10 + 1) * 10;
+
+            var availableGlyphs = new List<string>(GlyphIds);
+            var glyphs = new List<LanternModifierRoll>();
+            for (var index = 0; index < GlyphCountFor(quality); index++)
+            {
+                var selectedIndex = Next(ref state, availableGlyphs.Count);
+                var modifierId = availableGlyphs[selectedIndex];
+                availableGlyphs.RemoveAt(selectedIndex);
+                int minimum;
+                int maximum;
+                int step;
+                if (!TryGetGlyphRange(quality, modifierId, out minimum, out maximum, out step))
+                    throw new InvalidOperationException("Unknown lantern glyph range: " + modifierId);
+                var value = minimum + Next(ref state, (maximum - minimum) / step + 1) * step;
+                glyphs.Add(new LanternModifierRoll(modifierId, value));
+            }
+
+            return new LanternInstanceState(
+                instanceId,
+                templateId,
+                quality,
+                seasonId,
+                chapterId,
+                difficultyId,
+                FirstChapterLanternFixtures.TideShellInitialCoreEffectId,
+                glyphs,
+                rewardReceiptId,
+                RulesVersion,
+                LanternUsageLock.None,
+                FirstChapterLanternFixtures.MaxHealthBasisPointsStatId,
+                baseFlame,
+                0);
         }
 
         public static LanternInstanceState CreateConfirmedRepresentative(LanternQuality quality)
@@ -462,7 +584,7 @@ namespace SeekerAutoChess.Core
                     {
                         new LanternModifierRoll(FirstChapterLanternFixtures.MaxHealthModifierId, 900),
                         new LanternModifierRoll(FirstChapterLanternFixtures.HealingModifierId, 1000),
-                        new LanternModifierRoll(FirstChapterLanternFixtures.AttackSpeedModifierId, 600)
+                        new LanternModifierRoll(FirstChapterLanternFixtures.AttackSpeedModifierId, 1000)
                     };
                     break;
                 default:
@@ -471,7 +593,8 @@ namespace SeekerAutoChess.Core
 
             return new LanternInstanceState(
                 "economy-proof-" + qualityName,
-                FirstChapterLanternFixtures.GuardTideTemplateId,
+                HomeLanternModularArtContract.TemplateIdForAppearanceId(
+                    "L" + ((int)quality + 1).ToString("00")),
                 quality,
                 "season-0",
                 "chapter-1",
@@ -517,6 +640,74 @@ namespace SeekerAutoChess.Core
                 throw new ArgumentOutOfRangeException(nameof(quality));
             return (int)quality;
         }
+
+        private static bool TryGetGlyphRange(
+            LanternQuality quality, string modifierId,
+            out int minimum, out int maximum, out int step)
+        {
+            var index = QualityIndex(quality);
+            step = 10;
+            switch (modifierId)
+            {
+                case FirstChapterLanternFixtures.MaxHealthModifierId:
+                case FirstChapterLanternFixtures.LegacyMaxHealthModifierId:
+                    minimum = new[] { 300, 400, 500, 700, 900 }[index];
+                    maximum = new[] { 500, 600, 800, 1000, 1200 }[index];
+                    return true;
+                case FirstChapterLanternFixtures.AttackModifierId:
+                case FirstChapterLanternFixtures.LegacyAttackModifierId:
+                    minimum = new[] { 250, 400, 600, 800, 1050 }[index];
+                    maximum = new[] { 400, 600, 800, 1050, 1300 }[index];
+                    return true;
+                case FirstChapterLanternFixtures.HealingModifierId:
+                case FirstChapterLanternFixtures.LegacyHealingModifierId:
+                    minimum = new[] { 300, 450, 600, 800, 1000 }[index];
+                    maximum = new[] { 500, 650, 850, 1100, 1400 }[index];
+                    return true;
+                case FirstChapterLanternFixtures.AttackSpeedModifierId:
+                case FirstChapterLanternFixtures.LegacyAttackSpeedModifierId:
+                    minimum = new[] { 250, 350, 500, 700, 900 }[index];
+                    maximum = new[] { 400, 550, 750, 1000, 1300 }[index];
+                    return true;
+                case FirstChapterLanternFixtures.ArmorModifierId:
+                case FirstChapterLanternFixtures.LegacyArmorModifierId:
+                    minimum = new[] { 2, 3, 5, 7, 10 }[index];
+                    maximum = new[] { 4, 5, 7, 10, 13 }[index];
+                    step = 1;
+                    return true;
+                default:
+                    minimum = 0;
+                    maximum = 0;
+                    step = 1;
+                    return false;
+            }
+        }
+
+        private static uint StableSeed(string value)
+        {
+            unchecked
+            {
+                var hash = 2166136261u;
+                foreach (var character in value)
+                {
+                    hash ^= character;
+                    hash *= 16777619u;
+                }
+                return hash == 0u ? 0x9E3779B9u : hash;
+            }
+        }
+
+        private static int Next(ref uint state, int maximum)
+        {
+            if (maximum <= 1) return 0;
+            unchecked
+            {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+            }
+            return (int)(state % (uint)maximum);
+        }
     }
 
     public static class LanternCombatStatRules
@@ -528,9 +719,7 @@ namespace SeekerAutoChess.Core
         {
             var safeBase = Math.Max(0, baseMaximumHealth);
             if (snapshot == null || snapshot.IsNone ||
-                !string.Equals(snapshot.BaseFlameStatId,
-                    FirstChapterLanternFixtures.MaxHealthBasisPointsStatId,
-                    StringComparison.Ordinal)) return safeBase;
+                !MatchesBaseFlameStat(snapshot.BaseFlameStatId)) return safeBase;
             var bonus = snapshot.BaseFlameValue + ModifierTotal(snapshot,
                 FirstChapterLanternFixtures.MaxHealthModifierId);
             return ClampToInt((long)safeBase * (BasisPointScale + bonus) /
@@ -543,8 +732,9 @@ namespace SeekerAutoChess.Core
             if (snapshot == null || snapshot.IsNone) return result;
             foreach (var modifier in snapshot.ModifierRolls)
             {
-                if (modifier != null && string.Equals(modifier.ModifierId,
-                        FirstChapterLanternFixtures.ArmorModifierId, StringComparison.Ordinal))
+                if (modifier != null && MatchesModifierId(modifier.ModifierId,
+                        FirstChapterLanternFixtures.ArmorModifierId,
+                        FirstChapterLanternFixtures.LegacyArmorModifierId))
                     result = ClampToInt((long)result + modifier.Value);
             }
             return Math.Min(80, result);
@@ -601,9 +791,43 @@ namespace SeekerAutoChess.Core
         {
             var result = 0;
             foreach (var modifier in snapshot.ModifierRolls)
-                if (modifier != null && string.Equals(modifier.ModifierId, modifierId,
-                        StringComparison.Ordinal)) result = ClampToInt((long)result + modifier.Value);
+                if (modifier != null && MatchesModifierId(modifier.ModifierId, modifierId,
+                        LegacyModifierId(modifierId)))
+                    result = ClampToInt((long)result + modifier.Value);
             return result;
+        }
+
+        private static bool MatchesBaseFlameStat(string statId)
+        {
+            return string.Equals(statId,
+                       FirstChapterLanternFixtures.MaxHealthBasisPointsStatId,
+                       StringComparison.Ordinal) ||
+                   string.Equals(statId,
+                       FirstChapterLanternFixtures.LegacyMaxHealthBasisPointsStatId,
+                       StringComparison.Ordinal);
+        }
+
+        private static bool MatchesModifierId(string actual, string current, string legacy)
+        {
+            return string.Equals(actual, current, StringComparison.Ordinal) ||
+                   string.Equals(actual, legacy, StringComparison.Ordinal);
+        }
+
+        private static string LegacyModifierId(string modifierId)
+        {
+            if (string.Equals(modifierId, FirstChapterLanternFixtures.MaxHealthModifierId,
+                    StringComparison.Ordinal))
+                return FirstChapterLanternFixtures.LegacyMaxHealthModifierId;
+            if (string.Equals(modifierId, FirstChapterLanternFixtures.AttackModifierId,
+                    StringComparison.Ordinal))
+                return FirstChapterLanternFixtures.LegacyAttackModifierId;
+            if (string.Equals(modifierId, FirstChapterLanternFixtures.HealingModifierId,
+                    StringComparison.Ordinal))
+                return FirstChapterLanternFixtures.LegacyHealingModifierId;
+            if (string.Equals(modifierId, FirstChapterLanternFixtures.AttackSpeedModifierId,
+                    StringComparison.Ordinal))
+                return FirstChapterLanternFixtures.LegacyAttackSpeedModifierId;
+            return FirstChapterLanternFixtures.LegacyArmorModifierId;
         }
     }
 

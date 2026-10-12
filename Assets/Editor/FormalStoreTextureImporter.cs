@@ -5,11 +5,11 @@ namespace SeekerAutoChess.EditorTools
 {
     internal sealed class FormalStoreTextureImporter : AssetPostprocessor
     {
-        private const string StoreV110Prefix = "Assets/Resources/Art/Store/V110/";
+        private const string StoreRootPrefix = "Assets/Resources/Art/Store/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(StoreV110Prefix, System.StringComparison.Ordinal)) return;
+            if (!assetPath.StartsWith(StoreRootPrefix, System.StringComparison.Ordinal)) return;
 
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;

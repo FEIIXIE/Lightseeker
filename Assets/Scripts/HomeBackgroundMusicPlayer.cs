@@ -8,10 +8,10 @@ namespace SeekerAutoChess.Prototype
     public sealed class HomeBackgroundMusicPlayer : MonoBehaviour
     {
         private static HomeBackgroundMusicPlayer instance;
-        private readonly AudioSource[] sources = new AudioSource[2];
-        private readonly Dictionary<BackgroundMusicTrack, AudioClip> clips =
+        private AudioSource[] sources = new AudioSource[2];
+        private Dictionary<BackgroundMusicTrack, AudioClip> clips =
             new Dictionary<BackgroundMusicTrack, AudioClip>();
-        private readonly HashSet<string> missingResourcePaths = new HashSet<string>();
+        private HashSet<string> missingResourcePaths = new HashSet<string>();
         private AudioMixerGroups mixer;
         private int activeSourceIndex = -1;
         private int outgoingSourceIndex = -1;
@@ -113,6 +113,15 @@ namespace SeekerAutoChess.Prototype
 
         private void EnsureSources()
         {
+            // Unity can preserve a live MonoBehaviour while non-serialized fields are
+            // cleared during script/domain reload. Recreate all runtime-only state
+            // before indexing it so Play Mode hot reload cannot strand the music host.
+            if (sources == null || sources.Length != 2)
+                sources = new AudioSource[2];
+            if (clips == null)
+                clips = new Dictionary<BackgroundMusicTrack, AudioClip>();
+            if (missingResourcePaths == null)
+                missingResourcePaths = new HashSet<string>();
             if (sources[0] != null && sources[1] != null) return;
             var existing = GetComponents<AudioSource>();
             for (var i = 0; i < sources.Length; i++)
@@ -127,6 +136,14 @@ namespace SeekerAutoChess.Prototype
         private void AdvanceTransition(float deltaTime)
         {
             if (activeSourceIndex < 0) return;
+            EnsureSources();
+            if (activeSourceIndex >= sources.Length || sources[activeSourceIndex] == null)
+            {
+                activeSourceIndex = -1;
+                outgoingSourceIndex = -1;
+                transitioning = false;
+                return;
+            }
             var targetVolume = BackgroundMusicPolicy.ResolveVolume(mixer, currentTrack);
             if (!transitioning)
             {
@@ -138,11 +155,13 @@ namespace SeekerAutoChess.Prototype
             var progress = transitionDuration <= 0f ? 1f : Mathf.Clamp01(transitionElapsed / transitionDuration);
             var radians = progress * Mathf.PI * 0.5f;
             sources[activeSourceIndex].volume = targetVolume * Mathf.Sin(radians);
-            if (outgoingSourceIndex >= 0)
+            if (outgoingSourceIndex >= 0 && outgoingSourceIndex < sources.Length &&
+                sources[outgoingSourceIndex] != null)
                 sources[outgoingSourceIndex].volume = outgoingStartVolume * Mathf.Cos(radians);
 
             if (progress < 1f) return;
-            if (outgoingSourceIndex >= 0)
+            if (outgoingSourceIndex >= 0 && outgoingSourceIndex < sources.Length &&
+                sources[outgoingSourceIndex] != null)
             {
                 sources[outgoingSourceIndex].Stop();
                 sources[outgoingSourceIndex].clip = null;

@@ -82,8 +82,8 @@ namespace SeekerAutoChess.Core
         public const string RecruitResourceSuffix = "-RECRUIT-92x86-v1.0.0";
         public const string DragGhostResourcesFolder = "Art/Avatars/DragGhost/";
         public const string DragGhostResourceSuffix = "-DRAG-156x210-v1.0.0";
-        public const string DetailResourcesFolder = "Art/Avatars/Detail/";
-        public const string DetailResourceSuffix = "-DETAIL-500x370-v1.0.0";
+        public const string DetailResourcesFolder = "Art/CharacterDetailC/V100/character-exports/";
+        public const string DetailResourceSuffix = "-DETAIL-440x326-v1.1.0";
         public const string OccupiedSlotSurfaceSemanticKey = "surface.avatar-slot.occupied.104";
         public const string SlotForegroundRimSemanticKey = "frame.avatar-slot.foreground.104";
         public const string OccupiedSlotSurfaceResourceId =
@@ -139,7 +139,7 @@ namespace SeekerAutoChess.Core
             new AvatarArtContextSpec(AvatarArtContext.DragGhost, DragGhostResourcesFolder,
                 DragGhostResourceSuffix, 156, 210, 0, 27, 156, 156),
             new AvatarArtContextSpec(AvatarArtContext.Detail, DetailResourcesFolder,
-                DetailResourceSuffix, 500, 370, 65, 0, 370, 370)
+                DetailResourceSuffix, 440, 326, 57, 0, 326, 326)
         };
         private static readonly Dictionary<AvatarArtContext, AvatarArtContextSpec> contextSpecById =
             BuildContextIndex();

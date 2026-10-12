@@ -17,11 +17,15 @@ namespace SeekerAutoChess.Prototype
         private MarketAssetFilter marketAssetFilter;
         private Vector2 marketScroll;
         private string selectedMarketListingId;
+        private string selectedMarketPreviewAssetInstanceId;
         private MarketAssetKind selectedMarketAssetKind;
         private string selectedMarketAssetInstanceId;
-        private int marketListingPriceSkr = MarketRules.MinimumListingPriceSkr;
+        private int marketListingPriceSkr;
+        private string marketListingPriceInput = string.Empty;
         private string marketFeedbackKey = "market.status.ready";
         private int marketOperationSerial;
+        private bool marketShelfExpansionConfirmOpen;
+        private bool marketModalSubmissionInProgress;
         private string pendingMarketWarehouseFocusInstanceId;
         private MarketAssetKind? pendingMarketWarehouseFocusKind;
         private bool marketAcceptanceGrantChecked;
@@ -77,7 +81,7 @@ namespace SeekerAutoChess.Prototype
                 quality, MarketSeasonId, MarketRules.ToMicroSkr(priceSkr), DateTime.UtcNow.Ticks, out ignored);
         }
 
-        private void DrawMarketScreen()
+        private void DrawLegacyMarketScreen()
         {
             EnsureMarketState();
             GrantMarketAcceptanceInventoryIfNeeded();
@@ -142,20 +146,28 @@ namespace SeekerAutoChess.Prototype
             marketAcceptanceGrantChecked = true;
             if (PlayerPrefs.GetInt(MarketAcceptanceGrantPreferenceKey, 0) != 0) return;
 
-            SetWalletBalanceMicroSkr(Math.Max(WalletBalanceMicroSkr, MarketRules.ToMicroSkr(2000)));
+            SetWalletBalanceMicroSkr(Math.Max(WalletBalanceMicroSkr, MarketRules.ToMicroSkr(3000)));
             var capacityRemaining = Mathf.Max(0, WarehouseStorageRules.InitialCapacity -
                 WarehouseStorageRules.CountUsedSlots(
                     equipmentInventory.Instances.Count, lanternInventory.Instances.Count));
             var grantCount = Mathf.Min(5, capacityRemaining);
+            var acceptanceQualities = new[]
+            {
+                EquipmentQuality.Rare,
+                EquipmentQuality.Epic,
+                EquipmentQuality.Rare,
+                EquipmentQuality.Epic,
+                EquipmentQuality.Common
+            };
             for (var index = 0; index < grantCount; index++)
             {
                 var definition = equipmentCatalog.Definitions[index % equipmentCatalog.Definitions.Count];
-                var quality = (EquipmentQuality)(index % 3);
                 equipmentInventory.TryAddFirst(new EquipmentInstanceState(
-                    "market.acceptance.v043246." + (index + 1).ToString("D2"),
-                    definition.TemplateId, quality, MarketSeasonId));
+                    "market.acceptance.v043281." + (index + 1).ToString("D2"),
+                    definition.TemplateId, acceptanceQualities[index], MarketSeasonId));
             }
             SeedMarketAcceptancePurchaseListings();
+            SeedMarketAcceptanceHistory();
 
             SaveGame();
             PlayerPrefs.SetInt(MarketAcceptanceGrantPreferenceKey, 1);
@@ -168,18 +180,73 @@ namespace SeekerAutoChess.Prototype
 
         private void SeedMarketAcceptancePurchaseListings()
         {
+            var now = DateTime.UtcNow.Ticks;
             for (var index = 0; index < equipmentCatalog.Definitions.Count; index++)
             {
-                var definition = equipmentCatalog.Definitions[index];
+                var definition = equipmentCatalog.Definitions[index % equipmentCatalog.Definitions.Count];
                 MarketListing ignored;
                 marketBoard.TryCreateListing(
-                    "market-acceptance-seller-v043246", T("market.seller.acceptance"),
+                    "market-acceptance-equipment-v043281", T("market.seller.acceptance"),
                     MarketAssetKind.Equipment,
-                    "market.acceptance.purchase.v043246." + (index + 1).ToString("D2"),
+                    "market.acceptance.equipment.v043281." + (index + 1).ToString("D2"),
                     definition.TemplateId, index % 3, MarketSeasonId,
-                    MarketRules.ToMicroSkr(10 + index * 5), DateTime.UtcNow.Ticks + index,
+                    MarketRules.ToMicroSkr(10 + index * 5), now + index,
                     out ignored);
             }
+
+            for (var index = 0; index <= (int)LanternQuality.Legendary; index++)
+            {
+                MarketListing ignored;
+                marketBoard.TryCreateListing(
+                    "market-acceptance-lantern-v043281", T("market.seller.acceptance"),
+                    MarketAssetKind.Lantern,
+                    "market.acceptance.lantern.v043281." + (index + 1).ToString("D2"),
+                    HomeLanternModularArtContract.TemplateIdForAppearanceId(
+                        "L" + (index + 1).ToString("00")),
+                    index, MarketSeasonId, MarketRules.ToMicroSkr(45 + index * 15),
+                    now + 100 + index, out ignored);
+            }
+        }
+
+        private void SeedMarketAcceptanceHistory()
+        {
+            if (equipmentCatalog.Definitions.Count == 0) return;
+            var now = DateTime.UtcNow.Ticks;
+            var template = equipmentCatalog.Definitions[0].TemplateId;
+
+            MarketListing bought;
+            if (marketBoard.TryCreateListing("market-history-seller-v043249", T("market.seller.acceptance"),
+                    MarketAssetKind.Equipment, "market.history.bought.v043249", template,
+                    (int)EquipmentQuality.Rare, MarketSeasonId, MarketRules.ToMicroSkr(35),
+                    now - TimeSpan.FromMinutes(30).Ticks, out bought))
+            {
+                long ignoredBalance;
+                MarketTradeReceipt ignoredReceipt;
+                marketBoard.TryPurchase(MarketRules.LocalPlayerId, bought.ListingId,
+                    MarketRules.ToMicroSkr(999999), now - TimeSpan.FromMinutes(25).Ticks,
+                    receipt => true, out ignoredBalance, out ignoredReceipt);
+            }
+
+            MarketListing sold;
+            if (marketBoard.TryCreateListing(MarketRules.LocalPlayerId, T("market.you"),
+                    MarketAssetKind.Equipment, "market.history.sold.v043249", template,
+                    (int)EquipmentQuality.Epic, MarketSeasonId, MarketRules.ToMicroSkr(60),
+                    now - TimeSpan.FromMinutes(20).Ticks, out sold))
+            {
+                long ignoredBalance;
+                MarketTradeReceipt ignoredReceipt;
+                marketBoard.TryPurchase("market-history-buyer-v043249", sold.ListingId,
+                    MarketRules.ToMicroSkr(999999), now - TimeSpan.FromMinutes(15).Ticks,
+                    receipt => true, out ignoredBalance, out ignoredReceipt);
+            }
+
+            MarketListing cancelled;
+            if (marketBoard.TryCreateListing(MarketRules.LocalPlayerId, T("market.you"),
+                    MarketAssetKind.Equipment, "market.history.cancelled.v043249", template,
+                    (int)EquipmentQuality.Common, MarketSeasonId, MarketRules.ToMicroSkr(20),
+                    now - TimeSpan.FromMinutes(10).Ticks, out cancelled))
+                marketBoard.TryCancelListing(MarketRules.LocalPlayerId, cancelled.ListingId,
+                    now - TimeSpan.FromMinutes(5).Ticks);
         }
 
         private void DrawMarketTabs(float y)
@@ -481,12 +548,27 @@ namespace SeekerAutoChess.Prototype
                 MarketRules.RulesVersion, summary));
         }
 
-        private void TryCreateMarketListing()
+        private bool TryApplyMarketListingPriceInput()
+        {
+            int parsed;
+            if (!int.TryParse(marketListingPriceInput, out parsed) ||
+                parsed < MarketRules.MinimumListingPriceSkr || parsed > 999999)
+            {
+                marketListingPriceSkr = 0;
+                marketFeedbackKey = "market.status.invalidListing";
+                return false;
+            }
+            marketListingPriceSkr = parsed;
+            marketListingPriceInput = parsed.ToString();
+            return true;
+        }
+
+        private bool TryCreateMarketListing()
         {
             if (string.IsNullOrEmpty(selectedMarketAssetInstanceId))
             {
                 marketFeedbackKey = "market.status.selectAsset";
-                return;
+                return false;
             }
             var candidates = BuildMarketSaleCandidates();
             MarketSaleCandidate selected = null;
@@ -496,21 +578,22 @@ namespace SeekerAutoChess.Prototype
             if (selected == null)
             {
                 marketFeedbackKey = "market.status.assetUnavailable";
-                return;
+                return false;
             }
+            if (!TryApplyMarketListingPriceInput()) return false;
             var price = MarketRules.ToMicroSkr(marketListingPriceSkr);
             if (!marketBoard.CanCreateListing(MarketRules.LocalPlayerId, selected.Kind, selected.InstanceId, price))
             {
                 marketFeedbackKey = marketBoard.CountActiveListings(MarketRules.LocalPlayerId) >= marketBoard.ListingCapacity
                     ? "market.status.slotsFull" : "market.status.invalidListing";
-                return;
+                return false;
             }
             var signature = RequestMarketSignature(MarketActionType.CreateListing, null,
                 selected.InstanceId, price, 0L, "list:" + selected.InstanceId + ":" + marketListingPriceSkr);
             if (signature == null || !signature.Approved)
             {
                 marketFeedbackKey = "market.status.signatureRejected";
-                return;
+                return false;
             }
             var locked = false;
             if (selected.Kind == MarketAssetKind.Equipment)
@@ -540,12 +623,15 @@ namespace SeekerAutoChess.Prototype
                     else lanternInventory.TryCancelMarketListing(selected.InstanceId);
                 }
                 marketFeedbackKey = "market.status.invalidListing";
-                return;
+                return false;
             }
             PlayUiClick(UiAudioCueIds.Confirm, "market-create-listing");
             marketFeedbackKey = "market.status.listed";
             selectedMarketAssetInstanceId = null;
+            marketListingPriceSkr = 0;
+            marketListingPriceInput = string.Empty;
             SaveGame();
+            return true;
         }
 
         private void TryCancelMarketListing(MarketListing listing)
@@ -636,31 +722,40 @@ namespace SeekerAutoChess.Prototype
                 representative.BaseFlameValue, representative.ContractStage);
         }
 
-        private void TryLeaseMarketShop()
+        private bool TryLeaseMarketShop()
         {
+            if (marketBoard.ShopLeaseCount >= MarketRules.MaximumShopLeasePurchasesPerSeason)
+            {
+                marketFeedbackKey = "market.status.leaseLimit";
+                return false;
+            }
             var price = MarketRules.ToMicroSkr(MarketRules.ShopLeasePriceSkr);
             if (WalletBalanceMicroSkr < price)
             {
                 marketFeedbackKey = "market.status.insufficient";
-                return;
+                return false;
             }
             var signature = RequestMarketSignature(MarketActionType.LeaseShop, null,
                 "market-shop", price, price, "lease-shop:" + MarketRules.ShopLeasePriceSkr);
             if (signature == null || !signature.Approved)
             {
                 marketFeedbackKey = "market.status.signatureRejected";
-                return;
+                return false;
             }
             long updated;
             if (!marketBoard.TryLeaseShop(WalletBalanceMicroSkr, out updated))
             {
-                marketFeedbackKey = "market.status.insufficient";
-                return;
+                marketFeedbackKey = marketBoard.ShopLeaseCount >=
+                    MarketRules.MaximumShopLeasePurchasesPerSeason
+                    ? "market.status.leaseLimit"
+                    : "market.status.insufficient";
+                return false;
             }
             SetWalletBalanceMicroSkr(updated);
             PlayUiClick(UiAudioCueIds.Confirm, "market-lease-shop");
             marketFeedbackKey = "market.status.leased";
             SaveGame();
+            return true;
         }
 
         private PrototypeMarketListingSaveData[] SaveMarketListings()

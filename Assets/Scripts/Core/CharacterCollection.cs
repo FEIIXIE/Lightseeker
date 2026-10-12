@@ -181,6 +181,7 @@ namespace SeekerAutoChess.Core
         public int ExternalStar { get; }
         public CharacterQuality Quality { get; }
         public long AcquiredAtUtcTicks { get; }
+        public int AptitudeRoll { get; }
 
         public OwnedCharacterState(string definitionId, int copyCount, int externalStar, CharacterQuality quality)
             : this("character." + definitionId, definitionId, copyCount, externalStar, quality, 0L)
@@ -193,7 +194,8 @@ namespace SeekerAutoChess.Core
             int copyCount,
             int externalStar,
             CharacterQuality quality,
-            long acquiredAtUtcTicks = 0L)
+            long acquiredAtUtcTicks = 0L,
+            int aptitudeRoll = -1)
         {
             if (string.IsNullOrWhiteSpace(characterInstanceId)) throw new ArgumentException("A character instance id is required.", nameof(characterInstanceId));
             if (string.IsNullOrWhiteSpace(definitionId)) throw new ArgumentException("A definition id is required.", nameof(definitionId));
@@ -201,12 +203,15 @@ namespace SeekerAutoChess.Core
             if (externalStar < 0) throw new ArgumentOutOfRangeException(nameof(externalStar));
             if (!Enum.IsDefined(typeof(CharacterQuality), quality)) throw new ArgumentOutOfRangeException(nameof(quality));
             if (acquiredAtUtcTicks < 0L) throw new ArgumentOutOfRangeException(nameof(acquiredAtUtcTicks));
+            if (aptitudeRoll < -1 || aptitudeRoll > CharacterRarityInstanceRules.RollScale)
+                throw new ArgumentOutOfRangeException(nameof(aptitudeRoll));
             CharacterInstanceId = characterInstanceId;
             DefinitionId = definitionId;
             CopyCount = copyCount;
             ExternalStar = externalStar;
             Quality = quality;
             AcquiredAtUtcTicks = acquiredAtUtcTicks;
+            AptitudeRoll = aptitudeRoll;
         }
     }
 

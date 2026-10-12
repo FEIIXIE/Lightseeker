@@ -19,11 +19,11 @@ namespace SeekerAutoChess.EditorTools
         private const string WaitKey = "seeker.verify.formalArena.wait";
         private const string RefreshedKey = "seeker.verify.formalArena.refreshed";
         private const string CommandLineKey = "seeker.verify.formalArena.commandLine";
-        private const string Version = "v0.43.213";
+        private const string Version = "v0.43.413";
         private const string NormalScreenshot =
-            "SeekerAutoChess-v0.43.213-arena-e-normal-1080x2400.png";
+            "SeekerAutoChess-v0.43.404-arena-e-normal-1080x2400.png";
         private const string DetailScreenshot =
-            "SeekerAutoChess-v0.43.213-arena-e-opponent-detail-1080x2400.png";
+            "SeekerAutoChess-v0.43.404-arena-e-opponent-picker-1080x2400.png";
 
         private static double nextActionAt;
         private static bool captureCompleted;
@@ -36,7 +36,7 @@ namespace SeekerAutoChess.EditorTools
             nextActionAt = EditorApplication.timeSinceStartup + 1d;
         }
 
-        [MenuItem("Seeker/Verify Formal Arena E v1.0")]
+        [MenuItem("Seeker/Verify Formal Arena E v1.0.2")]
         private static void StartFromMenu()
         {
             SessionState.SetBool(ActiveKey, true);
@@ -136,7 +136,7 @@ namespace SeekerAutoChess.EditorTools
                     if (!WaitForCapture("Arena opponent detail")) return;
                     BuildComparisonEvidence();
                     WriteResult(projectRoot, true,
-                        "Captured Arena E v1.0.0 normal/detail states at 1080x2400 and generated overlay plus difference evidence.");
+                        "Captured Arena E v1.0.2 main/opponent-picker states at 1080x2400 and generated overlay plus difference evidence.");
                     Finish();
                 }
             }
@@ -182,9 +182,12 @@ namespace SeekerAutoChess.EditorTools
             FindField("arenaRating").SetValue(bootstrap, 1090);
             FindField("arenaChallengesRemaining").SetValue(bootstrap, 4);
             FindField("arenaRankingScroll").SetValue(bootstrap, Vector2.zero);
-            FindField("selectedArenaOpponentIndex").SetValue(bootstrap, detail ? 0 : -1);
-            FindField("arenaOpponents").SetValue(bootstrap,
-                ArenaPrototypeRules.CreateDeterministicBots(1090));
+            var opponents = ArenaPrototypeRules.CreateDeterministicBots(1090);
+            var playerRank = ArenaPrototypeRules.CalculatePlayerDisplayRank(opponents, 1090);
+            var candidates = ArenaPrototypeRules.SelectNearby(opponents, playerRank, 6);
+            FindField("selectedArenaOpponentIndex").SetValue(bootstrap,
+                detail && candidates.Length > 0 ? Array.IndexOf(opponents, candidates[0]) : -1);
+            FindField("arenaOpponents").SetValue(bootstrap, opponents);
             var stateField = FindField("arenaPageState");
             stateField.SetValue(bootstrap, Enum.Parse(stateField.FieldType,
                 detail ? "OpponentDetail" : "Ranking"));
@@ -228,16 +231,16 @@ namespace SeekerAutoChess.EditorTools
         private static void BuildComparisonEvidence()
         {
             BuildComparison(NormalScreenshot,
-                "主美-竞技页面E横向浮窗-正式组合预览-正常页-v1.0.0.png", "normal");
+                "主美-竞技页面E统一风格-正式组合QA-主页面-v1.0.2.png", "normal");
             BuildComparison(DetailScreenshot,
-                "主美-竞技页面E横向浮窗-正式组合预览-对手详情-v1.0.0.png", "detail");
+                "主美-竞技页面E统一风格-正式组合QA-寻找对手浮窗-v1.0.2.png", "opponent-picker");
         }
 
         private static void BuildComparison(string screenshotName, string baselineName, string stateName)
         {
             var screenshot = LoadTexture(Path.Combine(OutputDirectory(), screenshotName));
             var baseline = LoadTexture(Path.GetFullPath(Path.Combine(Application.dataPath,
-                "../../../outputs/meishu/_accepted/ui/arena-page-e-horizontal-detail-v1.0.0/preview/" +
+                "../../../outputs/meishu/_accepted/ui/arena-page-e-unified-v1.0.2/preview/" +
                 baselineName)));
             try
             {
@@ -294,7 +297,7 @@ namespace SeekerAutoChess.EditorTools
                 comparison.Apply(false, false);
                 var suffix = difference ? "difference" : "overlay-50pct";
                 File.WriteAllBytes(Path.Combine(OutputDirectory(),
-                    "SeekerAutoChess-v0.43.213-arena-e-" + stateName + "-" + suffix +
+                    "SeekerAutoChess-v0.43.404-arena-e-" + stateName + "-" + suffix +
                     "-1080x2400.png"), comparison.EncodeToPNG());
             }
             finally { UnityEngine.Object.DestroyImmediate(comparison); }
@@ -313,10 +316,10 @@ namespace SeekerAutoChess.EditorTools
             {
                 NormalScreenshot,
                 DetailScreenshot,
-                "SeekerAutoChess-v0.43.213-arena-e-normal-overlay-50pct-1080x2400.png",
-                "SeekerAutoChess-v0.43.213-arena-e-normal-difference-1080x2400.png",
-                "SeekerAutoChess-v0.43.213-arena-e-detail-overlay-50pct-1080x2400.png",
-                "SeekerAutoChess-v0.43.213-arena-e-detail-difference-1080x2400.png"
+                "SeekerAutoChess-v0.43.404-arena-e-normal-overlay-50pct-1080x2400.png",
+                "SeekerAutoChess-v0.43.404-arena-e-normal-difference-1080x2400.png",
+                "SeekerAutoChess-v0.43.404-arena-e-opponent-picker-overlay-50pct-1080x2400.png",
+                "SeekerAutoChess-v0.43.404-arena-e-opponent-picker-difference-1080x2400.png"
             })
             {
                 var path = Path.Combine(directory, fileName);
@@ -337,7 +340,7 @@ namespace SeekerAutoChess.EditorTools
                 checkedAt = DateTime.UtcNow.ToString("O")
             }, true);
             File.WriteAllText(Path.Combine(outputDirectory,
-                "主程-v0.43.213竞技页面E横向浮窗接入-运行时验证-v1.0.json"), result);
+                "主程-v0.43.404远征账户合同修复-运行时验证-v1.0.json"), result);
         }
 
         private static void Require(bool condition, string message)

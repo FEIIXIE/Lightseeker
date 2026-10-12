@@ -165,7 +165,7 @@ namespace SeekerAutoChess.EditorTools
             var legendary = LanternSnapshot.FromInstance(inventory.Get(InstanceId(LanternQuality.Legendary)));
             Require(LanternCombatStatRules.ApplyMaximumHealth(100, legendary) == 142 &&
                     LanternCombatStatRules.ApplyHealingAmount(100, legendary) == 110 &&
-                    LanternCombatStatRules.ApplyAttackSpeed(10000, legendary) == 10600,
+                    LanternCombatStatRules.ApplyAttackSpeed(10000, legendary) == 11000,
                 "Legendary health/healing/speed glyphs were not applied.");
         }
 

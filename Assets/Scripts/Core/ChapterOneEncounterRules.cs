@@ -6,13 +6,20 @@ namespace SeekerAutoChess.Core
     public sealed class ChapterOneEncounterUnit
     {
         public ChapterOneEncounterUnit(string definitionId, int runLevel)
+            : this(definitionId, runLevel, -1)
+        {
+        }
+
+        public ChapterOneEncounterUnit(string definitionId, int runLevel, int enemySlot)
         {
             DefinitionId = definitionId;
             RunLevel = Math.Max(1, Math.Min(3, runLevel));
+            EnemySlot = enemySlot < 0 ? -1 : Math.Min(5, enemySlot);
         }
 
         public string DefinitionId { get; private set; }
         public int RunLevel { get; private set; }
+        public int EnemySlot { get; private set; }
     }
 
     public sealed class ChapterOneEncounter
@@ -27,6 +34,22 @@ namespace SeekerAutoChess.Core
             bool isElite,
             bool isBoss,
             IEnumerable<ChapterOneEncounterUnit> generatedUnits)
+            : this(nodeId, generationVersion, battleSeed, coinReward, isElite, isBoss,
+                generatedUnits, "D0", 0, 0f)
+        {
+        }
+
+        public ChapterOneEncounter(
+            string nodeId,
+            int generationVersion,
+            uint battleSeed,
+            int coinReward,
+            bool isElite,
+            bool isBoss,
+            IEnumerable<ChapterOneEncounterUnit> generatedUnits,
+            string difficultyId,
+            int formationTier,
+            float threatBudget)
         {
             NodeId = nodeId;
             GenerationVersion = generationVersion;
@@ -34,6 +57,9 @@ namespace SeekerAutoChess.Core
             CoinReward = Math.Max(0, coinReward);
             IsElite = isElite;
             IsBoss = isBoss;
+            DifficultyId = string.IsNullOrWhiteSpace(difficultyId) ? "D0" : difficultyId;
+            FormationTier = Math.Max(0, Math.Min(3, formationTier));
+            ThreatBudget = Math.Max(0f, threatBudget);
             units = generatedUnits == null
                 ? new ChapterOneEncounterUnit[0]
                 : new List<ChapterOneEncounterUnit>(generatedUnits).ToArray();
@@ -45,6 +71,9 @@ namespace SeekerAutoChess.Core
         public int CoinReward { get; private set; }
         public bool IsElite { get; private set; }
         public bool IsBoss { get; private set; }
+        public string DifficultyId { get; private set; }
+        public int FormationTier { get; private set; }
+        public float ThreatBudget { get; private set; }
         public IReadOnlyList<ChapterOneEncounterUnit> Units { get { return units; } }
     }
 

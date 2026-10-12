@@ -113,7 +113,7 @@ namespace SeekerAutoChess.Tests.EditMode
             var map = ExpeditionMapGraph.CreateChapterOne(2u);
             var summary = ExpeditionMapDiagnostics.CreateSummary(map, "M00", 123u);
             StringAssert.Contains("mapSeed=2", summary);
-            StringAssert.Contains("mapGenerationVersion=8", summary);
+            StringAssert.Contains("mapGenerationVersion=9", summary);
             StringAssert.Contains("routeSkeleton=B", summary);
             StringAssert.Contains("currentNodeId=M00", summary);
             StringAssert.Contains("journeyProgress=0.000", summary);
@@ -127,7 +127,8 @@ namespace SeekerAutoChess.Tests.EditMode
         [Test]
         public void EncounterEconomySummary_ContainsBGroupFieldsWithoutFogState()
         {
-            var map = ExpeditionMapGraph.CreateChapterOne(5u);
+            var map = ExpeditionMapGraph.CreateChapterOne(
+                5u, ExpeditionMapGraph.LegacyFiveTypeMapGenerationVersion);
             var node = map.GetNode("M28");
             var encounter = ChapterOneEncounterRules.Generate(map.Seed, node, false);
             var economy = new ExpeditionEconomyState();
